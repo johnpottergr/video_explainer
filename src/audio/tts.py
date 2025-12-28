@@ -1,13 +1,34 @@
 """Text-to-Speech providers for voiceover generation."""
 
+import base64
 import os
+import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
 import httpx
 
 from ..config import Config, TTSConfig, load_config
+
+
+@dataclass
+class WordTimestamp:
+    """Timestamp for a single word."""
+
+    word: str
+    start_seconds: float
+    end_seconds: float
+
+
+@dataclass
+class TTSResult:
+    """Result of TTS generation with optional timestamps."""
+
+    audio_path: Path
+    duration_seconds: float
+    word_timestamps: list[WordTimestamp] = field(default_factory=list)
 
 
 class TTSProvider(ABC):
@@ -26,6 +47,21 @@ class TTSProvider(ABC):
 
         Returns:
             Path to the generated audio file
+        """
+        pass
+
+    @abstractmethod
+    def generate_with_timestamps(
+        self, text: str, output_path: str | Path
+    ) -> TTSResult:
+        """Generate speech with word-level timestamps.
+
+        Args:
+            text: The text to convert to speech
+            output_path: Path to save the audio file
+
+        Returns:
+            TTSResult with audio path and word timestamps
         """
         pass
 
@@ -153,6 +189,101 @@ class ElevenLabsTTS(TTSProvider):
             for v in data.get("voices", [])
         ]
 
+    def generate_with_timestamps(
+        self, text: str, output_path: str | Path
+    ) -> TTSResult:
+        """Generate speech with word-level timestamps using ElevenLabs API."""
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        url = f"{self.BASE_URL}/text-to-speech/{self.voice_id}/with-timestamps"
+
+        payload = {
+            "text": text,
+            "model_id": self.config.model,
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75,
+            },
+        }
+
+        with httpx.Client(timeout=120.0) as client:
+            response = client.post(
+                url,
+                headers=self._get_headers(),
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        # Decode and save audio
+        audio_bytes = base64.b64decode(data["audio_base64"])
+        with open(output_path, "wb") as f:
+            f.write(audio_bytes)
+
+        # Parse character-level timestamps into word-level
+        alignment = data.get("alignment", {})
+        word_timestamps = self._parse_word_timestamps(
+            alignment.get("characters", []),
+            alignment.get("character_start_times_seconds", []),
+            alignment.get("character_end_times_seconds", []),
+        )
+
+        # Calculate duration from last character end time
+        end_times = alignment.get("character_end_times_seconds", [])
+        duration = end_times[-1] if end_times else 0.0
+
+        return TTSResult(
+            audio_path=output_path,
+            duration_seconds=duration,
+            word_timestamps=word_timestamps,
+        )
+
+    def _parse_word_timestamps(
+        self,
+        characters: list[str],
+        start_times: list[float],
+        end_times: list[float],
+    ) -> list[WordTimestamp]:
+        """Convert character-level timestamps to word-level timestamps."""
+        if not characters or not start_times or not end_times:
+            return []
+
+        word_timestamps = []
+        current_word = ""
+        word_start = None
+
+        for i, char in enumerate(characters):
+            if char.isspace():
+                # End of word
+                if current_word and word_start is not None:
+                    word_timestamps.append(
+                        WordTimestamp(
+                            word=current_word,
+                            start_seconds=word_start,
+                            end_seconds=end_times[i - 1] if i > 0 else start_times[i],
+                        )
+                    )
+                current_word = ""
+                word_start = None
+            else:
+                # Part of a word
+                if word_start is None:
+                    word_start = start_times[i]
+                current_word += char
+
+        # Handle last word
+        if current_word and word_start is not None:
+            word_timestamps.append(
+                WordTimestamp(
+                    word=current_word,
+                    start_seconds=word_start,
+                    end_seconds=end_times[-1] if end_times else word_start,
+                )
+            )
+
+        return word_timestamps
+
     def estimate_cost(self, text: str) -> float:
         """Estimate cost for generating speech.
 
@@ -221,6 +352,43 @@ class MockTTS(TTSProvider):
             output_path.write_bytes(b"\x00" * 1000)
 
         return output_path
+
+    def generate_with_timestamps(
+        self, text: str, output_path: str | Path
+    ) -> TTSResult:
+        """Generate mock audio with simulated word timestamps."""
+        # Generate the audio file
+        audio_path = self.generate(text, output_path)
+
+        # Estimate duration based on text length (~150 words per minute)
+        words = text.split()
+        duration_seconds = max(1.0, (len(words) / 150) * 60)
+
+        # Generate simulated word timestamps
+        word_timestamps = []
+        current_time = 0.0
+        avg_word_duration = duration_seconds / max(len(words), 1)
+
+        for word in words:
+            # Clean word of punctuation for the timestamp
+            clean_word = re.sub(r"[^\w\-']", "", word)
+            if clean_word:
+                # Vary duration slightly based on word length
+                word_duration = avg_word_duration * (0.5 + 0.5 * len(clean_word) / 6)
+                word_timestamps.append(
+                    WordTimestamp(
+                        word=clean_word,
+                        start_seconds=current_time,
+                        end_seconds=current_time + word_duration,
+                    )
+                )
+                current_time += word_duration + 0.05  # Small gap between words
+
+        return TTSResult(
+            audio_path=audio_path,
+            duration_seconds=duration_seconds,
+            word_timestamps=word_timestamps,
+        )
 
     def generate_stream(self, text: str) -> Iterator[bytes]:
         """Generate mock audio stream."""

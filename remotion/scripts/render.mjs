@@ -4,8 +4,9 @@
  *
  * Usage:
  *   node scripts/render.mjs --props ./props.json --output ./output.mp4
+ *   node scripts/render.mjs --composition StoryboardPlayer --props ./storyboard.json --output ./output.mp4
  *
- * The props.json file should contain the ScriptProps object.
+ * The props.json file should contain the composition props.
  */
 
 import { bundle } from "@remotion/bundler";
@@ -24,6 +25,7 @@ async function main() {
   const args = process.argv.slice(2);
   let propsPath = null;
   let outputPath = "./output.mp4";
+  let compositionId = "ExplainerVideo";
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--props" && args[i + 1]) {
@@ -32,11 +34,14 @@ async function main() {
     } else if (args[i] === "--output" && args[i + 1]) {
       outputPath = args[i + 1];
       i++;
+    } else if (args[i] === "--composition" && args[i + 1]) {
+      compositionId = args[i + 1];
+      i++;
     }
   }
 
   if (!propsPath) {
-    console.error("Usage: node scripts/render.mjs --props <props.json> --output <output.mp4>");
+    console.error("Usage: node scripts/render.mjs [--composition <id>] --props <props.json> --output <output.mp4>");
     process.exit(1);
   }
 
@@ -48,14 +53,24 @@ async function main() {
   // Load props from JSON file
   const props = JSON.parse(readFileSync(propsPath, "utf-8"));
   console.log(`Loaded props from ${propsPath}`);
-  console.log(`Title: ${props.title}`);
-  console.log(`Scenes: ${props.scenes.length}`);
+  console.log(`Composition: ${compositionId}`);
 
-  // Calculate total duration
-  const totalDuration = props.scenes.reduce(
-    (acc, scene) => acc + scene.durationInSeconds,
-    0
-  );
+  // Calculate total duration based on composition type
+  let totalDuration;
+  if (compositionId === "StoryboardPlayer" && props.storyboard) {
+    totalDuration = props.storyboard.duration_seconds;
+    console.log(`Storyboard: ${props.storyboard.title}`);
+    console.log(`Beats: ${props.storyboard.beats.length}`);
+  } else if (props.scenes) {
+    totalDuration = props.scenes.reduce(
+      (acc, scene) => acc + scene.durationInSeconds,
+      0
+    );
+    console.log(`Title: ${props.title}`);
+    console.log(`Scenes: ${props.scenes.length}`);
+  } else {
+    totalDuration = props.duration_seconds || 60;
+  }
   console.log(`Total duration: ${totalDuration}s`);
 
   // Bundle the Remotion project
@@ -76,7 +91,7 @@ async function main() {
   console.log("\nPreparing composition...");
   const composition = await selectComposition({
     serveUrl: bundleLocation,
-    id: "ExplainerVideo",
+    id: compositionId,
     inputProps: props,
   });
 
