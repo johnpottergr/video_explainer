@@ -228,8 +228,10 @@ pytest tests/test_ingestion.py -v
 | Dec 2024 | 1237125 | Complete Phase 1 MVP with Dockerfile and E2E tests |
 | Dec 2024 | 43799de | Add video generation pipeline and first video output |
 | Dec 2024 | ff2b337 | Add comprehensive README.md |
+| Dec 2024 | 41ceadc | Complete Phase 2: First real explainer video generated |
+| Dec 2024 | 50dbc3f | Refactor pipeline: remove one-off scripts, use config-based providers |
 
 ---
 
 *Last Updated: December 2024*
-*Session: Phase 2 Complete - First Real Video Generated*
+*Session: Phase 2 Complete - Pipeline refactored for production*
