@@ -1,12 +1,15 @@
-"""Motion Canvas renderer for exporting animations to video."""
+"""Animation renderer abstraction and implementations."""
 
+import json
 import os
 import subprocess
-import time
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ..config import Config, load_config
+from ..models import Script
 
 
 @dataclass
@@ -20,17 +23,64 @@ class RenderResult:
     error_message: str | None = None
 
 
-class MotionCanvasRenderer:
-    """Render Motion Canvas animations to video files."""
+class AnimationRenderer(ABC):
+    """Abstract base class for animation renderers.
+
+    This interface allows swapping between different rendering backends
+    (Remotion, Motion Canvas, etc.) without changing the pipeline code.
+    """
 
     def __init__(self, config: Config | None = None):
-        """Initialize the renderer.
+        self.config = config or load_config()
+
+    @abstractmethod
+    def render_from_script(
+        self,
+        script: Script,
+        output_path: Path | str,
+    ) -> RenderResult:
+        """Render a video from a script.
 
         Args:
-            config: Configuration object. If None, loads default.
+            script: The video script with scenes and visual cues
+            output_path: Path for the output video file
+
+        Returns:
+            RenderResult with output info
         """
-        self.config = config or load_config()
-        self.animations_dir = Path(__file__).parent.parent.parent / "animations"
+        pass
+
+    @abstractmethod
+    def render_mock(
+        self,
+        output_path: Path | str,
+        duration_seconds: float = 10.0,
+    ) -> RenderResult:
+        """Generate a mock/test video.
+
+        Args:
+            output_path: Path for the output video file
+            duration_seconds: Duration of the mock video
+
+        Returns:
+            RenderResult with output info
+        """
+        pass
+
+
+class RemotionRenderer(AnimationRenderer):
+    """Render animations using Remotion (React-based).
+
+    This renderer generates videos by:
+    1. Converting the script to Remotion props (JSON)
+    2. Running the Remotion render script
+    3. Returning the rendered video path
+    """
+
+    def __init__(self, config: Config | None = None):
+        super().__init__(config)
+        self.remotion_dir = Path(__file__).parent.parent.parent / "remotion"
+        self._check_dependencies()
 
     def _check_dependencies(self) -> None:
         """Check if required dependencies are available."""
@@ -44,66 +94,75 @@ class MotionCanvasRenderer:
             if result.returncode != 0:
                 raise RuntimeError("Node.js not working properly")
         except FileNotFoundError:
-            raise RuntimeError("Node.js not found. Required for Motion Canvas.")
+            raise RuntimeError("Node.js not found. Required for Remotion.")
 
-        # Check FFmpeg
-        try:
-            result = subprocess.run(
-                ["ffmpeg", "-version"],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode != 0:
-                raise RuntimeError("FFmpeg not working properly")
-        except FileNotFoundError:
-            raise RuntimeError("FFmpeg not found. Required for video export.")
+        # Check if Remotion project exists
+        if not (self.remotion_dir / "package.json").exists():
+            raise RuntimeError(f"Remotion project not found at {self.remotion_dir}")
 
-    def render_scene(
+    def _script_to_props(self, script: Script) -> dict[str, Any]:
+        """Convert a Script to Remotion props format."""
+        scenes = []
+        for scene in script.scenes:
+            scenes.append({
+                "sceneId": scene.scene_id,
+                "sceneType": scene.scene_type,
+                "title": scene.title,
+                "voiceover": scene.voiceover,
+                "visualCue": {
+                    "description": scene.visual_cue.description,
+                    "visualType": scene.visual_cue.visual_type,
+                    "elements": scene.visual_cue.elements,
+                    "durationInSeconds": scene.visual_cue.duration_seconds,
+                },
+                "durationInSeconds": scene.duration_seconds,
+                "notes": scene.notes or "",
+            })
+
+        return {
+            "title": script.title,
+            "scenes": scenes,
+            "style": {
+                "backgroundColor": "#0f0f1a",
+                "primaryColor": "#00d9ff",
+                "secondaryColor": "#ff6b35",
+                "accentColor": "#00ff88",
+                "fontFamily": "Inter, sans-serif",
+            },
+        }
+
+    def render_from_script(
         self,
-        scene_name: str,
+        script: Script,
         output_path: Path | str,
-        fps: int = 30,
-        width: int = 1920,
-        height: int = 1080,
     ) -> RenderResult:
-        """Render a specific scene to video.
-
-        This method starts the Motion Canvas dev server, triggers rendering
-        via the FFmpeg plugin, and returns the result.
-
-        Args:
-            scene_name: Name of the scene to render (e.g., "prefillDecode")
-            output_path: Path for the output video file
-            fps: Frames per second (default 30)
-            width: Video width (default 1920)
-            height: Video height (default 1080)
-
-        Returns:
-            RenderResult with output info
-        """
+        """Render a video from a script using Remotion."""
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self._check_dependencies()
+        # Convert script to props
+        props = self._script_to_props(script)
 
-        # Motion Canvas with FFmpeg plugin exports to output/ directory
-        render_output_dir = self.animations_dir / "output"
-        render_output_dir.mkdir(exist_ok=True)
-
-        # Start vite in render mode
-        # Motion Canvas FFmpeg plugin handles the rendering automatically
-        env = os.environ.copy()
-        env["MOTION_CANVAS_RENDER"] = "true"
+        # Write props to temp file
+        props_path = output_path.parent / f"{output_path.stem}_props.json"
+        with open(props_path, "w") as f:
+            json.dump(props, f, indent=2)
 
         try:
-            # Run vite build which will trigger rendering
+            # Run Remotion render script
+            cmd = [
+                "node",
+                str(self.remotion_dir / "scripts" / "render.mjs"),
+                "--props", str(props_path),
+                "--output", str(output_path),
+            ]
+
             result = subprocess.run(
-                ["npm", "run", "build"],
-                cwd=self.animations_dir,
+                cmd,
                 capture_output=True,
                 text=True,
-                timeout=300,  # 5 minute timeout
-                env=env,
+                timeout=600,  # 10 minute timeout
+                cwd=self.remotion_dir,
             )
 
             if result.returncode != 0:
@@ -112,35 +171,18 @@ class MotionCanvasRenderer:
                     duration_seconds=0,
                     frame_count=0,
                     success=False,
-                    error_message=f"Build failed: {result.stderr}",
+                    error_message=f"Render failed: {result.stderr}\n{result.stdout}",
                 )
 
-            # Look for rendered output
-            # Motion Canvas FFmpeg exports to output/project/scene.mp4
-            expected_output = render_output_dir / "project" / f"{scene_name}.mp4"
+            # Get video duration
+            duration = self._get_video_duration(output_path)
 
-            if expected_output.exists():
-                # Move to desired location
-                import shutil
-                shutil.move(str(expected_output), str(output_path))
-
-                # Get duration using ffprobe
-                duration = self._get_video_duration(output_path)
-
-                return RenderResult(
-                    output_path=output_path,
-                    duration_seconds=duration,
-                    frame_count=int(duration * fps),
-                    success=True,
-                )
-            else:
-                return RenderResult(
-                    output_path=output_path,
-                    duration_seconds=0,
-                    frame_count=0,
-                    success=False,
-                    error_message=f"Output file not found: {expected_output}",
-                )
+            return RenderResult(
+                output_path=output_path,
+                duration_seconds=duration,
+                frame_count=int(duration * 30),
+                success=True,
+            )
 
         except subprocess.TimeoutExpired:
             return RenderResult(
@@ -148,35 +190,25 @@ class MotionCanvasRenderer:
                 duration_seconds=0,
                 frame_count=0,
                 success=False,
-                error_message="Render timeout exceeded (5 minutes)",
+                error_message="Render timeout exceeded (10 minutes)",
             )
+        finally:
+            # Clean up props file
+            props_path.unlink(missing_ok=True)
 
     def render_mock(
         self,
         output_path: Path | str,
         duration_seconds: float = 10.0,
-        fps: int = 30,
-        width: int = 1920,
-        height: int = 1080,
     ) -> RenderResult:
-        """Generate a mock video for testing without actually rendering.
-
-        Creates a simple test video using FFmpeg directly.
-
-        Args:
-            output_path: Path for the output video file
-            duration_seconds: Duration of the mock video
-            fps: Frames per second
-            width: Video width
-            height: Video height
-
-        Returns:
-            RenderResult with output info
-        """
+        """Generate a mock video using FFmpeg test pattern."""
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Generate a test pattern video with FFmpeg
+        fps = self.config.video.fps
+        width = self.config.video.width
+        height = self.config.video.height
+
         cmd = [
             "ffmpeg", "-y",
             "-f", "lavfi",
@@ -236,14 +268,118 @@ class MotionCanvasRenderer:
         ]
 
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode == 0:
                 return float(result.stdout.strip())
         except (ValueError, subprocess.SubprocessError):
             pass
 
         return 0.0
+
+
+class MockRenderer(AnimationRenderer):
+    """Mock renderer that generates test pattern videos.
+
+    Used for testing the pipeline without actual rendering.
+    """
+
+    def render_from_script(
+        self,
+        script: Script,
+        output_path: Path | str,
+    ) -> RenderResult:
+        """Generate a mock video matching script duration."""
+        total_duration = sum(s.duration_seconds for s in script.scenes)
+        return self.render_mock(output_path, duration_seconds=total_duration)
+
+    def render_mock(
+        self,
+        output_path: Path | str,
+        duration_seconds: float = 10.0,
+    ) -> RenderResult:
+        """Generate a test pattern video."""
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        fps = self.config.video.fps
+        width = self.config.video.width
+        height = self.config.video.height
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "lavfi",
+            "-i", f"testsrc2=size={width}x{height}:rate={fps}:duration={duration_seconds}",
+            "-f", "lavfi",
+            "-i", f"sine=frequency=440:duration={duration_seconds}",
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-crf", "23",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+            if result.returncode != 0:
+                return RenderResult(
+                    output_path=output_path,
+                    duration_seconds=0,
+                    frame_count=0,
+                    success=False,
+                    error_message=f"FFmpeg failed: {result.stderr}",
+                )
+
+            return RenderResult(
+                output_path=output_path,
+                duration_seconds=duration_seconds,
+                frame_count=int(duration_seconds * fps),
+                success=True,
+            )
+
+        except subprocess.TimeoutExpired:
+            return RenderResult(
+                output_path=output_path,
+                duration_seconds=0,
+                frame_count=0,
+                success=False,
+                error_message="Render timeout",
+            )
+
+
+# Keep backward compatibility alias
+MotionCanvasRenderer = MockRenderer
+
+
+def get_renderer(config: Config | None = None) -> AnimationRenderer:
+    """Get the appropriate renderer based on configuration.
+
+    Args:
+        config: Configuration object. If None, uses default config.
+
+    Returns:
+        An AnimationRenderer instance
+    """
+    if config is None:
+        config = load_config()
+
+    renderer_type = getattr(config, "animation", {})
+    if hasattr(renderer_type, "renderer"):
+        renderer_name = renderer_type.renderer.lower()
+    else:
+        renderer_name = "remotion"  # Default to Remotion
+
+    if renderer_name == "remotion":
+        return RemotionRenderer(config)
+    elif renderer_name == "mock":
+        return MockRenderer(config)
+    else:
+        # Default to Remotion
+        return RemotionRenderer(config)

@@ -1,5 +1,19 @@
-"""Animation rendering module for Motion Canvas integration."""
+"""Animation rendering module with pluggable backends."""
 
-from .renderer import MotionCanvasRenderer, RenderResult
+from .renderer import (
+    AnimationRenderer,
+    MockRenderer,
+    MotionCanvasRenderer,  # Backward compatibility alias
+    RemotionRenderer,
+    RenderResult,
+    get_renderer,
+)
 
-__all__ = ["MotionCanvasRenderer", "RenderResult"]
+__all__ = [
+    "AnimationRenderer",
+    "MockRenderer",
+    "MotionCanvasRenderer",
+    "RemotionRenderer",
+    "RenderResult",
+    "get_renderer",
+]

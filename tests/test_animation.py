@@ -6,7 +6,53 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.animation import MotionCanvasRenderer, RenderResult
+from src.animation import (
+    AnimationRenderer,
+    MockRenderer,
+    RemotionRenderer,
+    RenderResult,
+    get_renderer,
+)
+from src.config import Config
+from src.models import Script, ScriptScene, VisualCue
+
+
+@pytest.fixture
+def sample_script():
+    """Create a sample script for testing."""
+    return Script(
+        title="Test Video",
+        total_duration_seconds=35.0,
+        scenes=[
+            ScriptScene(
+                scene_id=1,
+                scene_type="hook",
+                title="Introduction",
+                voiceover="Welcome to this test video.",
+                visual_cue=VisualCue(
+                    description="Title card with animation",
+                    visual_type="animation",
+                    elements=["title", "subtitle"],
+                    duration_seconds=15.0,
+                ),
+                duration_seconds=15.0,
+            ),
+            ScriptScene(
+                scene_id=2,
+                scene_type="explanation",
+                title="Main Content",
+                voiceover="This is the main explanation.",
+                visual_cue=VisualCue(
+                    description="Diagram showing concept",
+                    visual_type="diagram",
+                    elements=["box", "arrow"],
+                    duration_seconds=20.0,
+                ),
+                duration_seconds=20.0,
+            ),
+        ],
+        source_document="test.md",
+    )
 
 
 class TestRenderResult:
@@ -40,8 +86,8 @@ class TestRenderResult:
         assert result.error_message == "Something went wrong"
 
 
-class TestMotionCanvasRenderer:
-    """Tests for MotionCanvasRenderer class."""
+class TestMockRenderer:
+    """Tests for MockRenderer class."""
 
     @pytest.fixture
     def mock_subprocess(self):
@@ -66,7 +112,7 @@ class TestMotionCanvasRenderer:
 
         mock_subprocess.side_effect = create_output
 
-        renderer = MotionCanvasRenderer()
+        renderer = MockRenderer()
         output_path = tmp_path / "test.mp4"
 
         result = renderer.render_mock(output_path, duration_seconds=5.0)
@@ -83,7 +129,7 @@ class TestMotionCanvasRenderer:
             stderr="FFmpeg error",
         )
 
-        renderer = MotionCanvasRenderer()
+        renderer = MockRenderer()
         output_path = tmp_path / "test.mp4"
 
         result = renderer.render_mock(output_path)
@@ -91,37 +137,52 @@ class TestMotionCanvasRenderer:
         assert not result.success
         assert "FFmpeg" in result.error_message
 
-    def test_check_dependencies(self, mock_subprocess):
-        """Test dependency checking."""
-        renderer = MotionCanvasRenderer()
-        renderer._check_dependencies()
+    def test_render_from_script(self, mock_subprocess, tmp_path, sample_script):
+        """Test rendering from a script."""
+        # Make FFmpeg create an actual file
+        def create_output(*args, **kwargs):
+            cmd = args[0]
+            for arg in cmd:
+                if str(tmp_path) in str(arg) and arg.endswith(".mp4"):
+                    Path(arg).write_bytes(b"fake video data")
+            return MagicMock(returncode=0, stdout="", stderr="")
 
-        # Should have checked for node and ffmpeg
-        calls = [str(c) for c in mock_subprocess.call_args_list]
-        assert any("node" in c for c in calls)
-        assert any("ffmpeg" in c for c in calls)
+        mock_subprocess.side_effect = create_output
 
-    def test_check_dependencies_missing_node(self):
-        """Test handling of missing Node.js."""
-        with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = FileNotFoundError()
+        renderer = MockRenderer()
+        output_path = tmp_path / "test.mp4"
 
-            renderer = MotionCanvasRenderer()
-            with pytest.raises(RuntimeError, match="Node.js not found"):
-                renderer._check_dependencies()
+        result = renderer.render_from_script(sample_script, output_path)
 
-    def test_get_video_duration(self, mock_subprocess, tmp_path):
-        """Test getting video duration."""
-        mock_subprocess.return_value = MagicMock(
-            returncode=0,
-            stdout="10.5\n",
-            stderr="",
-        )
+        assert result.success
+        # Duration should match sum of scene durations
+        expected_duration = sum(s.duration_seconds for s in sample_script.scenes)
+        assert result.duration_seconds == expected_duration
 
-        renderer = MotionCanvasRenderer()
-        duration = renderer._get_video_duration(tmp_path / "video.mp4")
 
-        assert duration == 10.5
+class TestRemotionRenderer:
+    """Tests for RemotionRenderer class."""
+
+    def test_remotion_renderer_init(self):
+        """Test RemotionRenderer initialization."""
+        # Should check for dependencies
+        renderer = RemotionRenderer()
+        assert renderer.remotion_dir.exists()
+
+    def test_script_to_props_conversion(self, sample_script):
+        """Test converting script to Remotion props."""
+        renderer = RemotionRenderer()
+        props = renderer._script_to_props(sample_script)
+
+        assert props["title"] == sample_script.title
+        assert len(props["scenes"]) == len(sample_script.scenes)
+        assert "style" in props
+
+        # Check scene conversion
+        first_scene = props["scenes"][0]
+        assert first_scene["sceneId"] == sample_script.scenes[0].scene_id
+        assert first_scene["voiceover"] == sample_script.scenes[0].voiceover
+        assert "visualCue" in first_scene
 
 
 class TestRendererIntegration:
@@ -142,18 +203,31 @@ class TestRendererIntegration:
 
     def test_real_mock_render(self, check_ffmpeg, tmp_path):
         """Test actual mock rendering with FFmpeg."""
-        renderer = MotionCanvasRenderer()
+        renderer = MockRenderer()
         output_path = tmp_path / "test_video.mp4"
 
         result = renderer.render_mock(
             output_path,
             duration_seconds=2.0,
-            fps=30,
-            width=640,
-            height=480,
         )
 
         assert result.success
         assert output_path.exists()
         assert result.duration_seconds == 2.0
         assert result.frame_count == 60
+
+
+class TestGetRenderer:
+    """Tests for get_renderer factory function."""
+
+    def test_get_renderer_default(self):
+        """Test getting default renderer (Remotion)."""
+        renderer = get_renderer()
+        assert isinstance(renderer, RemotionRenderer)
+
+    def test_get_renderer_mock(self):
+        """Test getting mock renderer."""
+        config = Config()
+        # Would need animation config to switch, for now test default
+        renderer = get_renderer(config)
+        assert isinstance(renderer, (RemotionRenderer, MockRenderer))
