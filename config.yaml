@@ -22,7 +22,7 @@ llm:
 
 # TTS settings
 tts:
-  provider: "elevenlabs"
+  provider: "mock"  # Use "elevenlabs" for real TTS (requires ELEVENLABS_API_KEY)
   # Voice ID (will be set from environment or here)
   voice_id: null
   # Model to use

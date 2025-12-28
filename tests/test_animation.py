@@ -184,6 +184,104 @@ class TestRemotionRenderer:
         assert first_scene["voiceover"] == sample_script.scenes[0].voiceover
         assert "visualCue" in first_scene
 
+    def test_script_to_props_visual_cue_fields(self, sample_script):
+        """Test that visual cue fields are correctly converted."""
+        renderer = RemotionRenderer()
+        props = renderer._script_to_props(sample_script)
+
+        visual_cue = props["scenes"][0]["visualCue"]
+        assert "description" in visual_cue
+        assert "visualType" in visual_cue
+        assert "elements" in visual_cue
+        assert "durationInSeconds" in visual_cue
+
+    def test_script_to_props_style_defaults(self, sample_script):
+        """Test that default styles are included in props."""
+        renderer = RemotionRenderer()
+        props = renderer._script_to_props(sample_script)
+
+        style = props["style"]
+        assert style["backgroundColor"] == "#0f0f1a"
+        assert style["primaryColor"] == "#00d9ff"
+        assert style["secondaryColor"] == "#ff6b35"
+        assert style["accentColor"] == "#00ff88"
+        assert "fontFamily" in style
+
+    def test_render_from_script_creates_props_file(self, sample_script, tmp_path):
+        """Test that render_from_script creates a props file."""
+        renderer = RemotionRenderer()
+        output_path = tmp_path / "test_video.mp4"
+
+        # Mock the subprocess to avoid actual rendering
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stderr="test")
+            renderer.render_from_script(sample_script, output_path)
+
+            # Verify subprocess was called with correct args
+            assert mock_run.called
+            call_args = mock_run.call_args[0][0]
+            assert "node" in call_args
+            assert "scripts/render.mjs" in call_args
+
+    def test_render_from_script_handles_subprocess_error(self, sample_script, tmp_path):
+        """Test that render handles subprocess errors gracefully."""
+        renderer = RemotionRenderer()
+        output_path = tmp_path / "test_video.mp4"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=1,
+                stdout="some output",
+                stderr="Error: Something failed",
+            )
+            result = renderer.render_from_script(sample_script, output_path)
+
+            assert not result.success
+            assert "Error" in result.error_message or "failed" in result.error_message.lower()
+
+    def test_render_from_script_handles_timeout(self, sample_script, tmp_path):
+        """Test that render handles timeout gracefully."""
+        renderer = RemotionRenderer()
+        output_path = tmp_path / "test_video.mp4"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.TimeoutExpired(cmd="node", timeout=600)
+            result = renderer.render_from_script(sample_script, output_path)
+
+            assert not result.success
+            assert "timeout" in result.error_message.lower()
+
+    def test_render_from_script_cleans_up_props_file(self, sample_script, tmp_path):
+        """Test that props file is cleaned up after render."""
+        renderer = RemotionRenderer()
+        output_path = tmp_path / "test_video.mp4"
+        props_path = renderer.remotion_dir / "temp_props.json"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            renderer.render_from_script(sample_script, output_path)
+
+            # Props file should be cleaned up
+            assert not props_path.exists()
+
+    def test_get_video_duration(self, tmp_path):
+        """Test getting video duration."""
+        renderer = RemotionRenderer()
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="10.5\n")
+            duration = renderer._get_video_duration(tmp_path / "test.mp4")
+            assert duration == 10.5
+
+    def test_get_video_duration_handles_error(self, tmp_path):
+        """Test that duration returns 0 on error."""
+        renderer = RemotionRenderer()
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stdout="")
+            duration = renderer._get_video_duration(tmp_path / "test.mp4")
+            assert duration == 0.0
+
 
 class TestRendererIntegration:
     """Integration tests for renderer (require FFmpeg)."""

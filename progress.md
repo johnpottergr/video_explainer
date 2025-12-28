@@ -3,7 +3,7 @@
 ## Quick Context for Future Sessions
 
 ### One-Line Summary
-Building a system to generate high-quality explainer videos from technical documents (starting with an LLM inference article).
+Building a system to generate high-quality explainer videos from technical documents using Remotion (React-based) programmatic animations.
 
 ### Prompt for New Claude Code Session
 ```
@@ -15,17 +15,19 @@ Key context:
 - Progress: progress.md (current state and next steps)
 - Test content: /Users/prajwal/Desktop/Learning/inference/website/post.md
 
-Current phase: Phase 3 - Extending the System
-- Phase 1 MVP: COMPLETE (112 tests passing)
+Current phase: Phase 4 - Production Ready
+- Phase 1 MVP: COMPLETE (112 tests)
 - Phase 2 First Video: COMPLETE
-- First real explainer video generated with Motion Canvas + ElevenLabs TTS
-- Output: output/real_video/prefill_decode_explainer_real.mp4
+- Phase 3 Automated Animation: COMPLETE (119 tests passing)
+  - Remotion integration for programmatic video generation
+  - Abstract renderer interface (swappable backends)
+  - Full E2E pipeline generating 176s videos
 
 Key commands:
-  source .venv/bin/activate && pytest tests/ -v  # Run all tests (112 passing)
-  cd animations && npm run dev                    # Start Motion Canvas editor
-  python generate_video.py                        # Generate video with mock data
-  python create_real_video_with_tts.py           # Generate with real TTS
+  source .venv/bin/activate && pytest tests/ -v  # Run all tests (119 passing)
+  cd remotion && npm run dev                      # Start Remotion studio
+  python generate_video.py --test                 # Generate video with mock data
+  python generate_video.py --source path/to/doc.md  # Generate from document
 
 Check "Next Actions" section below for current tasks.
 ```
@@ -39,8 +41,8 @@ Check "Next Actions" section below for current tasks.
 | **Goal** | Generate high-quality explainer videos from technical content |
 | **First Topic** | LLM Inference (Prefill/Decode/KV Cache) |
 | **Target Duration** | 3-4 minutes |
-| **Animation Tool** | Motion Canvas (TypeScript) |
-| **TTS** | ElevenLabs (real API) |
+| **Animation Tool** | Remotion (React-based, programmatic rendering) |
+| **TTS** | ElevenLabs (real API) or Mock for development |
 | **LLM** | Mock responses during dev, Claude/GPT-4 for production |
 | **Video Specs** | 1080p, 30fps, MP4 |
 
@@ -59,8 +61,6 @@ Check "Next Actions" section below for current tasks.
 - [x] Content understanding/analyzer module
 - [x] Script generation module with visual cues
 - [x] CLI review interface (rich-based)
-- [x] Motion Canvas setup and validation
-- [x] Manual test animation (Prefill vs Decode scene)
 - [x] ElevenLabs TTS integration (with mock for testing)
 - [x] Video composition with FFmpeg
 - [x] Dockerfile for containerization
@@ -71,31 +71,37 @@ Check "Next Actions" section below for current tasks.
 - [x] Video generation pipeline orchestrator (src/pipeline/)
 - [x] Animation renderer module (src/animation/)
 - [x] Motion Canvas FFmpeg plugin integration
-- [x] Fixed animation ref bug in prefillDecode.tsx
 - [x] MockTTS generates valid audio files via FFmpeg
 - [x] Real ElevenLabs TTS integration tested
 - [x] **First real explainer video generated!**
-  - Animation: Prefill vs Decode visualization
-  - Audio: ElevenLabs TTS narration
-  - Output: output/real_video/prefill_decode_explainer_real.mp4
 
-### Phase 2 Complete!
+### Completed (Phase 3 - Automated Animation)
+- [x] Remotion integration (React-based programmatic rendering)
+- [x] Abstract AnimationRenderer interface for swappable backends
+- [x] RemotionRenderer implementation with script-to-props conversion
+- [x] Animation components library (TitleCard, TokenGrid, ProgressBar, TextReveal)
+- [x] SceneRenderer to map visual cues to React components
+- [x] Headless rendering via `@remotion/renderer` and `@remotion/bundler`
+- [x] Full E2E pipeline generating 176-second videos from scripts
+- [x] **119 tests, all passing**
 
-Generated first real explainer video with Motion Canvas animation and ElevenLabs voiceover.
+### Phase 3 Complete!
 
-### Next Steps (Phase 3)
-- [ ] Extend animation to match full narration length (~21s)
-- [ ] Add more animation scenes (KV Cache, Batching, etc.)
-- [ ] Enable real LLM API for dynamic script generation
+Successfully migrated from manual Motion Canvas animations to fully automated Remotion-based rendering. The pipeline now generates complete explainer videos programmatically from any document.
+
+### Next Steps (Phase 4 - Production Ready)
+- [ ] Enable real LLM API (Anthropic/OpenAI) for dynamic content analysis
+- [ ] Add more animation components (code highlights, equations, diagrams)
 - [ ] Build web interface for easier use
-- [ ] Add more visual elements (code highlights, equations)
+- [ ] Cloud deployment (Docker/Kubernetes)
+- [ ] Support for more input formats (PDF, URL scraping)
 
 ---
 
 ## Architecture Summary
 
 ```
-Pipeline: Source → Parse → Analyze → Script → Review → TTS → Animation → Compose → Video
+Pipeline: Source → Parse → Analyze → Script → Review → TTS → Remotion → Compose → Video
 
 Key files:
 ├── src/
@@ -114,20 +120,29 @@ Key files:
 │   ├── audio/             # TTS integration
 │   │   └── tts.py         # ElevenLabs + Mock TTS
 │   ├── animation/         # Animation rendering
-│   │   └── renderer.py    # Motion Canvas renderer
+│   │   └── renderer.py    # Abstract renderer + Remotion implementation
 │   ├── composition/       # Video assembly
 │   │   └── composer.py    # FFmpeg-based composer
 │   └── pipeline/          # End-to-end orchestration
 │       └── orchestrator.py # Video generation pipeline
-├── animations/            # Motion Canvas project
-│   ├── src/scenes/        # Animation scenes
-│   │   └── prefillDecode.tsx  # Prefill vs Decode animation
-│   └── src/styles/        # Color palette, fonts
-├── tests/                 # 112 passing tests
-├── output/real_video/     # Generated videos
+├── remotion/              # Remotion project (React-based animations)
+│   ├── src/
+│   │   ├── components/    # Animation components
+│   │   │   ├── TitleCard.tsx
+│   │   │   ├── TokenGrid.tsx
+│   │   │   ├── ProgressBar.tsx
+│   │   │   └── TextReveal.tsx
+│   │   ├── scenes/        # Scene compositions
+│   │   │   ├── ExplainerVideo.tsx
+│   │   │   └── SceneRenderer.tsx
+│   │   └── types/         # TypeScript types
+│   └── scripts/
+│       └── render.mjs     # Headless rendering script
+├── animations/            # Legacy Motion Canvas project (deprecated)
+├── tests/                 # 119 passing tests
+├── output/                # Generated videos
 ├── Dockerfile             # Container setup
-├── generate_video.py      # Quick generation script
-└── create_real_video_with_tts.py  # Real TTS generation
+└── generate_video.py      # CLI entry point
 ```
 
 ---
@@ -136,12 +151,14 @@ Key files:
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Animation Library | Motion Canvas | TypeScript, modern, good for LLM code gen |
+| Animation Library | Remotion (React) | Headless rendering, programmatic, actively maintained |
+| Previous Choice | Motion Canvas | Moved away - no native headless rendering support |
 | TTS Provider | ElevenLabs | High quality, voice cloning support |
 | LLM During Dev | Mock responses | Save money, test pipeline |
 | Video Resolution | 1080p (4K later) | Standard YouTube, can scale |
 | Review Interface | CLI first | Simple, fast to implement |
 | Deployment | Docker/Containerized | Easy cloud deployment later |
+| Renderer Interface | Abstract base class | Easy to swap backends (Remotion, Mock, future options) |
 
 ---
 
@@ -185,26 +202,42 @@ pytest tests/ -v
 
 # Run specific test file
 pytest tests/test_ingestion.py -v
+
+# Start Remotion studio for development
+cd remotion && npm run dev
+
+# Generate video (mock data)
+python generate_video.py --test
+
+# Generate video from document
+python generate_video.py --source path/to/document.md
 ```
 
 ---
 
 ## Next Actions
 
-1. **Extend Prefill/Decode animation** - Increase duration from 9s to ~21s
-   to match the full narration length
+1. **Enable real LLM API** - Switch from mock to Claude/GPT-4 for dynamic
+   content analysis and script generation
 
-2. **Add KV Cache animation scene** - Create new scene explaining KV Cache
-   optimization in LLM inference
+2. **Add more animation components** - Create components for:
+   - Code block highlighting with syntax colors
+   - Mathematical equation rendering
+   - Diagram animations (flowcharts, architecture)
+   - Data visualization (charts, graphs)
 
-3. **Add Batching animation scene** - Visualize continuous batching and
-   how it improves throughput
-
-4. **Enable real LLM API** - Switch from mock to Claude for dynamic
-   script generation from any document
-
-5. **Create web interface** - Simple UI for uploading documents and
+3. **Create web interface** - Simple UI for uploading documents and
    generating videos without CLI
+
+4. **Cloud deployment** - Deploy to cloud infrastructure with:
+   - Docker/Kubernetes setup
+   - Queue-based video processing
+   - Storage for generated videos
+
+5. **Support more input formats** - Add parsers for:
+   - PDF documents
+   - URL scraping
+   - Jupyter notebooks
 
 ---
 
@@ -230,8 +263,9 @@ pytest tests/test_ingestion.py -v
 | Dec 2024 | ff2b337 | Add comprehensive README.md |
 | Dec 2024 | 41ceadc | Complete Phase 2: First real explainer video generated |
 | Dec 2024 | 50dbc3f | Refactor pipeline: remove one-off scripts, use config-based providers |
+| Dec 2024 | - | Phase 3: Remotion integration for automated animation rendering |
 
 ---
 
 *Last Updated: December 2024*
-*Session: Phase 2 Complete - Pipeline refactored for production*
+*Session: Phase 3 Complete - Remotion integration for programmatic video generation*

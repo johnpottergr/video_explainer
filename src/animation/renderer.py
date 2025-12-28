@@ -137,14 +137,14 @@ class RemotionRenderer(AnimationRenderer):
         output_path: Path | str,
     ) -> RenderResult:
         """Render a video from a script using Remotion."""
-        output_path = Path(output_path)
+        output_path = Path(output_path).absolute()
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Convert script to props
         props = self._script_to_props(script)
 
-        # Write props to temp file
-        props_path = output_path.parent / f"{output_path.stem}_props.json"
+        # Write props to temp file in remotion dir (where render script runs)
+        props_path = self.remotion_dir / "temp_props.json"
         with open(props_path, "w") as f:
             json.dump(props, f, indent=2)
 
@@ -152,7 +152,7 @@ class RemotionRenderer(AnimationRenderer):
             # Run Remotion render script
             cmd = [
                 "node",
-                str(self.remotion_dir / "scripts" / "render.mjs"),
+                "scripts/render.mjs",
                 "--props", str(props_path),
                 "--output", str(output_path),
             ]
@@ -172,6 +172,16 @@ class RemotionRenderer(AnimationRenderer):
                     frame_count=0,
                     success=False,
                     error_message=f"Render failed: {result.stderr}\n{result.stdout}",
+                )
+
+            # Verify output was created
+            if not output_path.exists():
+                return RenderResult(
+                    output_path=output_path,
+                    duration_seconds=0,
+                    frame_count=0,
+                    success=False,
+                    error_message="Render completed but output file not found",
                 )
 
             # Get video duration

@@ -1,6 +1,6 @@
 # Video Explainer System
 
-A powerful system for generating high-quality explainer videos from technical documents. Transform research papers, articles, and documentation into engaging video content with automated narration and animations.
+A powerful system for generating high-quality explainer videos from technical documents. Transform research papers, articles, and documentation into engaging video content with automated narration and **programmatic animations**.
 
 ## Features
 
@@ -8,7 +8,7 @@ A powerful system for generating high-quality explainer videos from technical do
 - **Content Analysis**: Automatically extract key concepts and structure content for video
 - **Script Generation**: Generate video scripts with visual cues and voiceover text
 - **Text-to-Speech**: Integration with ElevenLabs TTS (with mock mode for development)
-- **Motion Canvas Animations**: TypeScript-based animations for technical visualizations
+- **Remotion Animations**: React-based programmatic video generation - no manual animation required
 - **Video Composition**: FFmpeg-based video assembly with audio overlay
 - **Human-in-the-Loop**: CLI review interface for script approval and editing
 
@@ -34,8 +34,8 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install Python dependencies
 pip install -e .
 
-# Install Node.js dependencies for animations
-cd animations
+# Install Node.js dependencies for Remotion animations
+cd remotion
 npm install
 cd ..
 ```
@@ -43,16 +43,14 @@ cd ..
 ### Generate Your First Video
 
 ```bash
-# Using mock data (no API costs)
-python generate_video.py
+# Generate with mock data (no API costs)
+python generate_video.py --test
 
-# Or use the pipeline directly
-python -c "
-from src.pipeline import VideoPipeline
-pipeline = VideoPipeline()
-result = pipeline.quick_test()
-print(f'Video created: {result.output_path}')
-"
+# Generate from a specific document
+python generate_video.py --source path/to/document.md
+
+# Generate from an existing script
+python generate_video.py --script output/scripts/my_script.json
 ```
 
 ## Project Structure
@@ -73,32 +71,58 @@ video_explainer/
 │   ├── audio/              # Text-to-Speech
 │   │   └── tts.py          # ElevenLabs + Mock TTS providers
 │   ├── animation/          # Animation rendering
-│   │   └── renderer.py     # Motion Canvas renderer
+│   │   └── renderer.py     # Abstract renderer + Remotion implementation
 │   ├── composition/        # Video assembly
 │   │   └── composer.py     # FFmpeg-based video composer
 │   ├── pipeline/           # End-to-end orchestration
 │   │   └── orchestrator.py # Video generation pipeline
 │   ├── config.py           # Configuration management
 │   └── models.py           # Pydantic data models
-├── animations/             # Motion Canvas project
-│   ├── src/scenes/         # Animation scenes
-│   │   └── prefillDecode.tsx
-│   └── src/styles/         # Color palette, fonts
-├── tests/                  # Test suite (112 tests)
+├── remotion/               # Remotion project (React-based animations)
+│   ├── src/
+│   │   ├── components/     # Reusable animation components
+│   │   │   ├── TitleCard.tsx
+│   │   │   ├── TokenGrid.tsx
+│   │   │   ├── ProgressBar.tsx
+│   │   │   └── TextReveal.tsx
+│   │   ├── scenes/         # Scene compositions
+│   │   │   ├── ExplainerVideo.tsx
+│   │   │   └── SceneRenderer.tsx
+│   │   └── types/          # TypeScript types
+│   └── scripts/
+│       └── render.mjs      # Headless rendering script
+├── animations/             # Legacy Motion Canvas project (deprecated)
+├── tests/                  # Test suite (119+ tests)
 ├── output/                 # Generated assets
 ├── Dockerfile              # Container setup
-└── generate_video.py       # Quick generation script
+├── config.yaml             # Configuration file
+└── generate_video.py       # CLI entry point
 ```
 
 ## Pipeline Architecture
 
 ```
-Source Document → Parse → Analyze → Generate Script → Review → TTS → Animate → Compose → Video
-       │            │         │            │            │        │        │          │
-   Markdown      Sections   Concepts    Scenes      Approval   Audio   Video     Final
-     PDF         Headings   Insights    Visual       Edits     Files   Frames    MP4
-     URL         Code       Thesis      Cues
+Source Document → Parse → Analyze → Generate Script → TTS → Remotion → Compose → Video
+       │            │         │            │           │        │          │
+   Markdown      Sections   Concepts    Scenes      Audio    React      Final
+     PDF         Headings   Insights    Visual      Files   Components   MP4
+     URL         Code       Thesis      Cues                 Render
 ```
+
+### Animation Generation
+
+The system uses **Remotion** for programmatic video generation:
+
+1. **Script visual cues** describe what should be shown (e.g., "token grid animation")
+2. **SceneRenderer** maps visual cues to React components
+3. **Remotion** renders the composition headlessly to video
+4. **Composer** combines animation with TTS audio
+
+Available animation components:
+- `TitleCard` - Dramatic title reveals
+- `TokenGrid` - Grid of tokens (prefill/decode visualization)
+- `ProgressBar` - Animated utilization bars
+- `TextReveal` - Text with fade-in animation
 
 ## Usage Examples
 
@@ -108,12 +132,10 @@ Source Document → Parse → Analyze → Generate Script → Review → TTS →
 from src.pipeline import VideoPipeline
 from src.config import Config
 
-# Configure for mock mode (development)
+# Load configuration
 config = Config()
-config.llm.provider = "mock"
-config.tts.provider = "mock"
 
-# Create pipeline
+# Create pipeline (uses Remotion by default)
 pipeline = VideoPipeline(config=config, output_dir="output")
 
 # Set up progress callback
@@ -126,12 +148,12 @@ pipeline.set_progress_callback(on_progress)
 result = pipeline.generate_from_document(
     "path/to/document.md",
     target_duration=180,  # 3 minutes
-    use_mock=True
 )
 
 if result.success:
     print(f"Video created: {result.output_path}")
     print(f"Duration: {result.duration_seconds}s")
+    print(f"Renderer: {result.metadata['animation_renderer']}")
 ```
 
 ### Parse and Analyze Content
@@ -148,7 +170,6 @@ print(f"Sections: {len(document.sections)}")
 
 # Analyze content
 config = Config()
-config.llm.provider = "mock"  # Use mock for testing
 analyzer = ContentAnalyzer(config)
 analysis = analyzer.analyze(document)
 
@@ -172,37 +193,20 @@ print(script_gen.format_script_for_review(script))
 script_gen.save_script(script, "output/scripts/my_video.json")
 ```
 
-### Review Script via CLI
-
-```python
-from src.review import ReviewCLI
-from src.script import ScriptGenerator
-
-script = ScriptGenerator.load_script("output/scripts/my_video.json")
-cli = ReviewCLI()
-
-# Display and get user feedback
-result = cli.review_script(script)
-if result.approved:
-    print("Script approved!")
-elif result.edited:
-    print(f"Script edited: {result.changes}")
-```
-
 ## Configuration
 
 Configuration is managed through `config.yaml`:
 
 ```yaml
 llm:
-  provider: mock  # mock | openai | anthropic
-  model: gpt-4
+  provider: mock  # mock | anthropic | openai
+  model: claude-sonnet-4-20250514
   temperature: 0.7
 
 tts:
   provider: mock  # mock | elevenlabs
   voice_id: null  # Uses default voice if not specified
-  model: eleven_turbo_v2
+  model: eleven_multilingual_v2
 
 video:
   width: 1920
@@ -212,8 +216,8 @@ video:
 ```
 
 Environment variables for API keys:
-- `OPENAI_API_KEY` - For OpenAI LLM provider
 - `ANTHROPIC_API_KEY` - For Claude LLM provider
+- `OPENAI_API_KEY` - For OpenAI LLM provider
 - `ELEVENLABS_API_KEY` - For ElevenLabs TTS
 
 ## Testing
@@ -227,6 +231,9 @@ pytest tests/test_pipeline.py -v
 
 # Run with coverage
 pytest tests/ --cov=src --cov-report=html
+
+# Quick unit tests (faster)
+pytest tests/ --ignore=tests/test_e2e.py --ignore=tests/test_pipeline.py -v
 ```
 
 ## Docker
@@ -248,52 +255,55 @@ docker run -e ELEVENLABS_API_KEY=your_key \
 
 ## Development
 
-### Motion Canvas Animations
+### Remotion Animations
 
-Start the Motion Canvas editor:
+Start the Remotion studio for development:
 
 ```bash
-cd animations
+cd remotion
 npm run dev
 ```
 
-This opens a web-based editor at `http://localhost:9000` where you can preview and develop animations.
+This opens a web-based editor at `http://localhost:3000` where you can preview compositions.
 
-### Creating New Animations
+### Creating New Animation Components
 
-Add new scenes in `animations/src/scenes/`:
+Add new components in `remotion/src/components/`:
 
-```typescript
-import {makeScene2D, Rect, Txt} from '@motion-canvas/2d';
-import {createRef, all} from '@motion-canvas/core';
-import {Colors, Fonts} from '../styles/colors';
+```tsx
+import React from "react";
+import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 
-export default makeScene2D(function* (view) {
-  const title = createRef<Txt>();
+interface MyComponentProps {
+  title: string;
+  color: string;
+}
 
-  view.add(
-    <Txt
-      ref={title}
-      text="My Animation"
-      fontSize={64}
-      fontFamily={Fonts.main}
-      fill={Colors.text}
-    />
+export const MyComponent: React.FC<MyComponentProps> = ({ title, color }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const opacity = interpolate(frame, [0, fps], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <div style={{ opacity, color, fontSize: 48 }}>
+      {title}
+    </div>
   );
-
-  yield* title().opacity(0).to(1, 0.5);
-});
+};
 ```
 
-Register in `animations/src/project.ts`:
+Then add it to `SceneRenderer.tsx` to map from visual cues.
 
-```typescript
-import {makeProject} from '@motion-canvas/core';
-import myScene from './scenes/myScene?scene';
+### Programmatic Rendering
 
-export default makeProject({
-  scenes: [myScene],
-});
+Render videos headlessly:
+
+```bash
+cd remotion
+node scripts/render.mjs --props props.json --output video.mp4
 ```
 
 ## Visual Style
@@ -320,22 +330,27 @@ Typography:
   - [x] Mock LLM provider
   - [x] Script generation
   - [x] CLI review interface
-  - [x] Motion Canvas setup
   - [x] TTS integration
   - [x] Video composition
-  - [x] 112 tests passing
+  - [x] 112+ tests passing
 
 - [x] Phase 2: First Video
   - [x] Video generation pipeline
-  - [x] Mock rendering
+  - [x] Motion Canvas integration
   - [x] First video output
 
-- [ ] Phase 3: Production
+- [x] Phase 3: Automated Animation
+  - [x] Remotion integration (React-based)
+  - [x] Programmatic rendering from scripts
+  - [x] Animation components library
+  - [x] E2E pipeline working (176s video)
+  - [x] 119+ tests passing
+
+- [ ] Phase 4: Production Ready
   - [ ] Real LLM API integration
-  - [ ] Real Motion Canvas rendering
-  - [ ] Multiple animation scenes
-  - [ ] Real TTS integration
+  - [ ] More animation components
   - [ ] Web interface
+  - [ ] Cloud deployment
 
 ## Contributing
 
@@ -351,7 +366,7 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- [Motion Canvas](https://motioncanvas.io/) - Animation framework
+- [Remotion](https://remotion.dev/) - React-based video generation
 - [ElevenLabs](https://elevenlabs.io/) - Text-to-Speech
 - [FFmpeg](https://ffmpeg.org/) - Video processing
 - [Rich](https://rich.readthedocs.io/) - CLI interface
