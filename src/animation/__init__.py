@@ -3,7 +3,6 @@
 from .renderer import (
     AnimationRenderer,
     MockRenderer,
-    MotionCanvasRenderer,  # Backward compatibility alias
     RemotionRenderer,
     RenderResult,
     get_renderer,
@@ -12,7 +11,6 @@ from .renderer import (
 __all__ = [
     "AnimationRenderer",
     "MockRenderer",
-    "MotionCanvasRenderer",
     "RemotionRenderer",
     "RenderResult",
     "get_renderer",

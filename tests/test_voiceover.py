@@ -8,10 +8,8 @@ import pytest
 
 from src.voiceover.narration import (
     SceneNarration,
-    LLM_INFERENCE_NARRATIONS,
-    get_narration_for_scene,
-    get_all_narrations,
-    get_full_script,
+    load_narrations_from_file,
+    load_narrations_from_project,
 )
 from src.voiceover.generator import (
     SceneVoiceover,
@@ -23,54 +21,85 @@ from src.config import TTSConfig
 
 
 class TestNarration:
-    """Tests for narration data module."""
+    """Tests for narration loading module."""
 
-    def test_llm_inference_narrations_has_8_scenes(self):
-        """Verify we have all 8 scenes."""
-        assert len(LLM_INFERENCE_NARRATIONS) == 8
+    @pytest.fixture
+    def sample_narrations_file(self, tmp_path):
+        """Create a sample narrations JSON file."""
+        narrations_data = {
+            "scenes": [
+                {
+                    "scene_id": "scene1",
+                    "title": "Introduction",
+                    "duration_seconds": 15,
+                    "narration": "Welcome to this video.",
+                },
+                {
+                    "scene_id": "scene2",
+                    "title": "Main Content",
+                    "duration_seconds": 30,
+                    "narration": "Here is the main content.",
+                },
+                {
+                    "scene_id": "scene3",
+                    "title": "Conclusion",
+                    "duration_seconds": 10,
+                    "narration": "Thank you for watching.",
+                },
+            ],
+            "total_duration_seconds": 55,
+        }
+        narration_path = tmp_path / "narrations.json"
+        with open(narration_path, "w") as f:
+            json.dump(narrations_data, f)
+        return narration_path
 
-    def test_narration_scene_ids_are_unique(self):
-        """Verify all scene IDs are unique."""
-        scene_ids = [n.scene_id for n in LLM_INFERENCE_NARRATIONS]
-        assert len(scene_ids) == len(set(scene_ids))
+    def test_load_narrations_from_file(self, sample_narrations_file):
+        """Test loading narrations from a JSON file."""
+        narrations = load_narrations_from_file(sample_narrations_file)
 
-    def test_narration_has_required_fields(self):
-        """Verify each narration has required fields."""
-        for narration in LLM_INFERENCE_NARRATIONS:
+        assert len(narrations) == 3
+        assert narrations[0].scene_id == "scene1"
+        assert narrations[0].title == "Introduction"
+        assert narrations[1].duration_seconds == 30
+
+    def test_load_narrations_file_not_found(self, tmp_path):
+        """Test error when file doesn't exist."""
+        with pytest.raises(FileNotFoundError):
+            load_narrations_from_file(tmp_path / "nonexistent.json")
+
+    def test_load_narrations_from_project(self, tmp_path):
+        """Test loading narrations from a project directory."""
+        # Create project structure
+        narration_dir = tmp_path / "narration"
+        narration_dir.mkdir()
+
+        narrations_data = {
+            "scenes": [
+                {
+                    "scene_id": "test",
+                    "title": "Test",
+                    "duration_seconds": 10,
+                    "narration": "Test narration.",
+                },
+            ],
+        }
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump(narrations_data, f)
+
+        narrations = load_narrations_from_project(tmp_path)
+        assert len(narrations) == 1
+        assert narrations[0].scene_id == "test"
+
+    def test_scene_narration_fields(self, sample_narrations_file):
+        """Verify SceneNarration has all required fields."""
+        narrations = load_narrations_from_file(sample_narrations_file)
+
+        for narration in narrations:
             assert narration.scene_id, "scene_id should not be empty"
             assert narration.title, "title should not be empty"
             assert narration.duration_seconds > 0, "duration should be positive"
             assert narration.narration, "narration text should not be empty"
-
-    def test_get_narration_for_scene_existing(self):
-        """Test getting narration for existing scene."""
-        narration = get_narration_for_scene("scene1_hook")
-        assert narration is not None
-        assert narration.title == "The Speed Problem"
-
-    def test_get_narration_for_scene_nonexistent(self):
-        """Test getting narration for non-existent scene."""
-        narration = get_narration_for_scene("nonexistent_scene")
-        assert narration is None
-
-    def test_get_all_narrations(self):
-        """Test getting all narrations."""
-        narrations = get_all_narrations()
-        assert len(narrations) == 8
-        assert narrations == LLM_INFERENCE_NARRATIONS
-
-    def test_get_full_script(self):
-        """Test getting full script."""
-        script = get_full_script()
-        assert "[The Speed Problem]" in script
-        assert "[The Impact]" in script
-        assert "KV Cache" in script
-
-    def test_total_narration_duration(self):
-        """Verify total narration duration is reasonable."""
-        total_duration = sum(n.duration_seconds for n in LLM_INFERENCE_NARRATIONS)
-        # Should be around 3 minutes (180 seconds)
-        assert 150 < total_duration < 250
 
 
 class TestSceneVoiceover:
@@ -215,31 +244,34 @@ class TestVoiceoverGenerator:
         assert (tmp_path / "voiceover_manifest.json").exists()
 
 
-class TestVoiceoverIntegration:
-    """Integration tests for voiceover system."""
+class TestLLMInferenceProjectVoiceover:
+    """Integration tests for LLM inference project voiceover files."""
 
-    def test_manifest_file_exists(self):
-        """Verify manifest file was generated."""
-        manifest_path = Path("output/voiceover/voiceover_manifest.json")
-        if manifest_path.exists():
-            with open(manifest_path) as f:
-                data = json.load(f)
-            assert len(data["scenes"]) == 8
-            assert data["total_duration_seconds"] > 0
+    def test_project_narrations_exist(self):
+        """Verify narrations file exists in project."""
+        narration_path = Path("projects/llm-inference/narration/narrations.json")
+        if not narration_path.exists():
+            pytest.skip("LLM inference project not found")
 
-    def test_all_audio_files_exist(self):
-        """Verify all audio files were generated."""
-        voiceover_dir = Path("output/voiceover")
-        if voiceover_dir.exists():
-            for scene in LLM_INFERENCE_NARRATIONS:
-                audio_path = voiceover_dir / f"{scene.scene_id}.mp3"
-                # Only check if the directory exists (files generated)
-                if voiceover_dir.exists() and list(voiceover_dir.glob("*.mp3")):
-                    assert audio_path.exists(), f"Missing audio for {scene.scene_id}"
+        narrations = load_narrations_from_file(narration_path)
+        assert len(narrations) == 8
 
-    def test_remotion_public_voiceover_exists(self):
-        """Verify voiceover files are in Remotion public folder."""
-        public_dir = Path("remotion/public/voiceover")
-        if public_dir.exists():
-            mp3_files = list(public_dir.glob("*.mp3"))
-            assert len(mp3_files) == 8, f"Expected 8 mp3 files, got {len(mp3_files)}"
+    def test_project_voiceover_files_exist(self):
+        """Verify voiceover files exist in project."""
+        voiceover_dir = Path("projects/llm-inference/voiceover")
+        if not voiceover_dir.exists():
+            pytest.skip("LLM inference voiceover directory not found")
+
+        mp3_files = list(voiceover_dir.glob("*.mp3"))
+        assert len(mp3_files) == 8, f"Expected 8 mp3 files, got {len(mp3_files)}"
+
+    def test_project_manifest_exists(self):
+        """Verify manifest file exists in project."""
+        manifest_path = Path("projects/llm-inference/voiceover/manifest.json")
+        if not manifest_path.exists():
+            pytest.skip("LLM inference manifest not found")
+
+        with open(manifest_path) as f:
+            data = json.load(f)
+        assert len(data["scenes"]) == 8
+        assert data["total_duration_seconds"] > 0

@@ -12,6 +12,9 @@ import {
   useVideoConfig,
   interpolate,
   Easing,
+  Audio,
+  Sequence,
+  staticFile,
 } from "remotion";
 import { getComponent, hasComponent } from "../components/registry";
 import type {
@@ -23,8 +26,22 @@ import type {
   Transition,
 } from "../types/storyboard";
 
+// Audio scene definition
+interface AudioScene {
+  id: string;
+  file: string;
+  start_seconds: number;
+  duration_seconds: number;
+}
+
+// Audio configuration in storyboard
+interface AudioConfig {
+  base_path?: string;
+  scenes?: AudioScene[];
+}
+
 export interface StoryboardPlayerProps {
-  storyboard?: Storyboard;
+  storyboard?: Storyboard & { audio?: AudioConfig };
 }
 
 // Empty storyboard fallback for type safety
@@ -72,6 +89,10 @@ export const StoryboardPlayer: React.FC<StoryboardPlayerProps> = ({
   const backgroundColor =
     storyboard.style?.background_color || "#0f0f1a";
 
+  // Get audio scenes from storyboard
+  const audioConfig = (storyboard as StoryboardPlayerProps["storyboard"])?.audio;
+  const audioScenes = audioConfig?.scenes || [];
+
   return (
     <AbsoluteFill
       style={{
@@ -79,6 +100,24 @@ export const StoryboardPlayer: React.FC<StoryboardPlayerProps> = ({
         fontFamily: storyboard.style?.font_family || "Inter, sans-serif",
       }}
     >
+      {/* Render audio tracks */}
+      {audioScenes.map((scene) => {
+        const startFrame = Math.floor(scene.start_seconds * fps);
+        const durationFrames = Math.ceil(scene.duration_seconds * fps);
+
+        // Construct the audio path - use absolute path from base_path
+        const audioPath = audioConfig?.base_path
+          ? `${audioConfig.base_path}/${scene.file}`
+          : scene.file;
+
+        return (
+          <Sequence key={scene.id} from={startFrame} durationInFrames={durationFrames}>
+            <Audio src={audioPath} />
+          </Sequence>
+        );
+      })}
+
+      {/* Render visual elements */}
       {activeElements.map(({ element, beat }) => (
         <ElementRenderer
           key={element.id}

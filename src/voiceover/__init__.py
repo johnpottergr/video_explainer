@@ -2,19 +2,16 @@
 
 from .narration import (
     SceneNarration,
-    LLM_INFERENCE_NARRATIONS,
-    get_narration_for_scene,
-    get_all_narrations,
-    get_full_script,
+    load_narrations_from_file,
+    load_narrations_from_project,
 )
-from .generator import VoiceoverGenerator, VoiceoverResult
+from .generator import VoiceoverGenerator, VoiceoverResult, SceneVoiceover
 
 __all__ = [
     "SceneNarration",
-    "LLM_INFERENCE_NARRATIONS",
-    "get_narration_for_scene",
-    "get_all_narrations",
-    "get_full_script",
+    "load_narrations_from_file",
+    "load_narrations_from_project",
     "VoiceoverGenerator",
     "VoiceoverResult",
+    "SceneVoiceover",
 ]

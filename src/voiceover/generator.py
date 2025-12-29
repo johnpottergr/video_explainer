@@ -1,12 +1,12 @@
 """Voiceover generator using TTS providers."""
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..audio import EdgeTTS, TTSResult, WordTimestamp, get_tts_provider
 from ..config import Config, TTSConfig, load_config
-from .narration import SceneNarration, get_all_narrations
+from .narration import SceneNarration
 
 
 @dataclass
@@ -145,20 +145,17 @@ class VoiceoverGenerator:
     def generate_all_voiceovers(
         self,
         output_dir: Path,
-        narrations: list[SceneNarration] | None = None,
+        narrations: list[SceneNarration],
     ) -> VoiceoverResult:
         """Generate voiceovers for all scenes.
 
         Args:
             output_dir: Directory to save audio files.
-            narrations: List of narrations. If None, uses LLM inference narrations.
+            narrations: List of narrations to generate voiceovers for.
 
         Returns:
             VoiceoverResult with all generated audio.
         """
-        if narrations is None:
-            narrations = get_all_narrations()
-
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -184,20 +181,3 @@ class VoiceoverGenerator:
         print(f"Total duration: {total_duration:.2f}s ({total_duration/60:.1f} min)")
 
         return result
-
-
-def generate_llm_inference_voiceover(
-    output_dir: str | Path = "output/voiceover",
-    voice: str = "en-US-GuyNeural",
-) -> VoiceoverResult:
-    """Generate voiceover for the LLM Inference video.
-
-    Args:
-        output_dir: Directory to save audio files.
-        voice: Edge TTS voice name.
-
-    Returns:
-        VoiceoverResult with all generated audio.
-    """
-    generator = VoiceoverGenerator(voice=voice)
-    return generator.generate_all_voiceovers(Path(output_dir))

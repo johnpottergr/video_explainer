@@ -19,8 +19,8 @@
   },
 
   "tts": {
-    "provider": "elevenlabs",
-    "voice_id": "pNInz6obpgDQGcFmaJgB"
+    "provider": "edge",
+    "voice_id": "en-US-GuyNeural"
   },
 
   "style": {

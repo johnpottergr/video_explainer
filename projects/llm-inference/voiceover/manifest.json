@@ -2,7 +2,7 @@
   "scenes": [
     {
       "scene_id": "scene1_hook",
-      "audio_path": "output/voiceover/scene1_hook.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene1_hook.mp3",
       "duration_seconds": 21.1625,
       "word_timestamps": [
         {
@@ -224,7 +224,7 @@
     },
     {
       "scene_id": "scene2_phases",
-      "audio_path": "output/voiceover/scene2_phases.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene2_phases.mp3",
       "duration_seconds": 21.6125,
       "word_timestamps": [
         {
@@ -491,7 +491,7 @@
     },
     {
       "scene_id": "scene3_bottleneck",
-      "audio_path": "output/voiceover/scene3_bottleneck.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene3_bottleneck.mp3",
       "duration_seconds": 24.3,
       "word_timestamps": [
         {
@@ -748,7 +748,7 @@
     },
     {
       "scene_id": "scene4_attention",
-      "audio_path": "output/voiceover/scene4_attention.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene4_attention.mp3",
       "duration_seconds": 22.475,
       "word_timestamps": [
         {
@@ -1020,7 +1020,7 @@
     },
     {
       "scene_id": "scene5_redundancy",
-      "audio_path": "output/voiceover/scene5_redundancy.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene5_redundancy.mp3",
       "duration_seconds": 29.625,
       "word_timestamps": [
         {
@@ -1302,7 +1302,7 @@
     },
     {
       "scene_id": "scene6_kvcache",
-      "audio_path": "output/voiceover/scene6_kvcache.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene6_kvcache.mp3",
       "duration_seconds": 22.4125,
       "word_timestamps": [
         {
@@ -1529,7 +1529,7 @@
     },
     {
       "scene_id": "scene7_mechanics",
-      "audio_path": "output/voiceover/scene7_mechanics.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene7_mechanics.mp3",
       "duration_seconds": 20.4,
       "word_timestamps": [
         {
@@ -1776,7 +1776,7 @@
     },
     {
       "scene_id": "scene8_impact",
-      "audio_path": "output/voiceover/scene8_impact.mp3",
+      "audio_path": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover/scene8_impact.mp3",
       "duration_seconds": 31.3,
       "word_timestamps": [
         {
@@ -2068,5 +2068,5 @@
     }
   ],
   "total_duration_seconds": 193.28750000000002,
-  "output_dir": "output/voiceover"
+  "output_dir": "/Users/prajwal/Desktop/Learning/video_explainer/projects/llm-inference/voiceover"
 }

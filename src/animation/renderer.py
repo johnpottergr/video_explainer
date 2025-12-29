@@ -364,10 +364,6 @@ class MockRenderer(AnimationRenderer):
             )
 
 
-# Keep backward compatibility alias
-MotionCanvasRenderer = MockRenderer
-
-
 def get_renderer(config: Config | None = None) -> AnimationRenderer:
     """Get the appropriate renderer based on configuration.
 

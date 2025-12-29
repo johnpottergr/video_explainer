@@ -620,61 +620,94 @@ A simple web interface for reviewing outputs at each checkpoint.
 ## Technical Stack Recommendation
 
 ### Core Languages
-- **Python**: Pipeline orchestration, LLM integration, content processing
-- **TypeScript**: Animation generation via Motion Canvas
+- **Python**: Pipeline orchestration, LLM integration, content processing, CLI
+- **TypeScript**: Animation generation via Remotion (React-based)
 
 ### Key Libraries & Tools
 
 | Category | Tool | Purpose |
 |----------|------|---------|
-| Content Parsing | marker, PyMuPDF | PDF/document extraction |
+| Content Parsing | markdown parser | Markdown document extraction |
 | LLM | Claude API, OpenAI API | Content understanding, script generation |
-| TTS | ElevenLabs API, OpenAI TTS | Voiceover generation |
-| Animation | Motion Canvas | Technical animations (TypeScript) |
+| TTS | ElevenLabs, Edge TTS | Voiceover generation with word timestamps |
+| Animation | Remotion | React-based programmatic video rendering |
 | Video | FFmpeg | Video composition and encoding |
-| Web Scraping | trafilatura | URL content extraction |
-| Image Gen | OpenAI DALL-E, Replicate | Conceptual illustrations (if needed) |
+| CLI | rich, argparse | Command-line interface |
 
 ### Project Structure
+
+The system uses a **project-based organization** where each video project is self-contained:
+
 ```
 video_explainer/
-├── src/                    # Python pipeline code
-│   ├── ingestion/          # Content ingestion module
-│   │   ├── markdown.py
-│   │   ├── pdf.py
-│   │   └── web.py
-│   ├── understanding/      # Content analysis
-│   │   └── analyzer.py
-│   ├── script/             # Script generation
-│   │   ├── generator.py
-│   │   └── prompts/
-│   ├── storyboard/         # Visual planning
-│   │   └── planner.py
-│   ├── audio/              # TTS generation
-│   │   └── tts.py
-│   ├── composition/        # Video assembly
-│   │   └── composer.py
-│   ├── review/             # CLI review interface
-│   │   └── cli.py
-│   └── budget/             # Cost management
-│       └── tracker.py
-├── animations/             # Motion Canvas project (TypeScript)
+├── projects/                    # Self-contained video projects
+│   └── llm-inference/           # Example: LLM Inference video
+│       ├── config.json          # Project configuration
+│       ├── narration/           # Scene narration scripts
+│       │   └── narrations.json
+│       ├── voiceover/           # Generated audio files
+│       │   ├── manifest.json
+│       │   └── *.mp3
+│       ├── storyboard/          # Storyboard definitions
+│       │   └── storyboard.json
+│       ├── remotion/            # Video-specific React components
+│       │   └── scenes/
+│       └── output/              # Generated videos
+│
+├── src/                         # Core pipeline code
+│   ├── cli/                     # CLI commands
+│   ├── project/                 # Project loader module
+│   ├── ingestion/               # Document parsing
+│   ├── understanding/           # Content analysis (LLM)
+│   ├── script/                  # Script generation
+│   ├── audio/                   # TTS providers
+│   ├── voiceover/               # Voiceover generation
+│   ├── storyboard/              # Storyboard system
+│   ├── animation/               # Animation rendering
+│   ├── composition/             # Video assembly
+│   ├── pipeline/                # End-to-end orchestration
+│   ├── config.py                # Configuration management
+│   └── models.py                # Pydantic data models
+│
+├── remotion/                    # Remotion project (React animations)
 │   ├── src/
-│   │   ├── scenes/         # Individual scene animations
-│   │   ├── components/     # Reusable visual components
-│   │   └── styles/         # Color palette, typography
-│   ├── package.json
-│   └── motion-canvas.config.ts
-├── templates/              # Prompt templates
-├── output/                 # Generated videos and assets
-│   ├── scripts/
-│   ├── audio/
-│   ├── video/
-│   └── storyboards/
-├── tests/
-├── config.yaml
-├── requirements.txt
-└── main.py
+│   │   ├── components/          # Reusable animation components
+│   │   ├── scenes/              # Scene compositions
+│   │   └── types/               # TypeScript types
+│   └── scripts/
+│       └── render.mjs           # Headless rendering script
+│
+├── storyboards/                 # Storyboard schema
+│   └── schema/
+│       └── storyboard.schema.json
+│
+├── tests/                       # Test suite (241 tests)
+├── config.yaml                  # Global configuration
+└── pyproject.toml               # Python package configuration
+```
+
+### CLI Commands
+
+The pipeline can be run independently via CLI:
+
+```bash
+# List all projects
+python -m src.cli list
+
+# Show project information
+python -m src.cli info llm-inference
+
+# Generate voiceovers (with mock TTS for testing)
+python -m src.cli voiceover llm-inference --mock
+
+# View storyboard
+python -m src.cli storyboard llm-inference --view
+
+# Render video
+python -m src.cli render llm-inference
+
+# Create a new project
+python -m src.cli create my-new-video --title "My New Video"
 ```
 
 ---
@@ -719,11 +752,13 @@ video_explainer/
 |----------|--------|-----------|
 | Animation Library | Remotion (React) | Headless rendering, programmatic, actively maintained |
 | Previous Choice | Motion Canvas | Moved away - no native headless rendering support |
-| Review Interface | CLI-based (initially) | Simple, fast to implement, sufficient for single user |
+| Project Organization | Self-contained projects | Each video project in `projects/` with all assets |
+| Configuration | JSON files | Human readable, easy to edit, schema-validated |
+| Pipeline Execution | CLI commands | Run stages independently, easier iteration |
+| TTS Provider | ElevenLabs + Edge TTS | High quality with word timestamps, fallback option |
 | Visual Style | Dark technical (see Style Guide) | Suits LLM inference topic, professional look |
 | First Test Topic | LLM Inference (Prefill/Decode/KV Cache) | Author-written content, easy to verify, visual potential |
-| Voice | ElevenLabs (or Mock for dev) | High quality, will clone author's voice in future |
-| Animation Approach | Hand-crafted storyboards | Quality over automation, build patterns first |
+| Animation Approach | Storyboard-first | TTS timing drives visual sync, quality over automation |
 
 ## Open Questions
 
@@ -905,5 +940,6 @@ A successful scene should:
 
 ---
 
-*Document Version: 1.2*
+*Document Version: 1.3*
 *Last Updated: December 2024*
+*Current Status: 241 tests passing, project-based organization complete*

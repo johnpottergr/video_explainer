@@ -26,7 +26,7 @@ import { Scene7Mechanics } from "./Scene7Mechanics";
 import { Scene8Impact } from "./Scene8Impact";
 
 // Scene configuration with audio durations (from voiceover manifest)
-// These are the actual audio durations - we add a small buffer for transitions
+// Audio files are in remotion/public/voiceover/ (staticFile serves from public/)
 const SCENES_WITH_AUDIO = [
   {
     id: "hook",
