@@ -15,19 +15,21 @@ Key context:
 - Progress: progress.md (current state and next steps)
 - Test content: /Users/prajwal/Desktop/Learning/inference/website/post.md
 
-Current phase: Phase 4 - Quality & Generalization
+Current phase: Phase 4 - Production Ready
 - Phase 1 MVP: COMPLETE (112 tests)
 - Phase 2 First Video: COMPLETE
 - Phase 3 Automated Animation: COMPLETE
-- Phase 3.5 Quality Focus: IN PROGRESS (169 tests passing)
+- Phase 3.5 Quality Focus: COMPLETE (187 tests passing)
   - Storyboard-first workflow implemented
   - JSON schema for storyboards
   - StoryboardPlayer (runtime interpreter)
   - Custom components: Token, TokenRow, GPUGauge
   - PrefillDecodeScene hand-crafted demo working
+  - TTS word-level timestamps via ElevenLabs API
+  - StoryboardGenerator (LLM-assisted storyboard creation)
 
 Key commands:
-  source .venv/bin/activate && pytest tests/ -v  # Run all tests (169 passing)
+  source .venv/bin/activate && pytest tests/ -v  # Run all tests (187 passing)
   cd remotion && npm run dev                      # Start Remotion studio
   # Select "PrefillDecode" composition to see the hand-crafted demo
   # Select "StoryboardPlayer" to test storyboard rendering
@@ -98,7 +100,7 @@ Check "Next Actions" section below for current tasks.
 
 Successfully migrated from manual Motion Canvas animations to fully automated Remotion-based rendering. The pipeline now generates complete explainer videos programmatically from any document.
 
-### In Progress (Phase 3.5 - Quality & Generalization)
+### Completed (Phase 3.5 - Quality & Generalization)
 - [x] Identified quality issues with templated animations
 - [x] Designed storyboard-first workflow (TTS → Storyboard → Animation)
 - [x] Created detailed storyboard for Prefill vs Decode scene
@@ -107,10 +109,10 @@ Successfully migrated from manual Motion Canvas animations to fully automated Re
 - [x] Defined JSON schema for storyboards
 - [x] Built StoryboardPlayer (runtime storyboard interpreter)
 - [x] Created Python storyboard module (loader, validator, renderer)
-- [x] **169 tests passing**
-- [ ] Render storyboard JSON through StoryboardPlayer
-- [ ] Build storyboard generator (LLM-assisted)
-- [ ] Add TTS word-level timestamps for sync points
+- [x] Render storyboard JSON through StoryboardPlayer
+- [x] Add TTS word-level timestamps via ElevenLabs API
+- [x] Build StoryboardGenerator (LLM-assisted)
+- [x] **187 tests passing**
 
 ### Next Steps (Phase 4 - Production Ready)
 - [ ] Enable real LLM API (Anthropic/OpenAI) for dynamic content analysis

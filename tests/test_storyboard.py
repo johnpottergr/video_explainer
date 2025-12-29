@@ -19,6 +19,7 @@ from src.storyboard import (
     AudioConfig,
     StyleConfig,
     StoryboardRenderer,
+    StoryboardGenerator,
 )
 from src.storyboard.loader import (
     parse_storyboard,
@@ -27,6 +28,8 @@ from src.storyboard.loader import (
     storyboard_to_dict,
     save_storyboard,
 )
+from src.audio.tts import TTSResult, WordTimestamp
+from src.models import Script, ScriptScene, VisualCue
 
 
 # ============================================================================
@@ -627,3 +630,215 @@ class TestStoryboardIntegration:
                 original.beats[0].elements[0].component
                 == reloaded.beats[0].elements[0].component
             )
+
+
+# ============================================================================
+# Generator Tests
+# ============================================================================
+
+
+class TestStoryboardGenerator:
+    """Tests for StoryboardGenerator class."""
+
+    @pytest.fixture
+    def sample_script(self):
+        """Create a sample script for testing."""
+        return Script(
+            title="Test Script",
+            total_duration_seconds=20,
+            source_document="test.md",
+            scenes=[
+                ScriptScene(
+                    scene_id=1,
+                    scene_type="hook",
+                    title="Introduction",
+                    voiceover="This is the first scene with some content.",
+                    visual_cue=VisualCue(
+                        description="Title card appears",
+                        visual_type="animation",
+                        elements=["title", "subtitle"],
+                        duration_seconds=10,
+                    ),
+                    duration_seconds=10,
+                ),
+                ScriptScene(
+                    scene_id=2,
+                    scene_type="explanation",
+                    title="Main Content",
+                    voiceover="This is the second scene with more content.",
+                    visual_cue=VisualCue(
+                        description="Token animation",
+                        visual_type="animation",
+                        elements=["tokens", "flow"],
+                        duration_seconds=10,
+                    ),
+                    duration_seconds=10,
+                ),
+            ],
+        )
+
+    @pytest.fixture
+    def sample_tts_results(self, tmp_path):
+        """Create sample TTS results for testing."""
+        audio1 = tmp_path / "scene1.mp3"
+        audio2 = tmp_path / "scene2.mp3"
+        audio1.touch()
+        audio2.touch()
+
+        return [
+            TTSResult(
+                audio_path=audio1,
+                duration_seconds=10.0,
+                word_timestamps=[
+                    WordTimestamp("This", 0.0, 0.2),
+                    WordTimestamp("is", 0.3, 0.4),
+                    WordTimestamp("the", 0.5, 0.6),
+                    WordTimestamp("first", 0.7, 0.9),
+                    WordTimestamp("scene", 1.0, 1.3),
+                ],
+            ),
+            TTSResult(
+                audio_path=audio2,
+                duration_seconds=10.0,
+                word_timestamps=[
+                    WordTimestamp("This", 0.0, 0.2),
+                    WordTimestamp("is", 0.3, 0.4),
+                    WordTimestamp("the", 0.5, 0.6),
+                    WordTimestamp("second", 0.7, 1.0),
+                    WordTimestamp("scene", 1.1, 1.4),
+                ],
+            ),
+        ]
+
+    @pytest.fixture
+    def mock_llm(self):
+        """Create a mock LLM that returns valid storyboard beats."""
+        mock = MagicMock()
+        mock.generate_json.return_value = {
+            "beats": [
+                {
+                    "id": "beat_1",
+                    "start_seconds": 0,
+                    "end_seconds": 10,
+                    "voiceover": "Test voiceover",
+                    "elements": [
+                        {
+                            "id": "element_1",
+                            "component": "title_card",
+                            "props": {"title": "Test"},
+                            "position": {"x": "center", "y": "center"},
+                        }
+                    ],
+                }
+            ]
+        }
+        return mock
+
+    def test_generator_init(self):
+        """Test generator initialization."""
+        generator = StoryboardGenerator()
+        assert generator.config is not None
+        assert generator.llm is not None
+        assert generator.examples_dir.exists()
+
+    def test_generate_id_from_title(self):
+        """Test ID generation from title."""
+        generator = StoryboardGenerator()
+
+        assert generator._generate_id("Test Title") == "test_title"
+        assert generator._generate_id("Hello World!") == "hello_world"
+        assert generator._generate_id("123 Numbers") == "s_123_numbers"
+        assert generator._generate_id("") == "storyboard"
+
+    def test_calculate_scene_timing(self, sample_tts_results):
+        """Test scene timing calculation."""
+        generator = StoryboardGenerator()
+        timings = generator._calculate_scene_timing(sample_tts_results)
+
+        assert len(timings) == 2
+        assert timings[0] == (0.0, 10.0)
+        assert timings[1] == (10.0, 20.0)
+
+    def test_generate_with_mock_llm(
+        self, sample_script, sample_tts_results, mock_llm
+    ):
+        """Test generating storyboard with mock LLM."""
+        generator = StoryboardGenerator(llm=mock_llm)
+
+        storyboard = generator.generate(sample_script, sample_tts_results)
+
+        assert isinstance(storyboard, Storyboard)
+        assert storyboard.title == "Test Script"
+        assert storyboard.duration_seconds == 20.0
+        # Should have beats (2 scenes, each generating beats)
+        assert len(storyboard.beats) >= 2
+
+    def test_generate_validates_input_length(self, sample_script, sample_tts_results):
+        """Test that generator validates TTS results match scenes."""
+        generator = StoryboardGenerator()
+
+        # Remove one TTS result to create mismatch
+        with pytest.raises(ValueError, match="must match"):
+            generator.generate(sample_script, sample_tts_results[:1])
+
+    def test_generate_from_beats(self):
+        """Test creating storyboard from pre-generated beats."""
+        generator = StoryboardGenerator()
+
+        beats = [
+            {
+                "id": "beat_1",
+                "start_seconds": 0,
+                "end_seconds": 5,
+                "voiceover": "Hello",
+            },
+            {
+                "id": "beat_2",
+                "start_seconds": 5,
+                "end_seconds": 10,
+                "voiceover": "World",
+            },
+        ]
+
+        storyboard = generator.generate_from_beats(
+            title="Test Storyboard",
+            beats=beats,
+            duration_seconds=10.0,
+            audio_file="test.mp3",
+        )
+
+        assert isinstance(storyboard, Storyboard)
+        assert storyboard.title == "Test Storyboard"
+        assert storyboard.duration_seconds == 10.0
+        assert len(storyboard.beats) == 2
+        assert storyboard.audio is not None
+        assert storyboard.audio.file == "test.mp3"
+
+    def test_load_example_context(self):
+        """Test loading example storyboards for context."""
+        generator = StoryboardGenerator()
+        context = generator._load_example_context()
+
+        # Should load examples if they exist
+        if generator.examples_dir.exists():
+            assert "Example from" in context or context == ""
+        else:
+            assert context == ""
+
+    def test_generate_scene_beats_with_mock(
+        self, sample_script, sample_tts_results, mock_llm
+    ):
+        """Test generating beats for a single scene."""
+        generator = StoryboardGenerator(llm=mock_llm)
+
+        beats = generator._generate_scene_beats(
+            scene=sample_script.scenes[0],
+            tts_result=sample_tts_results[0],
+            start_seconds=0,
+            end_seconds=10,
+            example_context="",
+        )
+
+        assert isinstance(beats, list)
+        assert len(beats) > 0
+        assert all("id" in beat for beat in beats)
