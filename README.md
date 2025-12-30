@@ -66,6 +66,18 @@ python -m src.cli render llm-inference -r 720p
 
 # Create a new project
 python -m src.cli create my-new-video --title "My New Video"
+
+# Process feedback (uses Claude Code CLI for intelligent changes)
+python -m src.cli feedback llm-inference add "Make the text larger in scene 1"
+
+# Process feedback in dry-run mode (analyze without applying)
+python -m src.cli feedback llm-inference add "Fix the timing" --dry-run
+
+# List all feedback for a project
+python -m src.cli feedback llm-inference list
+
+# Show details of a specific feedback item
+python -m src.cli feedback llm-inference show fb_0001_1234567890
 ```
 
 ### Resolution Options
@@ -123,7 +135,7 @@ video_explainer/
 │   └── schema/
 │       └── storyboard.schema.json
 │
-├── tests/                       # Test suite (277 Python tests + 45 JS tests)
+├── tests/                       # Test suite (352 Python tests + 45 JS tests)
 ├── config.yaml                  # Global configuration
 └── pyproject.toml               # Python package configuration
 ```
@@ -191,7 +203,7 @@ video:
 
 ## Testing
 
-The project includes 322 tests (277 Python + 45 JavaScript).
+The project includes 397 tests (352 Python + 45 JavaScript).
 
 ### Python Tests
 

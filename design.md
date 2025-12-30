@@ -940,6 +940,121 @@ A successful scene should:
 
 ---
 
-*Document Version: 1.3*
+## Feedback System (December 2024)
+
+### Overview
+
+The feedback system enables iterative video improvement through natural language feedback. Users can describe changes they want, and the system uses Claude Code CLI in headless mode to analyze the feedback and apply intelligent changes to project files.
+
+### Architecture
+
+```
+User Feedback (natural language)
+         │
+         ▼
+┌─────────────────────────┐
+│   Feedback Processor    │
+│  ┌───────────────────┐  │
+│  │ ClaudeCodeLLM     │  │
+│  │ Provider          │  │
+│  └───────────────────┘  │
+│         │               │
+│         ▼               │
+│  ┌───────────────────┐  │
+│  │ Analyze Feedback  │  │──► Identify scope, affected scenes
+│  └───────────────────┘  │
+│         │               │
+│         ▼               │
+│  ┌───────────────────┐  │
+│  │ Create Preview    │  │──► Git branch: feedback/<id>
+│  │ Branch            │  │
+│  └───────────────────┘  │
+│         │               │
+│         ▼               │
+│  ┌───────────────────┐  │
+│  │ Apply Changes     │  │──► Modify storyboard, narrations
+│  └───────────────────┘  │
+│         │               │
+└─────────┼───────────────┘
+          ▼
+┌─────────────────────────┐
+│   Feedback Store        │
+│   (feedback.json)       │
+└─────────────────────────┘
+```
+
+### Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ClaudeCodeLLMProvider` | `src/understanding/llm_provider.py` | Execute Claude Code CLI for LLM operations |
+| `FeedbackItem` | `src/feedback/models.py` | Data model for feedback with status tracking |
+| `FeedbackHistory` | `src/feedback/models.py` | Collection of feedback items for a project |
+| `FeedbackStore` | `src/feedback/store.py` | JSON persistence for feedback history |
+| `FeedbackProcessor` | `src/feedback/processor.py` | Main processing logic |
+
+### CLI Commands
+
+```bash
+# Add and process feedback
+python -m src.cli feedback <project> add "<feedback_text>"
+
+# Analyze without applying (dry run)
+python -m src.cli feedback <project> add "<text>" --dry-run
+
+# Skip preview branch creation
+python -m src.cli feedback <project> add "<text>" --no-branch
+
+# List all feedback
+python -m src.cli feedback <project> list
+
+# Show feedback details
+python -m src.cli feedback <project> show <feedback_id>
+```
+
+### Preview Branch Workflow
+
+1. User runs `feedback add "<text>"`
+2. System creates branch `feedback/<feedback_id>`
+3. Claude Code makes changes on that branch
+4. User reviews with `git diff main`
+5. User merges with `git checkout main && git merge feedback/<id>` or discards
+
+### Feedback States
+
+| State | Description |
+|-------|-------------|
+| `pending` | Feedback recorded, not yet processed |
+| `processing` | Currently being analyzed/applied |
+| `applied` | Successfully applied changes |
+| `rejected` | User rejected the changes |
+| `failed` | Processing failed (see error_message) |
+
+### Data Storage
+
+Feedback is stored in `projects/<project>/feedback/feedback.json`:
+
+```json
+{
+  "project_id": "llm-inference",
+  "items": [
+    {
+      "id": "fb_0001_1234567890",
+      "timestamp": "2024-12-29T10:30:00",
+      "feedback_text": "Make the text larger in scene 1",
+      "status": "applied",
+      "scope": "scene",
+      "affected_scenes": ["scene_01"],
+      "interpretation": "User wants larger font size",
+      "files_modified": ["storyboard/storyboard.json"],
+      "preview_branch": "feedback/fb_0001_1234567890"
+    }
+  ]
+}
+```
+
+---
+
+*Document Version: 1.4*
 *Last Updated: December 2024*
-*Current Status: 241 tests passing, project-based organization complete*
+*Current Status: 397 tests passing, feedback system complete*

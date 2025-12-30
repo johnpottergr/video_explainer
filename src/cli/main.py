@@ -1,12 +1,16 @@
 """Main CLI entry point for video explainer pipeline.
 
 Usage:
-    python -m src.cli list                          # List all projects
-    python -m src.cli info <project>                # Show project info
-    python -m src.cli voiceover <project>           # Generate voiceovers
-    python -m src.cli storyboard <project>          # Generate storyboard
-    python -m src.cli render <project>              # Render video
-    python -m src.cli render <project> --preview    # Quick preview render
+    python -m src.cli list                                    # List all projects
+    python -m src.cli info <project>                          # Show project info
+    python -m src.cli voiceover <project>                     # Generate voiceovers
+    python -m src.cli storyboard <project>                    # Generate storyboard
+    python -m src.cli render <project>                        # Render video
+    python -m src.cli render <project> --preview              # Quick preview render
+    python -m src.cli feedback <project> add "<text>"         # Process feedback
+    python -m src.cli feedback <project> add "<text>" --dry-run  # Analyze only
+    python -m src.cli feedback <project> list                 # List feedback
+    python -m src.cli feedback <project> show <feedback_id>   # Show feedback details
 """
 
 import argparse
@@ -303,6 +307,158 @@ def cmd_render(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_feedback(args: argparse.Namespace) -> int:
+    """Process or view feedback for a project."""
+    from ..project import load_project
+    from ..feedback import FeedbackProcessor, FeedbackStore
+
+    try:
+        project = load_project(Path(args.projects_dir) / args.project)
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    if not args.feedback_command:
+        print("Usage: python -m src.cli feedback <project> <command>")
+        print("\nCommands:")
+        print("  add <text>     Add and process new feedback")
+        print("  list           List all feedback for the project")
+        print("  show <id>      Show details of a feedback item")
+        return 1
+
+    if args.feedback_command == "add":
+        # Process new feedback
+        processor = FeedbackProcessor(
+            project,
+            dry_run=args.dry_run,
+            create_branch=not args.no_branch,
+        )
+
+        print(f"Processing feedback for {project.id}...")
+        print(f"Feedback: {args.feedback_text}")
+        print()
+
+        if args.dry_run:
+            print("[DRY RUN] Analyzing feedback only, no changes will be made")
+            print()
+
+        item = processor.process_feedback(args.feedback_text)
+
+        print(f"Feedback ID: {item.id}")
+        print(f"Status: {item.status}")
+
+        if item.interpretation:
+            print(f"\nInterpretation:")
+            print(f"  {item.interpretation}")
+
+        if item.scope:
+            print(f"\nScope: {item.scope}")
+            if item.affected_scenes:
+                print(f"Affected scenes: {', '.join(item.affected_scenes)}")
+
+        if item.suggested_changes:
+            print(f"\nSuggested changes:")
+            desc = item.suggested_changes.get("description", "")
+            if desc:
+                print(f"  {desc}")
+            files = item.suggested_changes.get("files_to_modify", [])
+            if files:
+                print(f"  Files: {', '.join(files)}")
+
+        if item.preview_branch:
+            print(f"\nPreview branch: {item.preview_branch}")
+            print("  To review: git diff main")
+            print("  To merge: git checkout main && git merge " + item.preview_branch)
+            print("  To discard: git checkout main && git branch -D " + item.preview_branch)
+
+        if item.files_modified:
+            print(f"\nFiles modified:")
+            for f in item.files_modified:
+                print(f"  - {f}")
+
+        if item.error_message:
+            print(f"\nError: {item.error_message}", file=sys.stderr)
+
+        return 0 if item.status != "failed" else 1
+
+    elif args.feedback_command == "list":
+        # List all feedback
+        store = FeedbackStore(project.root_dir, project.id)
+        history = store.load()
+
+        if not history.items:
+            print(f"No feedback found for {project.id}")
+            return 0
+
+        print(f"Feedback for {project.id} ({len(history.items)} items):\n")
+
+        for item in history.items:
+            status_icon = {
+                "pending": "⏳",
+                "processing": "🔄",
+                "applied": "✅",
+                "rejected": "❌",
+                "failed": "💥",
+            }.get(item.status, "?")
+
+            print(f"  {status_icon} {item.id}")
+            print(f"    Status: {item.status}")
+            print(f"    Feedback: {item.feedback_text[:60]}{'...' if len(item.feedback_text) > 60 else ''}")
+            if item.affected_scenes:
+                print(f"    Scenes: {', '.join(item.affected_scenes)}")
+            print()
+
+        return 0
+
+    elif args.feedback_command == "show":
+        # Show detailed feedback
+        store = FeedbackStore(project.root_dir, project.id)
+        item = store.get_item(args.feedback_id)
+
+        if not item:
+            print(f"Error: Feedback not found: {args.feedback_id}", file=sys.stderr)
+            return 1
+
+        print(f"Feedback: {item.id}")
+        print(f"Status: {item.status}")
+        print(f"Timestamp: {item.timestamp}")
+        print()
+        print("Original feedback:")
+        print(f"  {item.feedback_text}")
+        print()
+
+        if item.interpretation:
+            print("Interpretation:")
+            print(f"  {item.interpretation}")
+            print()
+
+        if item.scope:
+            print(f"Scope: {item.scope}")
+        if item.affected_scenes:
+            print(f"Affected scenes: {', '.join(item.affected_scenes)}")
+        print()
+
+        if item.suggested_changes:
+            print("Suggested changes:")
+            print(json.dumps(item.suggested_changes, indent=2))
+            print()
+
+        if item.preview_branch:
+            print(f"Preview branch: {item.preview_branch}")
+
+        if item.files_modified:
+            print("Files modified:")
+            for f in item.files_modified:
+                print(f"  - {f}")
+
+        if item.error_message:
+            print(f"\nError: {item.error_message}")
+
+        return 0
+
+    return 0
+
+
 def cmd_create(args: argparse.Namespace) -> int:
     """Create a new project."""
     from ..project.loader import create_project
@@ -402,6 +558,56 @@ def main() -> int:
         help="Output resolution (default: 1080p)",
     )
     render_parser.set_defaults(func=cmd_render)
+
+    # feedback command
+    feedback_parser = subparsers.add_parser(
+        "feedback",
+        help="Process or view feedback for a project",
+    )
+    feedback_parser.add_argument("project", help="Project ID")
+
+    feedback_subparsers = feedback_parser.add_subparsers(
+        dest="feedback_command",
+        help="Feedback commands",
+    )
+
+    # feedback add
+    feedback_add_parser = feedback_subparsers.add_parser(
+        "add",
+        help="Add and process new feedback",
+    )
+    feedback_add_parser.add_argument(
+        "feedback_text",
+        help="The feedback text (natural language)",
+    )
+    feedback_add_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Analyze feedback without applying changes",
+    )
+    feedback_add_parser.add_argument(
+        "--no-branch",
+        action="store_true",
+        help="Don't create a preview branch",
+    )
+
+    # feedback list
+    feedback_subparsers.add_parser(
+        "list",
+        help="List all feedback for the project",
+    )
+
+    # feedback show
+    feedback_show_parser = feedback_subparsers.add_parser(
+        "show",
+        help="Show details of a feedback item",
+    )
+    feedback_show_parser.add_argument(
+        "feedback_id",
+        help="Feedback ID (e.g., fb_0001_1234567890)",
+    )
+
+    feedback_parser.set_defaults(func=cmd_feedback)
 
     args = parser.parse_args()
 

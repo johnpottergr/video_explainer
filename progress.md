@@ -15,32 +15,34 @@ Key context:
 - Progress: progress.md (current state and next steps)
 - README: README.md (setup and CLI usage)
 
-Current phase: Phase 4 - Production Ready
+Current phase: Phase 4.5 - Feedback System
 - Phase 1 MVP: COMPLETE (112 tests)
 - Phase 2 First Video: COMPLETE
 - Phase 3 Automated Animation: COMPLETE
 - Phase 3.5 Quality Focus: COMPLETE
-- Phase 4 Project Organization: COMPLETE (322 tests: 277 Python + 45 JavaScript)
-  - Project-based organization (projects/ directory)
-  - CLI for independent pipeline stages with resolution options
-  - JSON configuration files
-  - Data-driven architecture with scene registry
-  - JavaScript testing with vitest
+- Phase 4 Project Organization: COMPLETE
+- Phase 4.5 Feedback System: COMPLETE (397 tests: 352 Python + 45 JavaScript)
+  - Claude Code LLM Provider for intelligent file modifications
+  - Feedback CLI (add, list, show) for iterative improvements
+  - Preview branch workflow for safe changes
+  - Feedback history tracking with JSON persistence
 
 Key commands:
-  source .venv/bin/activate && pytest tests/ -v  # Run Python tests (277 passing)
+  source .venv/bin/activate && pytest tests/ -v  # Run Python tests (352 passing)
   cd remotion && npm test                         # Run JS tests (45 passing)
   python -m src.cli list                          # List projects
   python -m src.cli info llm-inference            # Show project info
   python -m src.cli voiceover llm-inference --mock # Generate voiceovers
   python -m src.cli render llm-inference          # Render video (1080p)
   python -m src.cli render llm-inference -r 4k    # Render in 4K for YouTube
+  python -m src.cli feedback llm-inference add "..." # Process feedback
   cd remotion && npm run dev                      # Start Remotion studio
 
 Key directories:
   projects/llm-inference/                         # Example video project
   src/cli/                                        # CLI commands
   src/project/                                    # Project loader
+  src/feedback/                                   # Feedback system
   remotion/                                       # Remotion React components
 
 Check "Next Actions" section below for current tasks.
@@ -130,6 +132,15 @@ Check "Next Actions" section below for current tasks.
 - [x] Refactored render.mjs with testable utility functions
 - [x] **322 tests passing (277 Python + 45 JavaScript)**
 
+### Completed (Phase 4.5 - Feedback System)
+- [x] ClaudeCodeLLMProvider using Claude Code CLI in headless mode
+- [x] Feedback module (src/feedback/) with models, store, processor
+- [x] Feedback CLI commands (add, list, show)
+- [x] Preview branch workflow for safe file modifications
+- [x] Feedback history tracking with JSON persistence
+- [x] 75 new tests (40 feedback + 35 Claude Code provider)
+- [x] **397 tests passing (352 Python + 45 JavaScript)**
+
 ### Next Steps (Phase 5 - Production Ready)
 - [ ] Enable real LLM API (Anthropic/OpenAI) for dynamic content analysis
 - [ ] Add more animation components (code highlights, equations, diagrams)
@@ -164,10 +175,11 @@ Document → Parse → Analyze → Script → TTS → Storyboard → Animation �
 
 Key modules:
 ├── src/
-│   ├── cli/              # CLI commands (list, info, voiceover, render, etc.)
+│   ├── cli/              # CLI commands (list, info, voiceover, render, feedback)
 │   ├── project/          # Project loader module
+│   ├── feedback/         # Feedback system (models, store, processor)
 │   ├── ingestion/        # Document parsing
-│   ├── understanding/    # Content analysis (LLM)
+│   ├── understanding/    # Content analysis (LLM providers)
 │   ├── script/           # Script generation
 │   ├── audio/            # TTS providers (ElevenLabs, Edge, Mock)
 │   ├── voiceover/        # Voiceover generation with timestamps
@@ -184,7 +196,7 @@ Key modules:
 │       ├── render.mjs        # Headless rendering
 │       ├── render-utils.mjs  # Testable utility functions
 │       └── render-utils.test.mjs  # JavaScript tests
-└── tests/                    # 277 Python tests + 45 JS tests
+└── tests/                    # 352 Python tests + 45 JS tests
 ```
 
 ---
@@ -225,7 +237,7 @@ Animation: easeInOutCubic, 0.3-0.5s transitions
 # Activate virtual environment
 source .venv/bin/activate
 
-# Run Python tests (277 tests)
+# Run Python tests (352 tests)
 pytest tests/ -v
 
 # Run JavaScript tests (45 tests)
@@ -254,6 +266,18 @@ cd remotion && npm run dev
 
 # Create a new project
 python -m src.cli create my-new-video --title "My New Video"
+
+# Process feedback (uses Claude Code CLI)
+python -m src.cli feedback llm-inference add "Make text larger in scene 1"
+
+# Analyze feedback without applying (dry run)
+python -m src.cli feedback llm-inference add "Fix timing" --dry-run
+
+# List all feedback for a project
+python -m src.cli feedback llm-inference list
+
+# Show details of a specific feedback item
+python -m src.cli feedback llm-inference show fb_0001_1234567890
 ```
 
 ---
@@ -303,7 +327,7 @@ python -m src.cli create my-new-video --title "My New Video"
 ## Notes for Future Sessions
 
 - Always run tests before committing:
-  - Python: `pytest tests/ -v` (277 tests)
+  - Python: `pytest tests/ -v` (352 tests)
   - JavaScript: `cd remotion && npm test` (45 tests)
 - Projects are self-contained in `projects/` directory
 - Use CLI commands for independent pipeline execution
@@ -311,6 +335,8 @@ python -m src.cli create my-new-video --title "My New Video"
 - Human review checkpoints at: script, storyboard, final
 - Use `--resolution 4k` for YouTube-ready exports
 - Use `--resolution 720p` for faster development iterations
+- Use `feedback add --dry-run` to analyze feedback without applying changes
+- Feedback creates preview branches for safe review before merging
 
 ---
 
@@ -333,4 +359,4 @@ python -m src.cli create my-new-video --title "My New Video"
 ---
 
 *Last Updated: December 2024*
-*Session: Phase 4 - Added resolution config, comprehensive CLI & JS tests (322 tests total)*
+*Session: Phase 4.5 - Added Claude Code LLM Provider, Feedback System CLI (397 tests total)*
