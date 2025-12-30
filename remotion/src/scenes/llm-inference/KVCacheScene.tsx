@@ -47,8 +47,9 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings - each token step gets ~7 seconds
   const introEnd = fps * 3; // Title intro
@@ -80,7 +81,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
   const cacheWidth = interpolate(
     cacheItemCount,
     [0, 1, 2, 3],
-    [200, 280, 420, 560],
+    [200 * scale, 280 * scale, 420 * scale, 560 * scale],
     { extrapolateRight: "clamp" }
   );
 
@@ -140,7 +141,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       fps,
       config: { damping: 12, stiffness: 100 },
     });
-    const scale = isNew ? Math.min(scaleSpring, 1) * 0.2 + 0.8 : 1;
+    const entryScale = isNew ? Math.min(scaleSpring, 1) * 0.2 + 0.8 : 1;
 
     return (
       <div
@@ -149,20 +150,20 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 6,
+          gap: 6 * scale,
           opacity,
-          transform: `scale(${scale})`,
-          padding: "8px 12px",
+          transform: `scale(${entryScale})`,
+          padding: `${8 * scale}px ${12 * scale}px`,
           backgroundColor: isNew ? COLORS.compute + "15" : "transparent",
-          borderRadius: 8,
-          border: isNew ? `2px solid ${COLORS.compute}40` : "2px solid transparent",
+          borderRadius: 8 * scale,
+          border: isNew ? `${2 * scale}px solid ${COLORS.compute}40` : `${2 * scale}px solid transparent`,
           transition: "background-color 0.3s, border 0.3s",
         }}
       >
         {/* Token label */}
         <div
           style={{
-            fontSize: 12,
+            fontSize: 12 * scale,
             color: isNew ? COLORS.compute : COLORS.textDim,
             fontWeight: 600,
           }}
@@ -173,18 +174,18 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         {/* K vector */}
         <div
           style={{
-            width: 80,
-            height: 32,
+            width: 80 * scale,
+            height: 32 * scale,
             backgroundColor: isNew ? COLORS.key : COLORS.key + "60",
-            borderRadius: 6,
+            borderRadius: 6 * scale,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 14,
+            fontSize: 14 * scale,
             fontWeight: 700,
             color: "#000",
             fontFamily: "JetBrains Mono",
-            boxShadow: isNew ? `0 0 12px ${COLORS.key}60` : "none",
+            boxShadow: isNew ? `0 0 ${12 * scale}px ${COLORS.key}60` : "none",
           }}
         >
           K{stepData.subscript}
@@ -193,18 +194,18 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         {/* V vector */}
         <div
           style={{
-            width: 80,
-            height: 32,
+            width: 80 * scale,
+            height: 32 * scale,
             backgroundColor: isNew ? COLORS.value : COLORS.value + "60",
-            borderRadius: 6,
+            borderRadius: 6 * scale,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 14,
+            fontSize: 14 * scale,
             fontWeight: 700,
             color: "#000",
             fontFamily: "JetBrains Mono",
-            boxShadow: isNew ? `0 0 12px ${COLORS.value}60` : "none",
+            boxShadow: isNew ? `0 0 ${12 * scale}px ${COLORS.value}60` : "none",
           }}
         >
           V{stepData.subscript}
@@ -230,16 +231,16 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          left: 100,
-          top: 200,
+          left: 100 * scale,
+          top: 200 * scale,
           opacity: generateProgress * tokenOpacity,
         }}
       >
         <div
           style={{
-            fontSize: 16,
+            fontSize: 16 * scale,
             color: COLORS.textDim,
-            marginBottom: 12,
+            marginBottom: 12 * scale,
             textAlign: "center",
           }}
         >
@@ -248,32 +249,32 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         <div
           style={{
             backgroundColor: COLORS.surface,
-            borderRadius: 12,
-            padding: 24,
-            border: `2px solid ${COLORS.compute}`,
+            borderRadius: 12 * scale,
+            padding: 24 * scale,
+            border: `${2 * scale}px solid ${COLORS.compute}`,
             textAlign: "center",
-            minWidth: 180,
+            minWidth: 180 * scale,
           }}
         >
           <div
             style={{
-              fontSize: 28,
+              fontSize: 28 * scale,
               fontWeight: 700,
               color: COLORS.compute,
-              marginBottom: 20,
+              marginBottom: 20 * scale,
             }}
           >
             "{stepData.token}"
           </div>
 
           {/* Generating K,V indicator */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 12 * scale, justifyContent: "center" }}>
             <div
               style={{
-                padding: "8px 16px",
+                padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.key + "40",
-                borderRadius: 6,
-                fontSize: 16,
+                borderRadius: 6 * scale,
+                fontSize: 16 * scale,
                 fontWeight: 600,
                 color: COLORS.key,
                 fontFamily: "JetBrains Mono",
@@ -283,10 +284,10 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
             </div>
             <div
               style={{
-                padding: "8px 16px",
+                padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.value + "40",
-                borderRadius: 6,
-                fontSize: 16,
+                borderRadius: 6 * scale,
+                fontSize: 16 * scale,
                 fontWeight: 600,
                 color: COLORS.value,
                 fontFamily: "JetBrains Mono",
@@ -309,10 +310,10 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <svg
         style={{
           position: "absolute",
-          left: 290,
-          top: 280,
-          width: 200,
-          height: 60,
+          left: 290 * scale,
+          top: 280 * scale,
+          width: 200 * scale,
+          height: 60 * scale,
           opacity: storeProgress,
         }}
       >
@@ -329,19 +330,19 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
           </marker>
         </defs>
         <line
-          x1="10"
-          y1="30"
-          x2={10 + 160 * storeProgress}
-          y2="30"
+          x1={10 * scale}
+          y1={30 * scale}
+          x2={10 * scale + 160 * scale * storeProgress}
+          y2={30 * scale}
           stroke={COLORS.cache}
-          strokeWidth="3"
+          strokeWidth={3 * scale}
           markerEnd={storeProgress > 0.5 ? "url(#storeArrow)" : ""}
         />
         <text
-          x="90"
-          y="18"
+          x={90 * scale}
+          y={18 * scale}
           fill={COLORS.cache}
-          fontSize="14"
+          fontSize={14 * scale}
           textAnchor="middle"
           fontWeight="600"
         >
@@ -364,17 +365,17 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          right: 80,
-          top: 180,
+          right: 80 * scale,
+          top: 180 * scale,
           opacity: reuseProgress,
         }}
       >
         <div
           style={{
-            fontSize: 16,
+            fontSize: 16 * scale,
             color: COLORS.attention,
             fontWeight: 600,
-            marginBottom: 12,
+            marginBottom: 12 * scale,
             textAlign: "center",
           }}
         >
@@ -383,9 +384,9 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         <div
           style={{
             backgroundColor: COLORS.surface,
-            borderRadius: 12,
-            padding: 16,
-            border: `2px solid ${COLORS.attention}40`,
+            borderRadius: 12 * scale,
+            padding: 16 * scale,
+            border: `${2 * scale}px solid ${COLORS.attention}40`,
           }}
         >
           {STEPS.slice(0, reusedCount).map((step, i) => (
@@ -394,25 +395,25 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                marginBottom: i < reusedCount - 1 ? 8 : 0,
-                padding: "6px 10px",
+                gap: 8 * scale,
+                marginBottom: i < reusedCount - 1 ? 8 * scale : 0,
+                padding: `${6 * scale}px ${10 * scale}px`,
                 backgroundColor: COLORS.attention + "15",
-                borderRadius: 6,
+                borderRadius: 6 * scale,
               }}
             >
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 13 * scale,
                   color: COLORS.textDim,
-                  width: 36,
+                  width: 36 * scale,
                 }}
               >
                 {step.token}
               </span>
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 13 * scale,
                   color: COLORS.key,
                   fontFamily: "JetBrains Mono",
                   fontWeight: 600,
@@ -422,7 +423,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
               </span>
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 13 * scale,
                   color: COLORS.value,
                   fontFamily: "JetBrains Mono",
                   fontWeight: 600,
@@ -432,7 +433,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
               </span>
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                   color: COLORS.success,
                   fontWeight: 600,
                 }}
@@ -446,7 +447,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         {/* Attention indicator */}
         <div
           style={{
-            marginTop: 16,
+            marginTop: 16 * scale,
             textAlign: "center",
             opacity: attentionProgress,
           }}
@@ -454,11 +455,11 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
           <div
             style={{
               display: "inline-block",
-              padding: "8px 16px",
+              padding: `${8 * scale}px ${16 * scale}px`,
               backgroundColor: COLORS.success + "20",
-              border: `1px solid ${COLORS.success}`,
-              borderRadius: 8,
-              fontSize: 14,
+              border: `${1 * scale}px solid ${COLORS.success}`,
+              borderRadius: 8 * scale,
+              fontSize: 14 * scale,
               color: COLORS.success,
               fontWeight: 600,
             }}
@@ -484,7 +485,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 100,
+          top: 100 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -493,15 +494,15 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         <div
           style={{
             display: "inline-block",
-            padding: "10px 24px",
+            padding: `${10 * scale}px ${24 * scale}px`,
             backgroundColor: COLORS.surface,
-            borderRadius: 24,
-            border: `2px solid ${COLORS.compute}40`,
+            borderRadius: 24 * scale,
+            border: `${2 * scale}px solid ${COLORS.compute}40`,
           }}
         >
           <span
             style={{
-              fontSize: 18,
+              fontSize: 18 * scale,
               color: COLORS.text,
               fontWeight: 600,
             }}
@@ -524,7 +525,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -533,7 +534,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -556,7 +557,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 200,
+          bottom: 200 * scale,
           left: "50%",
           transform: "translateX(-50%)",
           opacity: currentStep >= 0 ? 1 : 0,
@@ -564,22 +565,22 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       >
         <div
           style={{
-            fontSize: 18,
+            fontSize: 18 * scale,
             color: COLORS.cache,
             fontWeight: 600,
-            marginBottom: 12,
+            marginBottom: 12 * scale,
             textAlign: "center",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
+            gap: 8 * scale,
           }}
         >
           <span>📦</span>
           <span>KV Cache</span>
           <span
             style={{
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
               fontWeight: 400,
             }}
@@ -592,16 +593,16 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
         <div
           style={{
             display: "flex",
-            gap: 12,
-            padding: 20,
+            gap: 12 * scale,
+            padding: 20 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
-            border: `3px solid ${COLORS.cache}`,
+            borderRadius: 16 * scale,
+            border: `${3 * scale}px solid ${COLORS.cache}`,
             minWidth: cacheWidth,
-            maxWidth: 600,
+            maxWidth: 600 * scale,
             justifyContent: "center",
             transition: "min-width 0.5s ease-out",
-            boxShadow: `0 0 30px ${COLORS.cache}30`,
+            boxShadow: `0 0 ${30 * scale}px ${COLORS.cache}30`,
           }}
         >
           {/* Cached entries */}
@@ -622,14 +623,14 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 6,
-                  padding: "8px 12px",
+                  gap: 6 * scale,
+                  padding: `${8 * scale}px ${12 * scale}px`,
                   opacity: 0.3,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 12 * scale,
                     color: COLORS.textDim,
                   }}
                 >
@@ -637,18 +638,18 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
                 </div>
                 <div
                   style={{
-                    width: 80,
-                    height: 32,
+                    width: 80 * scale,
+                    height: 32 * scale,
                     backgroundColor: "#333",
-                    borderRadius: 6,
+                    borderRadius: 6 * scale,
                   }}
                 />
                 <div
                   style={{
-                    width: 80,
-                    height: 32,
+                    width: 80 * scale,
+                    height: 32 * scale,
                     backgroundColor: "#333",
-                    borderRadius: 6,
+                    borderRadius: 6 * scale,
                   }}
                 />
               </div>
@@ -663,7 +664,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -672,7 +673,7 @@ export const KVCacheScene: React.FC<KVCacheSceneProps> = ({
       >
         <span
           style={{
-            fontSize: 28,
+            fontSize: 28 * scale,
             fontWeight: 600,
             color: COLORS.text,
           }}

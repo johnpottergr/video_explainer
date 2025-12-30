@@ -39,8 +39,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 4; // Show FP16
@@ -96,7 +97,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -105,7 +106,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -113,7 +114,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
         >
           Quantization
         </h1>
-        <p style={{ fontSize: 18, color: COLORS.primary, marginTop: 8 }}>
+        <p style={{ fontSize: 18 * scale, color: COLORS.primary, marginTop: 8 * scale }}>
           Smaller Weights = Faster Loading
         </p>
       </div>
@@ -122,9 +123,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 140,
-          left: 80,
-          right: 80,
+          top: 140 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -133,8 +134,8 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 40,
-            marginBottom: 40,
+            gap: 40 * scale,
+            marginBottom: 40 * scale,
           }}
         >
           {formats.map((format, index) => {
@@ -159,21 +160,21 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
               >
                 <div
                   style={{
-                    padding: 24,
+                    padding: 24 * scale,
                     backgroundColor: COLORS.surface,
-                    borderRadius: 16,
-                    border: `3px solid ${isActive ? format.color : "#333"}`,
-                    width: 200,
+                    borderRadius: 16 * scale,
+                    border: `${3 * scale}px solid ${isActive ? format.color : "#333"}`,
+                    width: 200 * scale,
                     textAlign: "center",
                   }}
                 >
                   {/* Format name */}
                   <div
                     style={{
-                      fontSize: 24,
+                      fontSize: 24 * scale,
                       fontWeight: 700,
                       color: format.color,
-                      marginBottom: 16,
+                      marginBottom: 16 * scale,
                     }}
                   >
                     {format.name}
@@ -184,9 +185,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                     style={{
                       display: "flex",
                       justifyContent: "center",
-                      gap: 4,
-                      marginBottom: 16,
-                      height: 60,
+                      gap: 4 * scale,
+                      marginBottom: 16 * scale,
+                      height: 60 * scale,
                       alignItems: "flex-end",
                     }}
                   >
@@ -195,10 +196,10 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                         <div
                           key={i}
                           style={{
-                            width: 24,
-                            height: 30 * (format.bytes / 2) * 2,
+                            width: 24 * scale,
+                            height: 30 * (format.bytes / 2) * 2 * scale,
                             backgroundColor: format.color + "80",
-                            borderRadius: 4,
+                            borderRadius: 4 * scale,
                             border: `1px solid ${format.color}`,
                           }}
                         />
@@ -209,9 +210,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                   {/* Bytes per param */}
                   <div
                     style={{
-                      fontSize: 16,
+                      fontSize: 16 * scale,
                       color: COLORS.textDim,
-                      marginBottom: 8,
+                      marginBottom: 8 * scale,
                     }}
                   >
                     {format.bytes} bytes/param
@@ -220,11 +221,11 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                   {/* Model size */}
                   <div
                     style={{
-                      fontSize: 32,
+                      fontSize: 32 * scale,
                       fontWeight: 700,
                       fontFamily: "JetBrains Mono",
                       color: format.color,
-                      marginBottom: 8,
+                      marginBottom: 8 * scale,
                     }}
                   >
                     {format.size}
@@ -233,11 +234,11 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                   {/* Accuracy */}
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: 14 * scale,
                       color: COLORS.textDim,
-                      padding: "4px 12px",
+                      padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: "#222",
-                      borderRadius: 4,
+                      borderRadius: 4 * scale,
                       display: "inline-block",
                     }}
                   >
@@ -252,12 +253,12 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
         {/* Memory bandwidth explanation */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: "1px solid #333",
             textAlign: "center",
-            marginBottom: 32,
+            marginBottom: 32 * scale,
             opacity: interpolate(
               localFrame,
               [phase2End, phase2End + fps],
@@ -266,7 +267,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
             ),
           }}
         >
-          <div style={{ fontSize: 18, color: COLORS.text, marginBottom: 16 }}>
+          <div style={{ fontSize: 18 * scale, color: COLORS.text, marginBottom: 16 * scale }}>
             Memory Bandwidth is the Bottleneck
           </div>
           <div
@@ -274,21 +275,21 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              gap: 20,
+              gap: 20 * scale,
             }}
           >
             <div
               style={{
-                padding: "12px 24px",
+                padding: `${12 * scale}px ${24 * scale}px`,
                 backgroundColor: COLORS.fp16 + "20",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 border: `1px solid ${COLORS.fp16}`,
               }}
             >
-              <div style={{ fontSize: 14, color: COLORS.fp16 }}>FP16</div>
+              <div style={{ fontSize: 14 * scale, color: COLORS.fp16 }}>FP16</div>
               <div
                 style={{
-                  fontSize: 20,
+                  fontSize: 20 * scale,
                   fontWeight: 700,
                   color: COLORS.fp16,
                   fontFamily: "JetBrains Mono",
@@ -298,20 +299,20 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
               </div>
             </div>
 
-            <div style={{ fontSize: 24, color: COLORS.textDim }}>→</div>
+            <div style={{ fontSize: 24 * scale, color: COLORS.textDim }}>→</div>
 
             <div
               style={{
-                padding: "12px 24px",
+                padding: `${12 * scale}px ${24 * scale}px`,
                 backgroundColor: COLORS.int4 + "20",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 border: `1px solid ${COLORS.int4}`,
               }}
             >
-              <div style={{ fontSize: 14, color: COLORS.int4 }}>INT4</div>
+              <div style={{ fontSize: 14 * scale, color: COLORS.int4 }}>INT4</div>
               <div
                 style={{
-                  fontSize: 20,
+                  fontSize: 20 * scale,
                   fontWeight: 700,
                   color: COLORS.int4,
                   fontFamily: "JetBrains Mono",
@@ -321,20 +322,20 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
               </div>
             </div>
 
-            <div style={{ fontSize: 24, color: COLORS.textDim }}>=</div>
+            <div style={{ fontSize: 24 * scale, color: COLORS.textDim }}>=</div>
 
             <div
               style={{
-                padding: "12px 24px",
+                padding: `${12 * scale}px ${24 * scale}px`,
                 backgroundColor: COLORS.primary + "20",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 border: `1px solid ${COLORS.primary}`,
               }}
             >
-              <div style={{ fontSize: 14, color: COLORS.primary }}>Result</div>
+              <div style={{ fontSize: 14 * scale, color: COLORS.primary }}>Result</div>
               <div
                 style={{
-                  fontSize: 20,
+                  fontSize: 20 * scale,
                   fontWeight: 700,
                   color: COLORS.primary,
                   fontFamily: "JetBrains Mono",
@@ -349,9 +350,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
         {/* Throughput comparison bars */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: "1px solid #333",
             opacity: interpolate(
               localFrame,
@@ -363,9 +364,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
         >
           <div
             style={{
-              fontSize: 16,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
-              marginBottom: 16,
+              marginBottom: 16 * scale,
               textAlign: "center",
             }}
           >
@@ -386,14 +387,14 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 16,
-                  marginBottom: 12,
+                  gap: 16 * scale,
+                  marginBottom: 12 * scale,
                 }}
               >
                 <div
                   style={{
-                    width: 60,
-                    fontSize: 14,
+                    width: 60 * scale,
+                    fontSize: 14 * scale,
                     color: format.color,
                     fontWeight: 600,
                     textAlign: "right",
@@ -404,9 +405,9 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                 <div
                   style={{
                     flex: 1,
-                    height: 32,
+                    height: 32 * scale,
                     backgroundColor: "#222",
-                    borderRadius: 6,
+                    borderRadius: 6 * scale,
                     overflow: "hidden",
                   }}
                 >
@@ -415,16 +416,16 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                       width: `${barWidth * barSpring}%`,
                       height: "100%",
                       backgroundColor: format.color,
-                      borderRadius: 6,
+                      borderRadius: 6 * scale,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "flex-end",
-                      paddingRight: 12,
+                      paddingRight: 12 * scale,
                     }}
                   >
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 14 * scale,
                         fontWeight: 700,
                         color: "#000",
                       }}
@@ -443,7 +444,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -455,7 +456,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           Decode is memory-bound:{" "}
           <span style={{ color: COLORS.int4, fontWeight: 700 }}>
             smaller weights = proportionally faster

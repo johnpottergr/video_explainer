@@ -39,8 +39,9 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 6; // Requirements calculation
@@ -100,7 +101,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -109,7 +110,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -123,9 +124,9 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 80,
-          right: 80,
+          top: 120 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -135,25 +136,25 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 20,
-            marginBottom: 40,
+            gap: 20 * scale,
+            marginBottom: 40 * scale,
             flexWrap: "wrap",
           }}
         >
           {/* Users */}
           <div
             style={{
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: `2px solid ${COLORS.primary}`,
               textAlign: "center",
-              minWidth: 160,
+              minWidth: 160 * scale,
             }}
           >
             <div
               style={{
-                fontSize: 32,
+                fontSize: 32 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.primary,
@@ -161,26 +162,26 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             >
               {Math.round(usersCounter).toLocaleString()}
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Concurrent Users
             </div>
           </div>
 
-          <div style={{ fontSize: 24, color: COLORS.textDim }}>×</div>
+          <div style={{ fontSize: 24 * scale, color: COLORS.textDim }}>×</div>
 
           {/* Tokens per user */}
           <div
             style={{
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: "1px solid #333",
               textAlign: "center",
             }}
           >
             <div
               style={{
-                fontSize: 32,
+                fontSize: 32 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.text,
@@ -188,27 +189,27 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             >
               50
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               tokens/sec each
             </div>
           </div>
 
-          <div style={{ fontSize: 24, color: COLORS.textDim }}>=</div>
+          <div style={{ fontSize: 24 * scale, color: COLORS.textDim }}>=</div>
 
           {/* Total throughput */}
           <div
             style={{
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: `2px solid ${COLORS.cost}`,
               textAlign: "center",
-              minWidth: 180,
+              minWidth: 180 * scale,
             }}
           >
             <div
               style={{
-                fontSize: 32,
+                fontSize: 32 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.cost,
@@ -216,7 +217,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             >
               {Math.round(tokensCounter / 1000000)}M
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               tokens/sec total
             </div>
           </div>
@@ -227,8 +228,8 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 40,
-            marginBottom: 40,
+            gap: 40 * scale,
+            marginBottom: 40 * scale,
             opacity: interpolate(
               localFrame,
               [phase1End, phase1End + fps * 0.5],
@@ -240,19 +241,19 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
           {/* GPU requirement */}
           <div
             style={{
-              padding: 24,
+              padding: 24 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: "1px solid #333",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 16, color: COLORS.textDim, marginBottom: 8 }}>
+            <div style={{ fontSize: 16 * scale, color: COLORS.textDim, marginBottom: 8 * scale }}>
               At 2,000 tok/s per GPU
             </div>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.cost,
@@ -260,25 +261,25 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             >
               {Math.round(gpusCounter).toLocaleString()}
             </div>
-            <div style={{ fontSize: 18, color: COLORS.text }}>GPUs Required</div>
+            <div style={{ fontSize: 18 * scale, color: COLORS.text }}>GPUs Required</div>
           </div>
 
           {/* Monthly cost */}
           <div
             style={{
-              padding: 24,
+              padding: 24 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.cost}`,
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 16, color: COLORS.textDim, marginBottom: 8 }}>
+            <div style={{ fontSize: 16 * scale, color: COLORS.textDim, marginBottom: 8 * scale }}>
               At $2/GPU-hour
             </div>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.cost,
@@ -286,25 +287,25 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             >
               ${Math.round(costCounter)}M
             </div>
-            <div style={{ fontSize: 18, color: COLORS.text }}>Per Month</div>
+            <div style={{ fontSize: 18 * scale, color: COLORS.text }}>Per Month</div>
           </div>
         </div>
 
         {/* Optimization impact */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: `2px solid ${COLORS.savings}`,
             opacity: optimizationOpacity,
           }}
         >
           <div
             style={{
-              fontSize: 20,
+              fontSize: 20 * scale,
               color: COLORS.text,
-              marginBottom: 20,
+              marginBottom: 20 * scale,
               textAlign: "center",
             }}
           >
@@ -316,17 +317,17 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              gap: 40,
+              gap: 40 * scale,
             }}
           >
             {/* Before */}
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: COLORS.textDim, marginBottom: 8 }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim, marginBottom: 8 * scale }}>
                 Before
               </div>
               <div
                 style={{
-                  fontSize: 36,
+                  fontSize: 36 * scale,
                   fontWeight: 700,
                   fontFamily: "JetBrains Mono",
                   color: COLORS.cost,
@@ -334,7 +335,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
               >
                 $50M/mo
               </div>
-              <div style={{ fontSize: 14, color: COLORS.textDim }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                 25,000 GPUs
               </div>
             </div>
@@ -345,32 +346,32 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 4,
+                gap: 4 * scale,
               }}
             >
               <div
                 style={{
-                  padding: "8px 16px",
+                  padding: `${8 * scale}px ${16 * scale}px`,
                   backgroundColor: COLORS.savings + "20",
-                  borderRadius: 8,
-                  fontSize: 14,
+                  borderRadius: 8 * scale,
+                  fontSize: 14 * scale,
                   fontWeight: 700,
                   color: COLORS.savings,
                 }}
               >
                 2× faster
               </div>
-              <div style={{ fontSize: 24, color: COLORS.savings }}>→</div>
+              <div style={{ fontSize: 24 * scale, color: COLORS.savings }}>→</div>
             </div>
 
             {/* After */}
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: COLORS.textDim, marginBottom: 8 }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim, marginBottom: 8 * scale }}>
                 After
               </div>
               <div
                 style={{
-                  fontSize: 36,
+                  fontSize: 36 * scale,
                   fontWeight: 700,
                   fontFamily: "JetBrains Mono",
                   color: COLORS.savings,
@@ -378,7 +379,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
               >
                 $25M/mo
               </div>
-              <div style={{ fontSize: 14, color: COLORS.textDim }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                 12,500 GPUs
               </div>
             </div>
@@ -386,23 +387,23 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
             {/* Savings */}
             <div
               style={{
-                padding: 16,
+                padding: 16 * scale,
                 backgroundColor: COLORS.savings + "15",
-                borderRadius: 12,
+                borderRadius: 12 * scale,
                 border: `2px solid ${COLORS.savings}`,
                 textAlign: "center",
               }}
             >
               <div
                 style={{
-                  fontSize: 28,
+                  fontSize: 28 * scale,
                   fontWeight: 700,
                   color: COLORS.savings,
                 }}
               >
                 $25M
               </div>
-              <div style={{ fontSize: 14, color: COLORS.savings }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.savings }}>
                 Monthly Savings
               </div>
             </div>
@@ -414,7 +415,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -426,7 +427,7 @@ export const EconomicsScene: React.FC<EconomicsSceneProps> = ({
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           Every optimization in this video{" "}
           <span style={{ color: COLORS.savings, fontWeight: 700 }}>
             directly reduces your infrastructure bill

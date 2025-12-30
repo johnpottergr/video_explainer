@@ -55,8 +55,11 @@ const RESPONSE_TOKENS = [
 
 export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling based on 1920x1080 reference
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 2; // Show prompt
@@ -143,7 +146,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          top: 60,
+          top: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -152,7 +155,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       >
         <h1
           style={{
-            fontSize: 56,
+            fontSize: 56 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -162,9 +165,9 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </h1>
         <p
           style={{
-            fontSize: 24,
+            fontSize: 24 * scale,
             color: COLORS.textDim,
-            marginTop: 8,
+            marginTop: 8 * scale,
           }}
         >
           How fast can we generate tokens?
@@ -175,10 +178,10 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          top: 200,
+          top: 200 * scale,
           left: "50%",
           transform: "translateX(-50%)",
-          width: 800,
+          width: Math.min(800 * scale, width * 0.85),
         }}
       >
         {/* User prompt */}
@@ -186,22 +189,22 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
           style={{
             display: "flex",
             justifyContent: "flex-end",
-            marginBottom: 24,
+            marginBottom: 24 * scale,
           }}
         >
           <div
             style={{
               backgroundColor: COLORS.primary + "30",
               border: `1px solid ${COLORS.primary}50`,
-              borderRadius: 16,
-              borderBottomRightRadius: 4,
-              padding: "16px 24px",
+              borderRadius: 16 * scale,
+              borderBottomRightRadius: 4 * scale,
+              padding: `${16 * scale}px ${24 * scale}px`,
               maxWidth: "70%",
             }}
           >
             <span
               style={{
-                fontSize: 20,
+                fontSize: 20 * scale,
                 color: COLORS.text,
               }}
             >
@@ -230,25 +233,25 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
             style={{
               backgroundColor: COLORS.surface,
               border: `1px solid #333`,
-              borderRadius: 16,
-              borderBottomLeftRadius: 4,
-              padding: "16px 24px",
+              borderRadius: 16 * scale,
+              borderBottomLeftRadius: 4 * scale,
+              padding: `${16 * scale}px ${24 * scale}px`,
               maxWidth: "80%",
-              minHeight: 60,
+              minHeight: 60 * scale,
             }}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 * scale }}>
               {RESPONSE_TOKENS.slice(0, currentTokens).map((token, i) => (
                 <span
                   key={i}
                   style={{
-                    fontSize: 20,
+                    fontSize: 20 * scale,
                     color: COLORS.text,
                     backgroundColor: showingFast
                       ? COLORS.success + "20"
                       : COLORS.secondary + "20",
-                    padding: "4px 8px",
-                    borderRadius: 4,
+                    padding: `${4 * scale}px ${8 * scale}px`,
+                    borderRadius: 4 * scale,
                   }}
                 >
                   {token}
@@ -257,7 +260,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
               {currentTokens < RESPONSE_TOKENS.length && (
                 <span
                   style={{
-                    fontSize: 20,
+                    fontSize: 20 * scale,
                     color: COLORS.textDim,
                     opacity: Math.sin(localFrame * 0.2) > 0 ? 1 : 0.3,
                   }}
@@ -274,7 +277,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          bottom: 200,
+          bottom: height * 0.185,
           left: "50%",
           transform: "translateX(-50%)",
           textAlign: "center",
@@ -283,16 +286,16 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       >
         <div
           style={{
-            fontSize: 18,
+            fontSize: 18 * scale,
             color: COLORS.textDim,
-            marginBottom: 8,
+            marginBottom: 8 * scale,
           }}
         >
           {showingFast ? "Optimized" : "Naive Approach"}
         </div>
         <div
           style={{
-            fontSize: 72,
+            fontSize: 72 * scale,
             fontWeight: 700,
             fontFamily: "JetBrains Mono, monospace",
             color: showingFast ? COLORS.success : COLORS.secondary,
@@ -302,7 +305,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </div>
         <div
           style={{
-            fontSize: 24,
+            fontSize: 24 * scale,
             color: COLORS.textDim,
           }}
         >
@@ -315,7 +318,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         <div
           style={{
             position: "absolute",
-            bottom: 80,
+            bottom: height * 0.074,
             left: 0,
             right: 0,
             textAlign: "center",
@@ -327,14 +330,14 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
             style={{
               display: "inline-block",
               backgroundColor: COLORS.success + "20",
-              border: `3px solid ${COLORS.success}`,
-              borderRadius: 16,
-              padding: "16px 48px",
+              border: `${3 * scale}px solid ${COLORS.success}`,
+              borderRadius: 16 * scale,
+              padding: `${16 * scale}px ${48 * scale}px`,
             }}
           >
             <span
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 color: COLORS.success,
               }}
@@ -349,7 +352,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          bottom: 20,
+          bottom: 20 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -363,7 +366,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
       >
         <span
           style={{
-            fontSize: 28,
+            fontSize: 28 * scale,
             color: COLORS.text,
             fontStyle: "italic",
           }}

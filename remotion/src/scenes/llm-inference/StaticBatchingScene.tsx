@@ -85,16 +85,19 @@ const SEQUENCES = [
 ];
 
 const MAX_TOKENS = Math.max(...SEQUENCES.map((s) => s.tokens));
-const SLOT_WIDTH = 44;
-const SLOT_HEIGHT = 36;
-const SLOT_GAP = 4;
 
 export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
+
+  // Scaled slot dimensions
+  const SLOT_WIDTH = 44 * scale;
+  const SLOT_HEIGHT = 36 * scale;
+  const SLOT_GAP = 4 * scale;
 
   // Phase timings
   const phase1End = fps * 3; // Intro - show GPU and sequences
@@ -167,7 +170,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -176,7 +179,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -190,7 +193,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 120,
+          top: 120 * scale,
           left: "50%",
           transform: "translateX(-50%)",
           opacity: introOpacity,
@@ -200,22 +203,22 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
         <div
           style={{
             backgroundColor: COLORS.gpu,
-            borderRadius: 16,
-            border: `3px solid ${COLORS.gpuBorder}`,
-            padding: 24,
-            boxShadow: `0 0 30px ${COLORS.gpuBorder}30`,
+            borderRadius: 16 * scale,
+            border: `${3 * scale}px solid ${COLORS.gpuBorder}`,
+            padding: 24 * scale,
+            boxShadow: `0 0 ${30 * scale}px ${COLORS.gpuBorder}30`,
           }}
         >
           {/* GPU Label */}
           <div
             style={{
               textAlign: "center",
-              marginBottom: 20,
+              marginBottom: 20 * scale,
             }}
           >
             <span
               style={{
-                fontSize: 24,
+                fontSize: 24 * scale,
                 fontWeight: 700,
                 color: COLORS.gpuBorder,
                 fontFamily: "JetBrains Mono",
@@ -230,7 +233,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 16,
+              gap: 16 * scale,
             }}
           >
             {SEQUENCES.map((seq, seqIndex) => {
@@ -242,29 +245,29 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 16,
+                    gap: 16 * scale,
                   }}
                 >
                   {/* Sequence label */}
                   <div
                     style={{
-                      width: 140,
+                      width: 140 * scale,
                       textAlign: "right",
                     }}
                   >
                     <div
                       style={{
-                        fontSize: 14,
+                        fontSize: 14 * scale,
                         color: seq.color,
                         fontWeight: 600,
-                        marginBottom: 4,
+                        marginBottom: 4 * scale,
                       }}
                     >
                       Seq {seq.id}
                     </div>
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: 11 * scale,
                         color: COLORS.textDim,
                         fontStyle: "italic",
                         whiteSpace: "nowrap",
@@ -304,7 +307,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           content = (
                             <span
                               style={{
-                                fontSize: 9,
+                                fontSize: 9 * scale,
                                 color: seq.color,
                                 fontWeight: 600,
                               }}
@@ -320,7 +323,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           content = (
                             <span
                               style={{
-                                fontSize: 8,
+                                fontSize: 8 * scale,
                                 color: COLORS.waste,
                                 fontWeight: 700,
                               }}
@@ -338,15 +341,15 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                             width: SLOT_WIDTH,
                             height: SLOT_HEIGHT,
                             backgroundColor,
-                            border: `2px solid ${borderColor}`,
-                            borderRadius: 6,
+                            border: `${2 * scale}px solid ${borderColor}`,
+                            borderRadius: 6 * scale,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             boxShadow: isCurrentlyGenerating
-                              ? `0 0 10px ${seq.color}80`
+                              ? `0 0 ${10 * scale}px ${seq.color}80`
                               : isWastedSlot
-                              ? `0 0 8px ${COLORS.waste}40`
+                              ? `0 0 ${8 * scale}px ${COLORS.waste}40`
                               : "none",
                             transition: "all 0.1s ease",
                           }}
@@ -360,17 +363,17 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                   {/* Sequence status */}
                   <div
                     style={{
-                      width: 80,
+                      width: 80 * scale,
                       textAlign: "center",
                     }}
                   >
                     {isComplete ? (
                       <div
                         style={{
-                          padding: "4px 8px",
+                          padding: `${4 * scale}px ${8 * scale}px`,
                           backgroundColor: COLORS.success + "20",
-                          borderRadius: 4,
-                          fontSize: 11,
+                          borderRadius: 4 * scale,
+                          fontSize: 11 * scale,
                           color: COLORS.success,
                           fontWeight: 600,
                         }}
@@ -380,10 +383,10 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                     ) : currentStep > 0 ? (
                       <div
                         style={{
-                          padding: "4px 8px",
+                          padding: `${4 * scale}px ${8 * scale}px`,
                           backgroundColor: seq.color + "20",
-                          borderRadius: 4,
-                          fontSize: 11,
+                          borderRadius: 4 * scale,
+                          fontSize: 11 * scale,
                           color: seq.color,
                           fontWeight: 600,
                         }}
@@ -400,24 +403,24 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
           {/* Timeline / Progress indicator */}
           <div
             style={{
-              marginTop: 24,
-              padding: "16px 0",
-              borderTop: `1px solid ${COLORS.textDim}40`,
+              marginTop: 24 * scale,
+              padding: `${16 * scale}px 0`,
+              borderTop: `${1 * scale}px solid ${COLORS.textDim}40`,
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                marginBottom: 8,
+                gap: 12 * scale,
+                marginBottom: 8 * scale,
               }}
             >
               <span
                 style={{
-                  fontSize: 14,
+                  fontSize: 14 * scale,
                   color: COLORS.textDim,
-                  width: 140,
+                  width: 140 * scale,
                   textAlign: "right",
                 }}
               >
@@ -426,9 +429,9 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
               <div
                 style={{
                   flex: 1,
-                  height: 8,
+                  height: 8 * scale,
                   backgroundColor: COLORS.surface,
-                  borderRadius: 4,
+                  borderRadius: 4 * scale,
                   overflow: "hidden",
                   position: "relative",
                 }}
@@ -441,7 +444,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                     bottom: 0,
                     width: `${(currentStep / MAX_TOKENS) * 100}%`,
                     backgroundColor: COLORS.primary,
-                    borderRadius: 4,
+                    borderRadius: 4 * scale,
                     transition: "width 0.1s ease",
                   }}
                 />
@@ -452,9 +455,9 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                     style={{
                       position: "absolute",
                       left: `${(seq.tokens / MAX_TOKENS) * 100}%`,
-                      top: -4,
-                      bottom: -4,
-                      width: 2,
+                      top: -4 * scale,
+                      bottom: -4 * scale,
+                      width: 2 * scale,
                       backgroundColor: seq.color,
                     }}
                   />
@@ -462,11 +465,11 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
               </div>
               <span
                 style={{
-                  fontSize: 16,
+                  fontSize: 16 * scale,
                   color: COLORS.primary,
                   fontWeight: 700,
                   fontFamily: "JetBrains Mono",
-                  width: 60,
+                  width: 60 * scale,
                 }}
               >
                 {currentStep}/{MAX_TOKENS}
@@ -478,8 +481,8 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
               style={{
                 display: "flex",
                 justifyContent: "center",
-                gap: 24,
-                marginTop: 12,
+                gap: 24 * scale,
+                marginTop: 12 * scale,
               }}
             >
               {SEQUENCES.map((seq) => (
@@ -488,20 +491,20 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
+                    gap: 6 * scale,
                   }}
                 >
                   <div
                     style={{
-                      width: 10,
-                      height: 10,
+                      width: 10 * scale,
+                      height: 10 * scale,
                       backgroundColor: seq.color,
-                      borderRadius: 2,
+                      borderRadius: 2 * scale,
                     }}
                   />
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 11 * scale,
                       color: COLORS.textDim,
                     }}
                   >
@@ -518,19 +521,19 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 140,
+          bottom: 140 * scale,
           left: 0,
           right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 60,
+          gap: 60 * scale,
           opacity: statsOpacity,
         }}
       >
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 48,
+              fontSize: 48 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.waste,
@@ -538,7 +541,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
           >
             {wastedSlots}
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             Wasted GPU Slots
           </div>
         </div>
@@ -546,7 +549,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 48,
+              fontSize: 48 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.primary,
@@ -554,7 +557,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
           >
             {totalSlots - wastedSlots}
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             Useful Work
           </div>
         </div>
@@ -562,7 +565,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 48,
+              fontSize: 48 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.waste,
@@ -570,7 +573,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
           >
             {wastePercentage}%
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             GPU Waste
           </div>
         </div>
@@ -580,7 +583,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -591,14 +594,14 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
           style={{
             display: "inline-block",
             backgroundColor: COLORS.waste + "20",
-            border: `2px solid ${COLORS.waste}`,
-            borderRadius: 12,
-            padding: "12px 32px",
+            border: `${2 * scale}px solid ${COLORS.waste}`,
+            borderRadius: 12 * scale,
+            padding: `${12 * scale}px ${32 * scale}px`,
           }}
         >
           <span
             style={{
-              fontSize: 20,
+              fontSize: 20 * scale,
               color: COLORS.waste,
             }}
           >
@@ -622,7 +625,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
         <div
           style={{
             position: "absolute",
-            bottom: 40,
+            bottom: 40 * scale,
             left: 0,
             right: 0,
             textAlign: "center",
@@ -634,7 +637,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
             ),
           }}
         >
-          <span style={{ fontSize: 18, color: COLORS.text }}>
+          <span style={{ fontSize: 18 * scale, color: COLORS.text }}>
             {currentStep < SEQUENCES[0].tokens ? (
               <>All sequences generating in parallel...</>
             ) : currentStep < SEQUENCES[1].tokens ? (

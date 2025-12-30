@@ -44,8 +44,11 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 5; // Speed comparison
@@ -106,7 +109,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -115,7 +118,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -129,9 +132,9 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 110,
-          left: 80,
-          right: 80,
+          top: 110 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -141,18 +144,18 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 40,
-            marginBottom: 32,
+            gap: 40 * scale,
+            marginBottom: 32 * scale,
           }}
         >
           {/* Naive */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: COLORS.textDim, marginBottom: 4 }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim, marginBottom: 4 * scale }}>
               Naive Inference
             </div>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: "#ff4757",
@@ -160,7 +163,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
             >
               {Math.round(slowSpeed)}
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>tok/s</div>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>tok/s</div>
           </div>
 
           {/* Arrow with multiplier */}
@@ -169,16 +172,16 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 4,
+              gap: 4 * scale,
             }}
           >
-            <div style={{ fontSize: 32, color: COLORS.textDim }}>→</div>
+            <div style={{ fontSize: 32 * scale, color: COLORS.textDim }}>→</div>
             <div
               style={{
-                padding: "4px 12px",
+                padding: `${4 * scale}px ${12 * scale}px`,
                 backgroundColor: COLORS.success + "20",
-                borderRadius: 6,
-                fontSize: 18,
+                borderRadius: 6 * scale,
+                fontSize: 18 * scale,
                 fontWeight: 700,
                 color: COLORS.success,
               }}
@@ -189,12 +192,12 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
 
           {/* Optimized */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: COLORS.textDim, marginBottom: 4 }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim, marginBottom: 4 * scale }}>
               Fully Optimized
             </div>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.success,
@@ -202,7 +205,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
             >
               {Math.round(fastSpeed).toLocaleString()}+
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>tok/s</div>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>tok/s</div>
           </div>
         </div>
 
@@ -211,8 +214,8 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 16,
-            marginBottom: 32,
+            gap: 16 * scale,
+            marginBottom: 32 * scale,
           }}
         >
           {TECHNIQUES.map((tech, index) => {
@@ -228,24 +231,24 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
               <div
                 key={tech.name}
                 style={{
-                  padding: 16,
+                  padding: 16 * scale,
                   backgroundColor: COLORS.surface,
-                  borderRadius: 12,
+                  borderRadius: 12 * scale,
                   border: `2px solid ${tech.color}`,
                   opacity: techOpacity,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 16,
+                    fontSize: 16 * scale,
                     fontWeight: 700,
                     color: tech.color,
-                    marginBottom: 4,
+                    marginBottom: 4 * scale,
                   }}
                 >
                   {tech.name}
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.textDim }}>
+                <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
                   {tech.benefit}
                 </div>
               </div>
@@ -256,33 +259,33 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
         {/* Key insight box */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.highlight + "15",
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: `2px solid ${COLORS.highlight}`,
             textAlign: "center",
-            marginBottom: 24,
+            marginBottom: 24 * scale,
             opacity: insightOpacity,
           }}
         >
           <div
             style={{
-              fontSize: 20,
+              fontSize: 20 * scale,
               fontWeight: 700,
               color: COLORS.highlight,
-              marginBottom: 8,
+              marginBottom: 8 * scale,
             }}
           >
             The Key Insight
           </div>
-          <div style={{ fontSize: 18, color: COLORS.text }}>
+          <div style={{ fontSize: 18 * scale, color: COLORS.text }}>
             LLM inference is{" "}
             <span style={{ color: COLORS.primary, fontWeight: 700 }}>
               memory-bound
             </span>
             , not compute-bound.
           </div>
-          <div style={{ fontSize: 16, color: COLORS.textDim, marginTop: 8 }}>
+          <div style={{ fontSize: 16 * scale, color: COLORS.textDim, marginTop: 8 * scale }}>
             Every optimization serves one goal: maximize useful work per byte
             transferred.
           </div>
@@ -293,7 +296,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 80,
+          bottom: 80 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -306,13 +309,13 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
             display: "inline-block",
             backgroundColor: COLORS.success + "15",
             border: `3px solid ${COLORS.success}`,
-            borderRadius: 16,
-            padding: "20px 40px",
+            borderRadius: 16 * scale,
+            padding: `${20 * scale}px ${40 * scale}px`,
           }}
         >
           <div
             style={{
-              fontSize: 24,
+              fontSize: 24 * scale,
               fontWeight: 700,
               color: COLORS.success,
             }}
@@ -321,9 +324,9 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
           </div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
-              marginTop: 8,
+              marginTop: 8 * scale,
             }}
           >
             GPT-4 • Claude • Gemini • LLaMA • Mistral

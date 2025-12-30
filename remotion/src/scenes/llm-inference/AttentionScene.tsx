@@ -51,9 +51,10 @@ const TensorMatrix: React.FC<{
   opacity: number;
   values: number[][];
   size?: "small" | "large";
-}> = ({ label, fullLabel, color, opacity, values, size = "small" }) => {
-  const cellSize = size === "large" ? 24 : 16;
-  const fontSize = size === "large" ? 11 : 9;
+  scale?: number;
+}> = ({ label, fullLabel, color, opacity, values, size = "small", scale = 1 }) => {
+  const cellSize = (size === "large" ? 24 : 16) * scale;
+  const fontSize = (size === "large" ? 11 : 9) * scale;
 
   return (
     <div
@@ -62,21 +63,21 @@ const TensorMatrix: React.FC<{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 4,
+        gap: 4 * scale,
       }}
     >
       {/* Label badge with full name */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 * scale }}>
         <div
           style={{
-            width: size === "large" ? 36 : 28,
-            height: size === "large" ? 28 : 22,
+            width: (size === "large" ? 36 : 28) * scale,
+            height: (size === "large" ? 28 : 22) * scale,
             backgroundColor: color,
-            borderRadius: 4,
+            borderRadius: 4 * scale,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: size === "large" ? 16 : 13,
+            fontSize: (size === "large" ? 16 : 13) * scale,
             fontWeight: 700,
             color: "#000",
           }}
@@ -85,7 +86,7 @@ const TensorMatrix: React.FC<{
         </div>
         <span
           style={{
-            fontSize: size === "large" ? 14 : 11,
+            fontSize: (size === "large" ? 14 : 11) * scale,
             fontWeight: 600,
             color: color,
           }}
@@ -99,11 +100,11 @@ const TensorMatrix: React.FC<{
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${values[0]?.length || 4}, ${cellSize}px)`,
-          gap: 2,
-          padding: 4,
+          gap: 2 * scale,
+          padding: 4 * scale,
           backgroundColor: `${color}15`,
-          borderRadius: 6,
-          border: `1px solid ${color}40`,
+          borderRadius: 6 * scale,
+          border: `${1 * scale}px solid ${color}40`,
         }}
       >
         {values.flat().map((val, idx) => (
@@ -113,7 +114,7 @@ const TensorMatrix: React.FC<{
               width: cellSize,
               height: cellSize,
               backgroundColor: `${color}${Math.floor(val * 99).toString(16).padStart(2, '0')}`,
-              borderRadius: 2,
+              borderRadius: 2 * scale,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -140,10 +141,11 @@ const FlowArrow: React.FC<{
   color: string;
   label?: string;
   curved?: boolean;
-}> = ({ x1, y1, x2, y2, opacity, color, label, curved = false }) => {
+  scale?: number;
+}> = ({ x1, y1, x2, y2, opacity, color, label, curved = false, scale = 1 }) => {
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
-  const curveOffset = curved ? 30 : 0;
+  const curveOffset = curved ? 30 * scale : 0;
 
   const path = curved
     ? `M ${x1} ${y1} Q ${midX} ${midY - curveOffset} ${x2} ${y2}`
@@ -151,7 +153,7 @@ const FlowArrow: React.FC<{
 
   // Calculate arrow head angle
   const angle = Math.atan2(y2 - (curved ? midY - curveOffset : y1), x2 - (curved ? midX : x1));
-  const arrowLength = 10;
+  const arrowLength = 10 * scale;
   const arrowAngle = Math.PI / 6;
 
   return (
@@ -159,31 +161,31 @@ const FlowArrow: React.FC<{
       <defs>
         <marker
           id={`arrowhead-${color.replace('#', '')}`}
-          markerWidth="10"
-          markerHeight="7"
-          refX="9"
-          refY="3.5"
+          markerWidth={10 * scale}
+          markerHeight={7 * scale}
+          refX={9 * scale}
+          refY={3.5 * scale}
           orient="auto"
         >
-          <polygon points="0 0, 10 3.5, 0 7" fill={color} />
+          <polygon points={`0 0, ${10 * scale} ${3.5 * scale}, 0 ${7 * scale}`} fill={color} />
         </marker>
       </defs>
       <path
         d={path}
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={2 * scale}
         fill="none"
         markerEnd={`url(#arrowhead-${color.replace('#', '')})`}
         style={{
-          strokeDasharray: curved ? "5,3" : "none",
+          strokeDasharray: curved ? `${5 * scale},${3 * scale}` : "none",
         }}
       />
       {label && (
         <text
           x={midX}
-          y={midY - (curved ? curveOffset + 10 : 15)}
+          y={midY - (curved ? curveOffset + 10 * scale : 15 * scale)}
           fill={color}
-          fontSize={12}
+          fontSize={12 * scale}
           fontFamily="JetBrains Mono, monospace"
           textAnchor="middle"
         >
@@ -217,8 +219,11 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling based on viewport size
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 4; // Show tokens
@@ -317,7 +322,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -326,7 +331,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -340,12 +345,12 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 110,
+          top: 110 * scale,
           left: 0,
           right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 50,
+          gap: 50 * scale,
           opacity: tokensOpacity,
         }}
       >
@@ -361,11 +366,11 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
             {/* Token box */}
             <div
               style={{
-                padding: "10px 20px",
+                padding: `${10 * scale}px ${20 * scale}px`,
                 backgroundColor: COLORS.surface,
-                borderRadius: 8,
-                border: "2px solid #444",
-                fontSize: 20,
+                borderRadius: 8 * scale,
+                border: `${2 * scale}px solid #444`,
+                fontSize: 20 * scale,
                 fontWeight: 600,
                 color: COLORS.text,
                 fontFamily: "JetBrains Mono, monospace",
@@ -381,14 +386,14 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 180,
+          top: 180 * scale,
           left: 0,
           right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 80,
-          paddingLeft: 60,
-          paddingRight: 60,
+          gap: 80 * scale,
+          paddingLeft: 60 * scale,
+          paddingRight: 60 * scale,
         }}
       >
         {/* Query Matrix */}
@@ -399,6 +404,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
           opacity={qOpacity}
           values={Q_MATRIX}
           size="large"
+          scale={scale}
         />
 
         {/* Key Matrix */}
@@ -409,6 +415,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
           opacity={kOpacity}
           values={K_MATRIX}
           size="large"
+          scale={scale}
         />
 
         {/* Value Matrix */}
@@ -419,6 +426,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
           opacity={vOpacity}
           values={V_MATRIX}
           size="large"
+          scale={scale}
         />
       </div>
 
@@ -435,58 +443,62 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       >
         {/* Arrow from Q and K to Attention Matrix */}
         <FlowArrow
-          x1={480}
-          y1={320}
-          x2={600}
-          y2={420}
+          x1={480 * (width / 1920)}
+          y1={320 * (height / 1080)}
+          x2={600 * (width / 1920)}
+          y2={420 * (height / 1080)}
           opacity={qkArrowOpacity}
           color={COLORS.query}
           curved
+          scale={scale}
         />
         <FlowArrow
-          x1={680}
-          y1={320}
-          x2={620}
-          y2={420}
+          x1={680 * (width / 1920)}
+          y1={320 * (height / 1080)}
+          x2={620 * (width / 1920)}
+          y2={420 * (height / 1080)}
           opacity={qkArrowOpacity}
           color={COLORS.key}
           curved
+          scale={scale}
         />
 
         {/* Label for Q×K^T operation */}
         {qkArrowOpacity > 0 && (
           <text
-            x={580}
-            y={380}
+            x={580 * (width / 1920)}
+            y={380 * (height / 1080)}
             fill={COLORS.text}
-            fontSize={14}
+            fontSize={14 * scale}
             fontFamily="JetBrains Mono, monospace"
             textAnchor="middle"
             opacity={qkArrowOpacity}
           >
-            Q × K<tspan baselineShift="super" fontSize={10}>T</tspan> / √d<tspan baselineShift="sub" fontSize={10}>k</tspan>
+            Q × K<tspan baselineShift="super" fontSize={10 * scale}>T</tspan> / √d<tspan baselineShift="sub" fontSize={10 * scale}>k</tspan>
           </text>
         )}
 
         {/* Arrow from Attention Matrix to V */}
         <FlowArrow
-          x1={720}
-          y1={540}
-          x2={820}
-          y2={540}
+          x1={720 * (width / 1920)}
+          y1={540 * (height / 1080)}
+          x2={820 * (width / 1920)}
+          y2={540 * (height / 1080)}
           opacity={attentionVArrowOpacity}
           color={COLORS.attention}
           label="weights"
+          scale={scale}
         />
 
         {/* Arrow showing weighted output */}
         <FlowArrow
-          x1={880}
-          y1={320}
-          x2={880}
-          y2={480}
+          x1={880 * (width / 1920)}
+          y1={320 * (height / 1080)}
+          x2={880 * (width / 1920)}
+          y2={480 * (height / 1080)}
           opacity={attentionVArrowOpacity}
           color={COLORS.value}
+          scale={scale}
         />
       </svg>
 
@@ -494,12 +506,12 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 330,
-          left: 100,
-          right: 100,
+          top: 330 * scale,
+          left: 100 * scale,
+          right: 100 * scale,
           display: "flex",
           justifyContent: "center",
-          gap: 100,
+          gap: 100 * scale,
           opacity: interpolate(vectorsProgress, [0.3, 0.5], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
@@ -507,17 +519,17 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
         }}
       >
         <div style={{ textAlign: "center", opacity: qOpacity }}>
-          <div style={{ color: COLORS.textDim, fontSize: 14 }}>
+          <div style={{ color: COLORS.textDim, fontSize: 14 * scale }}>
             "What am I looking for?"
           </div>
         </div>
         <div style={{ textAlign: "center", opacity: kOpacity }}>
-          <div style={{ color: COLORS.textDim, fontSize: 14 }}>
+          <div style={{ color: COLORS.textDim, fontSize: 14 * scale }}>
             "What do I contain?"
           </div>
         </div>
         <div style={{ textAlign: "center", opacity: vOpacity }}>
-          <div style={{ color: COLORS.textDim, fontSize: 14 }}>
+          <div style={{ color: COLORS.textDim, fontSize: 14 * scale }}>
             "Here's my information"
           </div>
         </div>
@@ -527,7 +539,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 400,
+          top: 400 * scale,
           left: "50%",
           transform: "translateX(-50%)",
           opacity: matrixProgress,
@@ -535,9 +547,9 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       >
         <div
           style={{
-            fontSize: 16,
+            fontSize: 16 * scale,
             color: COLORS.textDim,
-            marginBottom: 12,
+            marginBottom: 12 * scale,
             textAlign: "center",
           }}
         >
@@ -548,8 +560,8 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `40px repeat(${TOKENS.length}, 60px)`,
-            gap: 4,
+            gridTemplateColumns: `${40 * scale}px repeat(${TOKENS.length}, ${60 * scale}px)`,
+            gap: 4 * scale,
           }}
         >
           {/* Header row */}
@@ -559,7 +571,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
               key={i}
               style={{
                 textAlign: "center",
-                fontSize: 14,
+                fontSize: 14 * scale,
                 color: COLORS.key,
                 fontFamily: "JetBrains Mono",
               }}
@@ -575,8 +587,8 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
               <div
                 style={{
                   textAlign: "right",
-                  paddingRight: 8,
-                  fontSize: 14,
+                  paddingRight: 8 * scale,
+                  fontSize: 14 * scale,
                   color: COLORS.query,
                   fontFamily: "JetBrains Mono",
                 }}
@@ -597,14 +609,14 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
                   <div
                     key={j}
                     style={{
-                      width: 56,
-                      height: 40,
+                      width: 56 * scale,
+                      height: 40 * scale,
                       backgroundColor: `rgba(155, 89, 182, ${score * cellProgress})`,
-                      borderRadius: 4,
+                      borderRadius: 4 * scale,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 12,
+                      fontSize: 12 * scale,
                       color: COLORS.text,
                       fontFamily: "JetBrains Mono",
                       opacity: cellProgress,
@@ -623,7 +635,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 120,
+          bottom: 120 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -639,15 +651,15 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
           style={{
             display: "inline-block",
             backgroundColor: COLORS.surface,
-            padding: "16px 32px",
-            borderRadius: 12,
-            marginBottom: 16,
-            border: `1px solid ${COLORS.attention}40`,
+            padding: `${16 * scale}px ${32 * scale}px`,
+            borderRadius: 12 * scale,
+            marginBottom: 16 * scale,
+            border: `${1 * scale}px solid ${COLORS.attention}40`,
           }}
         >
           <span
             style={{
-              fontSize: 22,
+              fontSize: 22 * scale,
               fontFamily: "JetBrains Mono, monospace",
               color: COLORS.text,
             }}
@@ -657,7 +669,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
             <span style={{ color: COLORS.value }}>V</span>) = softmax(
             <span style={{ color: COLORS.query }}>Q</span>
             <span style={{ color: COLORS.key }}>K</span>
-            <sup style={{ fontSize: 14 }}>T</sup>/√d<sub style={{ fontSize: 14 }}>k</sub>)
+            <sup style={{ fontSize: 14 * scale }}>T</sup>/√d<sub style={{ fontSize: 14 * scale }}>k</sub>)
             <span style={{ color: COLORS.value }}>V</span>
           </span>
         </div>
@@ -667,18 +679,18 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 160,
-          right: 120,
+          bottom: 160 * scale,
+          right: 120 * scale,
           opacity: outputVectorOpacity,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 8,
+          gap: 8 * scale,
         }}
       >
         <div
           style={{
-            fontSize: 14,
+            fontSize: 14 * scale,
             color: COLORS.output,
             fontWeight: 600,
           }}
@@ -688,25 +700,25 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
         <div
           style={{
             display: "flex",
-            gap: 3,
-            padding: "8px 12px",
+            gap: 3 * scale,
+            padding: `${8 * scale}px ${12 * scale}px`,
             backgroundColor: `${COLORS.output}20`,
-            borderRadius: 8,
-            border: `2px solid ${COLORS.output}`,
+            borderRadius: 8 * scale,
+            border: `${2 * scale}px solid ${COLORS.output}`,
           }}
         >
           {[0.65, 0.45, 0.72, 0.53].map((val, idx) => (
             <div
               key={idx}
               style={{
-                width: 28,
-                height: 28,
+                width: 28 * scale,
+                height: 28 * scale,
                 backgroundColor: `${COLORS.output}${Math.floor(val * 99).toString(16).padStart(2, '0')}`,
-                borderRadius: 4,
+                borderRadius: 4 * scale,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 10,
+                fontSize: 10 * scale,
                 fontWeight: 600,
                 color: val > 0.5 ? "#000" : COLORS.output,
                 fontFamily: "JetBrains Mono, monospace",
@@ -716,7 +728,7 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 11, color: COLORS.textDim }}>
+        <div style={{ fontSize: 11 * scale, color: COLORS.textDim }}>
           Σ(attention × V)
         </div>
       </div>
@@ -725,14 +737,14 @@ export const AttentionScene: React.FC<AttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 50,
+          bottom: 50 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
           opacity: outputProgress,
         }}
       >
-        <span style={{ fontSize: 20, color: COLORS.text }}>
+        <span style={{ fontSize: 20 * scale, color: COLORS.text }}>
           Each token can "look at" every other token to understand context
         </span>
       </div>

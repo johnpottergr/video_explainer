@@ -43,8 +43,11 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 4; // Show draft model
@@ -100,7 +103,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -109,7 +112,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -117,7 +120,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
         >
           Speculative Decoding
         </h1>
-        <p style={{ fontSize: 18, color: COLORS.draft, marginTop: 8 }}>
+        <p style={{ fontSize: 18 * scale, color: COLORS.draft, marginTop: 8 * scale }}>
           Draft, Verify, Accelerate
         </p>
       </div>
@@ -126,9 +129,9 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
       <div
         style={{
           position: "absolute",
-          top: 140,
-          left: 80,
-          right: 80,
+          top: 140 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -137,17 +140,17 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 60,
-            marginBottom: 40,
+            gap: 60 * scale,
+            marginBottom: 40 * scale,
           }}
         >
           {/* Draft Model */}
           <div
             style={{
-              width: 350,
-              padding: 24,
+              width: 350 * scale,
+              padding: 24 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.draft}`,
             }}
           >
@@ -156,12 +159,12 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: 16,
+                marginBottom: 16 * scale,
               }}
             >
               <div
                 style={{
-                  fontSize: 20,
+                  fontSize: 20 * scale,
                   fontWeight: 700,
                   color: COLORS.draft,
                 }}
@@ -170,11 +173,11 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
               </div>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                   color: COLORS.textDim,
-                  padding: "4px 8px",
+                  padding: `${4 * scale}px ${8 * scale}px`,
                   backgroundColor: "#222",
-                  borderRadius: 4,
+                  borderRadius: 4 * scale,
                 }}
               >
                 1.5B params (fast)
@@ -185,20 +188,20 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             <div
               style={{
                 display: "flex",
-                gap: 8,
+                gap: 8 * scale,
                 flexWrap: "wrap",
-                minHeight: 44,
+                minHeight: 44 * scale,
               }}
             >
               {DRAFT_TOKENS.slice(0, Math.floor(draftProgress)).map((token, i) => (
                 <div
                   key={i}
                   style={{
-                    padding: "8px 16px",
+                    padding: `${8 * scale}px ${16 * scale}px`,
                     backgroundColor: COLORS.draft + "30",
-                    borderRadius: 8,
+                    borderRadius: 8 * scale,
                     border: `1px solid ${COLORS.draft}`,
-                    fontSize: 16,
+                    fontSize: 16 * scale,
                     fontWeight: 600,
                     color: COLORS.draft,
                     transform: `scale(${
@@ -214,8 +217,8 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
 
             <div
               style={{
-                marginTop: 16,
-                fontSize: 14,
+                marginTop: 16 * scale,
+                fontSize: 14 * scale,
                 color: COLORS.textDim,
                 textAlign: "center",
               }}
@@ -229,7 +232,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             style={{
               display: "flex",
               alignItems: "center",
-              fontSize: 32,
+              fontSize: 32 * scale,
               color: COLORS.textDim,
               opacity: verifyProgress,
             }}
@@ -240,10 +243,10 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           {/* Target Model */}
           <div
             style={{
-              width: 350,
-              padding: 24,
+              width: 350 * scale,
+              padding: 24 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.target}`,
               opacity: 0.3 + verifyProgress * 0.7,
             }}
@@ -253,12 +256,12 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: 16,
+                marginBottom: 16 * scale,
               }}
             >
               <div
                 style={{
-                  fontSize: 20,
+                  fontSize: 20 * scale,
                   fontWeight: 700,
                   color: COLORS.target,
                 }}
@@ -267,11 +270,11 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
               </div>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                   color: COLORS.textDim,
-                  padding: "4px 8px",
+                  padding: `${4 * scale}px ${8 * scale}px`,
                   backgroundColor: "#222",
-                  borderRadius: 4,
+                  borderRadius: 4 * scale,
                 }}
               >
                 7B params (accurate)
@@ -281,11 +284,11 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             {/* Verify indicator */}
             <div
               style={{
-                padding: 16,
+                padding: 16 * scale,
                 backgroundColor: verifyProgress > 0 ? COLORS.target + "20" : "#222",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 textAlign: "center",
-                minHeight: 44,
+                minHeight: 44 * scale,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -305,8 +308,8 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
 
             <div
               style={{
-                marginTop: 16,
-                fontSize: 14,
+                marginTop: 16 * scale,
+                fontSize: 14 * scale,
                 color: COLORS.textDim,
                 textAlign: "center",
               }}
@@ -319,19 +322,19 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
         {/* Comparison results */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: "1px solid #333",
-            marginBottom: 32,
+            marginBottom: 32 * scale,
             opacity: resultProgress > 0 ? 1 : 0,
           }}
         >
           <div
             style={{
-              fontSize: 16,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
-              marginBottom: 16,
+              marginBottom: 16 * scale,
               textAlign: "center",
             }}
           >
@@ -342,7 +345,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             style={{
               display: "flex",
               justifyContent: "center",
-              gap: 16,
+              gap: 16 * scale,
             }}
           >
             {DRAFT_TOKENS.map((token, i) => {
@@ -356,17 +359,17 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: 8,
+                    gap: 8 * scale,
                     opacity: isRevealed ? 1 : 0.3,
                   }}
                 >
                   {/* Draft token */}
                   <div
                     style={{
-                      padding: "6px 12px",
+                      padding: `${6 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.draft + "30",
-                      borderRadius: 6,
-                      fontSize: 14,
+                      borderRadius: 6 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.draft,
                     }}
                   >
@@ -377,8 +380,8 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                   {isRevealed && (
                     <div
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 24 * scale,
+                        height: 24 * scale,
                         borderRadius: "50%",
                         backgroundColor: isMatch
                           ? COLORS.accept + "40"
@@ -387,7 +390,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 12,
+                        fontSize: 12 * scale,
                         fontWeight: 700,
                         color: isMatch ? COLORS.accept : COLORS.reject,
                       }}
@@ -399,10 +402,10 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
                   {/* Target token */}
                   <div
                     style={{
-                      padding: "6px 12px",
+                      padding: `${6 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.target + "30",
-                      borderRadius: 6,
-                      fontSize: 14,
+                      borderRadius: 6 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.target,
                     }}
                   >
@@ -417,15 +420,15 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           {resultProgress >= DRAFT_TOKENS.length && (
             <div
               style={{
-                marginTop: 20,
+                marginTop: 20 * scale,
                 textAlign: "center",
-                padding: 12,
+                padding: 12 * scale,
                 backgroundColor: COLORS.accept + "15",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 border: `1px solid ${COLORS.accept}40`,
               }}
             >
-              <span style={{ color: COLORS.accept, fontSize: 16 }}>
+              <span style={{ color: COLORS.accept, fontSize: 16 * scale }}>
                 4/5 tokens accepted! Generated 4 tokens for cost of 1 forward pass
               </span>
             </div>
@@ -437,22 +440,22 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 40,
+            gap: 40 * scale,
             opacity: statsOpacity,
           }}
         >
           <div
             style={{
               textAlign: "center",
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: "1px solid #333",
             }}
           >
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.accept,
@@ -460,7 +463,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             >
               70-80%
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Typical Acceptance Rate
             </div>
           </div>
@@ -468,15 +471,15 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           <div
             style={{
               textAlign: "center",
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: "1px solid #333",
             }}
           >
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.primary,
@@ -484,7 +487,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
             >
               2-3×
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Latency Speedup
             </div>
           </div>
@@ -495,7 +498,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -507,7 +510,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           Easy tokens:{" "}
           <span style={{ color: COLORS.accept, fontWeight: 700 }}>
             draft is right

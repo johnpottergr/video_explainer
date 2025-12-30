@@ -322,6 +322,144 @@
       ],
       "preview_branch": "feedback/fb_0008_1767121629",
       "error_message": null
+    },
+    {
+      "id": "fb_0009_1767124026",
+      "timestamp": "2025-12-30T11:47:06.079239",
+      "feedback_text": "In the video, depending on the resolution set, the visual elements overlap. We need to fix that. For example, in the first scene, in 480p, the generated text and the 87x faster text overlap, but they don't in 1080p. We need to fix the scenes to be consistent across all reslutions",
+      "status": "failed",
+      "scope": "project",
+      "affected_scenes": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ],
+      "interpretation": "The user wants to fix visual element overlaps that occur at lower resolutions (specifically 480p) because scenes use hardcoded pixel values for positioning and font sizes. In the HookScene (scene 0), the 'generated text' and '87x faster' text overlap at 480p due to hardcoded bottom positioning values (bottom: 200px and bottom: 80px) that don't scale with viewport height. This is a systemic issue affecting all scenes.",
+      "suggested_changes": {
+        "description": "Implement responsive scaling across all scene components by replacing hardcoded pixel values with viewport-relative calculations. Priority should be given to HookScene (scene 0) where the specific overlap was reported, then extend to all other scenes.",
+        "files_to_modify": [
+          "remotion/src/scenes/llm-inference/HookScene.tsx",
+          "remotion/src/scenes/llm-inference/PhasesScene.tsx",
+          "remotion/src/scenes/llm-inference/BottleneckScene.tsx",
+          "remotion/src/scenes/llm-inference/AttentionScene.tsx",
+          "remotion/src/scenes/llm-inference/RedundancyScene.tsx",
+          "remotion/src/scenes/llm-inference/KVCacheScene.tsx",
+          "remotion/src/scenes/llm-inference/MechanicsScene.tsx",
+          "remotion/src/scenes/llm-inference/MemoryFragmentationScene.tsx",
+          "remotion/src/scenes/llm-inference/StaticBatchingScene.tsx",
+          "remotion/src/scenes/llm-inference/ContinuousBatchingScene.tsx",
+          "remotion/src/scenes/llm-inference/PagedAttentionScene.tsx",
+          "remotion/src/scenes/llm-inference/QuantizationScene.tsx",
+          "remotion/src/scenes/llm-inference/SpeculativeDecodingScene.tsx",
+          "remotion/src/scenes/llm-inference/ScalingScene.tsx",
+          "remotion/src/scenes/llm-inference/EconomicsScene.tsx",
+          "remotion/src/scenes/llm-inference/ConclusionScene.tsx",
+          "remotion/src/scenes/llm-inference/ImpactScene.tsx"
+        ],
+        "changes": [
+          {
+            "file": "remotion/src/scenes/llm-inference/HookScene.tsx",
+            "action": "modify",
+            "what": "Replace hardcoded pixel positions with viewport-relative values using useVideoConfig(). Change bottom: 200 and bottom: 80 to percentage-based calculations (e.g., height * 0.185 and height * 0.074). Scale font sizes (56, 72, 48, etc.) relative to base 1920x1080 resolution using a scale factor (width/1920). Replace width: 800 with Math.min(width * 0.42, 800) for the chat container."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/BottleneckScene.tsx",
+            "action": "modify",
+            "what": "Convert fixed widths (width: 300) for GPU/Memory boxes to percentage-based values. Replace hardcoded top/left/right/bottom values with viewport-relative calculations. Scale font sizes proportionally."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/AttentionScene.tsx",
+            "action": "modify",
+            "what": "Replace hardcoded SVG arrow coordinates (x1={480}, y1={320}, etc.) with viewport-relative values. Convert fixed gridTemplateColumns values to scale with viewport. Scale font sizes proportionally."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/PhasesScene.tsx",
+            "action": "modify",
+            "what": "Replace fixed padding (left: 60, right: 60) with percentage-based values. Scale gap values and font sizes proportionally to viewport."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/KVCacheScene.tsx",
+            "action": "modify",
+            "what": "Convert hardcoded SVG arrow positions (left: 290, top: 280) to viewport-relative values. Scale font sizes and spacing proportionally."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/MechanicsScene.tsx",
+            "action": "modify",
+            "what": "Scale formula box padding and font sizes. Ensure flex column layout maintains proper spacing at all resolutions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/RedundancyScene.tsx",
+            "action": "modify",
+            "what": "Replace fixed gap values (gap: 20) and margins (marginBottom: 40) with viewport-relative calculations."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/StaticBatchingScene.tsx",
+            "action": "modify",
+            "what": "Convert fixed grid dimensions and slot visualizations to viewport-relative values."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/ContinuousBatchingScene.tsx",
+            "action": "modify",
+            "what": "Convert fixed grid dimensions and slot visualizations to viewport-relative values."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/PagedAttentionScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/QuantizationScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/SpeculativeDecodingScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/ScalingScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/EconomicsScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/ConclusionScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/ImpactScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/MemoryFragmentationScene.tsx",
+            "action": "modify",
+            "what": "Scale positioning values and font sizes proportionally to viewport dimensions."
+          }
+        ]
+      },
+      "files_modified": [],
+      "preview_branch": "feedback/fb_0009_1767124026",
+      "error_message": null
     }
   ]
 }

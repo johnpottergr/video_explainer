@@ -41,8 +41,11 @@ const OUTPUT_TOKENS = ["The", "capital", "of", "France", "is", "Paris", "."];
 
 export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling based on 1920x1080 reference
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 3; // Show input tokens
@@ -110,7 +113,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -119,7 +122,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -133,12 +136,12 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 60,
-          right: 60,
-          bottom: 150,
+          top: 120 * scale,
+          left: 60 * scale,
+          right: 60 * scale,
+          bottom: 150 * scale,
           display: "flex",
-          gap: 40,
+          gap: 40 * scale,
         }}
       >
         {/* PREFILL SIDE */}
@@ -146,9 +149,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
           style={{
             flex: 1,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
-            padding: 24,
-            border: `2px solid ${inPrefill ? COLORS.prefill : "#333"}`,
+            borderRadius: 16 * scale,
+            padding: 24 * scale,
+            border: `${2 * scale}px solid ${inPrefill ? COLORS.prefill : "#333"}`,
             opacity: interpolate(localFrame, [0, fps], [0, 1]),
             transition: "border-color 0.3s",
           }}
@@ -159,13 +162,13 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 24,
+              marginBottom: 24 * scale,
             }}
           >
             <div>
               <div
                 style={{
-                  fontSize: 28,
+                  fontSize: 28 * scale,
                   fontWeight: 700,
                   color: COLORS.prefill,
                 }}
@@ -174,9 +177,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               </div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: 14 * scale,
                   color: COLORS.textDim,
-                  marginTop: 4,
+                  marginTop: 4 * scale,
                 }}
               >
                 Process input tokens
@@ -184,10 +187,10 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
             </div>
             <div
               style={{
-                padding: "8px 16px",
+                padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.prefill + "20",
-                borderRadius: 8,
-                fontSize: 14,
+                borderRadius: 8 * scale,
+                fontSize: 14 * scale,
                 color: COLORS.prefill,
                 fontWeight: 600,
                 opacity: showPrefillLabel ? 1 : 0,
@@ -204,18 +207,18 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               <div
                 style={{
                   position: "absolute",
-                  top: -30,
+                  top: -30 * scale,
                   left: 0,
                   right: 0,
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 8 * scale,
                 }}
               >
                 <div
                   style={{
-                    height: 2,
+                    height: 2 * scale,
                     flex: 1,
                     background: `linear-gradient(90deg, transparent, ${COLORS.prefill}, transparent)`,
                     opacity: 0.8,
@@ -223,7 +226,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 />
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: 12 * scale,
                     color: COLORS.prefill,
                     fontWeight: 600,
                     whiteSpace: "nowrap",
@@ -233,7 +236,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 </span>
                 <div
                   style={{
-                    height: 2,
+                    height: 2 * scale,
                     flex: 1,
                     background: `linear-gradient(90deg, transparent, ${COLORS.prefill}, transparent)`,
                     opacity: 0.8,
@@ -245,9 +248,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: 12,
-                marginBottom: 32,
-                marginTop: prefillProgress > 0 ? 8 : 0,
+                gap: 12 * scale,
+                marginBottom: 32 * scale,
+                marginTop: prefillProgress > 0 ? 8 * scale : 0,
               }}
             >
               {INPUT_TOKENS.map((token, i) => {
@@ -258,19 +261,19 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                   <div
                     key={i}
                     style={{
-                      padding: "12px 20px",
+                      padding: `${12 * scale}px ${20 * scale}px`,
                       backgroundColor: isActive
                         ? COLORS.prefill + "30"
                         : COLORS.surface,
-                      border: `2px solid ${isActive ? COLORS.prefill : "#444"}`,
-                      borderRadius: 8,
-                      fontSize: 18,
+                      border: `${2 * scale}px solid ${isActive ? COLORS.prefill : "#444"}`,
+                      borderRadius: 8 * scale,
+                      fontSize: 18 * scale,
                       fontWeight: 500,
                       color: isActive ? COLORS.prefill : COLORS.text,
                       transform: isActive ? `scale(${1.05 + pulseOffset})` : "scale(1)",
                       transition: "all 0.2s",
                       boxShadow: isActive
-                        ? `0 0 20px ${COLORS.prefill}60, 0 0 40px ${COLORS.prefill}30`
+                        ? `0 0 ${20 * scale}px ${COLORS.prefill}60, 0 0 ${40 * scale}px ${COLORS.prefill}30`
                         : "none",
                     }}
                   >
@@ -284,7 +287,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
           {/* Prefill description */}
           <div
             style={{
-              fontSize: 16,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
               lineHeight: 1.6,
               opacity: showPrefillLabel ? 1 : 0,
@@ -303,9 +306,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
           style={{
             flex: 1,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
-            padding: 24,
-            border: `2px solid ${inDecode ? COLORS.decode : "#333"}`,
+            borderRadius: 16 * scale,
+            padding: 24 * scale,
+            border: `${2 * scale}px solid ${inDecode ? COLORS.decode : "#333"}`,
             opacity: interpolate(localFrame, [phase2End, phase3End], [0.5, 1]),
             transition: "border-color 0.3s",
           }}
@@ -316,13 +319,13 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 24,
+              marginBottom: 24 * scale,
             }}
           >
             <div>
               <div
                 style={{
-                  fontSize: 28,
+                  fontSize: 28 * scale,
                   fontWeight: 700,
                   color: COLORS.decode,
                 }}
@@ -331,9 +334,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               </div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: 14 * scale,
                   color: COLORS.textDim,
-                  marginTop: 4,
+                  marginTop: 4 * scale,
                 }}
               >
                 Generate output tokens
@@ -341,10 +344,10 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
             </div>
             <div
               style={{
-                padding: "8px 16px",
+                padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.decode + "20",
-                borderRadius: 8,
-                fontSize: 14,
+                borderRadius: 8 * scale,
+                fontSize: 14 * scale,
                 color: COLORS.decode,
                 fontWeight: 600,
                 opacity: showDecodeLabel ? 1 : 0,
@@ -359,9 +362,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: 12,
-              marginBottom: 32,
-              minHeight: 100,
+              gap: 12 * scale,
+              marginBottom: 32 * scale,
+              minHeight: 100 * scale,
             }}
           >
             {OUTPUT_TOKENS.slice(0, decodeTokenCount).map((token, i) => {
@@ -370,17 +373,17 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 <div
                   key={i}
                   style={{
-                    padding: "12px 20px",
+                    padding: `${12 * scale}px ${20 * scale}px`,
                     backgroundColor: isLatest
                       ? COLORS.decode + "30"
                       : COLORS.active + "20",
-                    border: `2px solid ${isLatest ? COLORS.decode : COLORS.active}`,
-                    borderRadius: 8,
-                    fontSize: 18,
+                    border: `${2 * scale}px solid ${isLatest ? COLORS.decode : COLORS.active}`,
+                    borderRadius: 8 * scale,
+                    fontSize: 18 * scale,
                     fontWeight: 500,
                     color: isLatest ? COLORS.decode : COLORS.active,
                     boxShadow: isLatest
-                      ? `0 0 20px ${COLORS.decode}40`
+                      ? `0 0 ${20 * scale}px ${COLORS.decode}40`
                       : "none",
                   }}
                 >
@@ -391,11 +394,11 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
             {decodeTokenCount < OUTPUT_TOKENS.length && inDecode && (
               <div
                 style={{
-                  padding: "12px 20px",
+                  padding: `${12 * scale}px ${20 * scale}px`,
                   backgroundColor: "transparent",
-                  border: `2px dashed #444`,
-                  borderRadius: 8,
-                  fontSize: 18,
+                  border: `${2 * scale}px dashed #444`,
+                  borderRadius: 8 * scale,
+                  fontSize: 18 * scale,
                   color: COLORS.textDim,
                   opacity: Math.sin(localFrame * 0.2) > 0 ? 1 : 0.3,
                 }}
@@ -408,7 +411,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
           {/* Decode description */}
           <div
             style={{
-              fontSize: 16,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
               lineHeight: 1.6,
               opacity: showDecodeLabel ? 1 : 0,
@@ -427,24 +430,24 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
       <div
         style={{
           position: "absolute",
-          bottom: 60,
-          left: 60,
-          right: 60,
+          bottom: 60 * scale,
+          left: 60 * scale,
+          right: 60 * scale,
         }}
       >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: 12 * scale,
           }}
         >
-          <span style={{ fontSize: 18, color: COLORS.text, fontWeight: 600 }}>
+          <span style={{ fontSize: 18 * scale, color: COLORS.text, fontWeight: 600 }}>
             GPU Compute Utilization
           </span>
           <span
             style={{
-              fontSize: 24,
+              fontSize: 24 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color:
@@ -460,9 +463,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
         </div>
         <div
           style={{
-            height: 32,
+            height: 32 * scale,
             backgroundColor: "#333",
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             overflow: "hidden",
           }}
         >
@@ -472,9 +475,9 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               height: "100%",
               backgroundColor:
                 currentGPU > 80 ? COLORS.prefill : COLORS.decode,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               transition: "width 0.3s, background-color 0.3s",
-              boxShadow: `0 0 20px ${currentGPU > 80 ? COLORS.prefill : COLORS.decode}60`,
+              boxShadow: `0 0 ${20 * scale}px ${currentGPU > 80 ? COLORS.prefill : COLORS.decode}60`,
             }}
           />
         </div>
@@ -482,8 +485,8 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            marginTop: 8,
-            fontSize: 14,
+            marginTop: 8 * scale,
+            fontSize: 14 * scale,
             color: COLORS.textDim,
           }}
         >

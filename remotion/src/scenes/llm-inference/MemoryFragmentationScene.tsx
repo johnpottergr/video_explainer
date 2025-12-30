@@ -48,7 +48,8 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
+  const scale = Math.min(width / 1920, height / 1080);
   const localFrame = frame - startFrame;
 
   // Phase timings
@@ -100,7 +101,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -109,7 +110,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -123,9 +124,9 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 80,
-          right: 80,
+          top: 120 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -134,16 +135,16 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           style={{
             display: "flex",
             alignItems: "center",
-            marginBottom: 20,
+            marginBottom: 20 * scale,
           }}
         >
           <div
             style={{
-              padding: "8px 16px",
+              padding: `${8 * scale}px ${16 * scale}px`,
               backgroundColor: COLORS.surface,
-              borderRadius: 8,
+              borderRadius: 8 * scale,
               border: "1px solid #444",
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
             }}
           >
@@ -151,8 +152,8 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           </div>
           <div
             style={{
-              marginLeft: 20,
-              fontSize: 14,
+              marginLeft: 20 * scale,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
             }}
           >
@@ -165,8 +166,8 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 8,
-            marginBottom: 32,
+            gap: 8 * scale,
+            marginBottom: 32 * scale,
           }}
         >
           {SEQUENCES.map((seq, index) => {
@@ -180,7 +181,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
+                  gap: 12 * scale,
                   opacity: showAllocation ? 1 : 0.3,
                   transition: "opacity 0.3s",
                 }}
@@ -188,8 +189,8 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                 {/* Label */}
                 <div
                   style={{
-                    width: 60,
-                    fontSize: 14,
+                    width: 60 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.textDim,
                     textAlign: "right",
                   }}
@@ -201,9 +202,9 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                 <div
                   style={{
                     flex: 1,
-                    height: 48,
+                    height: 48 * scale,
                     backgroundColor: COLORS.surface,
-                    borderRadius: 8,
+                    borderRadius: 8 * scale,
                     position: "relative",
                     overflow: "hidden",
                     border: "1px solid #333",
@@ -218,7 +219,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                       width: "100%",
                       height: "100%",
                       backgroundColor: COLORS.allocated + "30",
-                      borderRight: `3px solid ${COLORS.allocated}`,
+                      borderRight: `${3 * scale}px solid ${COLORS.allocated}`,
                     }}
                   />
 
@@ -232,7 +233,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                         width: `${usedPercent}%`,
                         height: "100%",
                         backgroundColor: COLORS.used + "60",
-                        borderRight: `3px solid ${COLORS.used}`,
+                        borderRight: `${3 * scale}px solid ${COLORS.used}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -240,7 +241,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                     >
                       <span
                         style={{
-                          fontSize: 12,
+                          fontSize: 12 * scale,
                           fontWeight: 600,
                           color: COLORS.used,
                         }}
@@ -258,7 +259,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                         top: "50%",
                         left: `${usedPercent + 2}%`,
                         transform: "translateY(-50%)",
-                        fontSize: 11,
+                        fontSize: 11 * scale,
                         color: COLORS.wasted,
                         opacity: 0.8,
                       }}
@@ -271,8 +272,8 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                 {/* Size indicator */}
                 <div
                   style={{
-                    width: 100,
-                    fontSize: 12,
+                    width: 100 * scale,
+                    fontSize: 12 * scale,
                     color: COLORS.allocated,
                     fontFamily: "JetBrains Mono",
                   }}
@@ -291,36 +292,36 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 32,
-            marginBottom: 20,
+            gap: 32 * scale,
+            marginBottom: 20 * scale,
             opacity: usageRevealProgress,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 * scale }}>
             <div
               style={{
-                width: 20,
-                height: 20,
+                width: 20 * scale,
+                height: 20 * scale,
                 backgroundColor: COLORS.allocated + "30",
-                border: `2px solid ${COLORS.allocated}`,
-                borderRadius: 4,
+                border: `${2 * scale}px solid ${COLORS.allocated}`,
+                borderRadius: 4 * scale,
               }}
             />
-            <span style={{ fontSize: 14, color: COLORS.allocated }}>
+            <span style={{ fontSize: 14 * scale, color: COLORS.allocated }}>
               Pre-allocated
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 * scale }}>
             <div
               style={{
-                width: 20,
-                height: 20,
+                width: 20 * scale,
+                height: 20 * scale,
                 backgroundColor: COLORS.used + "60",
-                border: `2px solid ${COLORS.used}`,
-                borderRadius: 4,
+                border: `${2 * scale}px solid ${COLORS.used}`,
+                borderRadius: 4 * scale,
               }}
             />
-            <span style={{ fontSize: 14, color: COLORS.used }}>
+            <span style={{ fontSize: 14 * scale, color: COLORS.used }}>
               Actually Used
             </span>
           </div>
@@ -331,19 +332,19 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
       <div
         style={{
           position: "absolute",
-          bottom: 180,
+          bottom: 180 * scale,
           left: 0,
           right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 80,
+          gap: 80 * scale,
           opacity: statsOpacity,
         }}
       >
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 56 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.wasted,
@@ -351,7 +352,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           >
             {wastePercentage}%
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             Memory Wasted
           </div>
         </div>
@@ -359,7 +360,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 56 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.allocated,
@@ -367,7 +368,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           >
             97
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             Max Sequences (could be 2000+)
           </div>
         </div>
@@ -377,7 +378,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -389,7 +390,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           Pre-allocation causes{" "}
           <span style={{ color: COLORS.wasted, fontWeight: 700 }}>
             20x efficiency loss

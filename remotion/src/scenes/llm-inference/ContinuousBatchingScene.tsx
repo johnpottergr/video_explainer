@@ -67,15 +67,20 @@ const INCOMING_SEQUENCES = [
 ];
 
 const TOTAL_STEPS = 12;
-const SLOT_WIDTH = 180;
-const SLOT_HEIGHT = 80;
 
 export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+
+  // Responsive scaling based on viewport size
+  const scale = Math.min(width / 1920, height / 1080);
+
+  // Scaled dimensions
+  const SLOT_WIDTH = 180 * scale;
+  const SLOT_HEIGHT = 80 * scale;
 
   // Phase timings
   const phase1End = fps * 4;   // Slot definition
@@ -176,7 +181,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -185,7 +190,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -199,7 +204,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
       <div
         style={{
           position: "absolute",
-          top: 100,
+          top: 100 * scale,
           left: "50%",
           transform: "translateX(-50%)",
           opacity: definitionOpacity,
@@ -208,15 +213,15 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
         <div
           style={{
             backgroundColor: COLORS.surface,
-            border: `2px solid ${COLORS.primary}`,
-            borderRadius: 12,
-            padding: "16px 32px",
-            maxWidth: 700,
+            border: `${2 * scale}px solid ${COLORS.primary}`,
+            borderRadius: 12 * scale,
+            padding: `${16 * scale}px ${32 * scale}px`,
+            maxWidth: 700 * scale,
           }}
         >
           <div
             style={{
-              fontSize: 18,
+              fontSize: 18 * scale,
               color: COLORS.text,
               textAlign: "center",
             }}
@@ -235,7 +240,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
       <div
         style={{
           position: "absolute",
-          top: 180,
+          top: 180 * scale,
           left: "50%",
           transform: "translateX(-50%)",
           opacity: gpuOpacity,
@@ -244,22 +249,22 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
         <div
           style={{
             backgroundColor: COLORS.gpu,
-            borderRadius: 20,
-            border: `3px solid ${COLORS.gpuBorder}`,
-            padding: 32,
-            boxShadow: `0 0 40px ${COLORS.gpuBorder}30`,
+            borderRadius: 20 * scale,
+            border: `${3 * scale}px solid ${COLORS.gpuBorder}`,
+            padding: 32 * scale,
+            boxShadow: `0 0 ${40 * scale}px ${COLORS.gpuBorder}30`,
           }}
         >
           {/* GPU Label */}
           <div
             style={{
               textAlign: "center",
-              marginBottom: 24,
+              marginBottom: 24 * scale,
             }}
           >
             <span
               style={{
-                fontSize: 28,
+                fontSize: 28 * scale,
                 fontWeight: 700,
                 color: COLORS.gpuBorder,
                 fontFamily: "JetBrains Mono, monospace",
@@ -274,7 +279,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, 1fr)",
-              gap: 20,
+              gap: 20 * scale,
             }}
           >
             {[0, 1, 2, 3].map((slotIdx) => {
@@ -311,13 +316,13 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 8,
+                    gap: 8 * scale,
                   }}
                 >
                   {/* Slot Label */}
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: 14 * scale,
                       fontWeight: 600,
                       color: COLORS.slotLabel,
                       fontFamily: "JetBrains Mono, monospace",
@@ -333,8 +338,8 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                       width: SLOT_WIDTH,
                       height: SLOT_HEIGHT,
                       backgroundColor: slotContent ? slotContent.color + "30" : COLORS.slotEmpty,
-                      border: `3px solid ${slotContent ? slotContent.color : COLORS.slotEmpty}`,
-                      borderRadius: 12,
+                      border: `${3 * scale}px solid ${slotContent ? slotContent.color : COLORS.slotEmpty}`,
+                      borderRadius: 12 * scale,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
@@ -342,9 +347,9 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                       position: "relative",
                       overflow: "hidden",
                       boxShadow: isNewSequence
-                        ? `0 0 20px ${slotContent?.color}60`
+                        ? `0 0 ${20 * scale}px ${slotContent?.color}60`
                         : isAboutToComplete
-                        ? `0 0 15px ${COLORS.success}60`
+                        ? `0 0 ${15 * scale}px ${COLORS.success}60`
                         : "none",
                       transform: isNewSequence
                         ? `scale(${newSeqSpring(phase2End + fps * (slotIdx * 0.5))})`
@@ -356,7 +361,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                         {/* Sequence ID */}
                         <div
                           style={{
-                            fontSize: 24,
+                            fontSize: 24 * scale,
                             fontWeight: 700,
                             color: slotContent.color,
                             fontFamily: "JetBrains Mono, monospace",
@@ -372,7 +377,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                             bottom: 0,
                             left: 0,
                             right: 0,
-                            height: 6,
+                            height: 6 * scale,
                             backgroundColor: COLORS.surface,
                           }}
                         >
@@ -391,14 +396,14 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                           <div
                             style={{
                               position: "absolute",
-                              top: 4,
-                              right: 4,
+                              top: 4 * scale,
+                              right: 4 * scale,
                               backgroundColor: COLORS.success,
                               color: COLORS.background,
-                              fontSize: 10,
+                              fontSize: 10 * scale,
                               fontWeight: 700,
-                              padding: "2px 6px",
-                              borderRadius: 4,
+                              padding: `${2 * scale}px ${6 * scale}px`,
+                              borderRadius: 4 * scale,
                             }}
                           >
                             NEW
@@ -408,7 +413,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                     ) : (
                       <div
                         style={{
-                          fontSize: 14,
+                          fontSize: 14 * scale,
                           color: COLORS.textDim,
                           fontStyle: "italic",
                         }}
@@ -425,21 +430,21 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
           {/* Time Step Indicator */}
           <div
             style={{
-              marginTop: 24,
-              padding: "12px 0",
-              borderTop: `1px solid ${COLORS.textDim}40`,
+              marginTop: 24 * scale,
+              padding: `${12 * scale}px 0`,
+              borderTop: `${1 * scale}px solid ${COLORS.textDim}40`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 16,
+              gap: 16 * scale,
             }}
           >
-            <span style={{ fontSize: 14, color: COLORS.textDim }}>
+            <span style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Time Step:
             </span>
             <span
               style={{
-                fontSize: 24,
+                fontSize: 24 * scale,
                 fontWeight: 700,
                 color: COLORS.primary,
                 fontFamily: "JetBrains Mono, monospace",
@@ -456,8 +461,8 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
         <div
           style={{
             position: "absolute",
-            right: 60,
-            top: 250,
+            right: 60 * scale,
+            top: 250 * scale,
             opacity: interpolate(
               localFrame,
               [phase2End, phase2End + fps * 0.5],
@@ -469,34 +474,34 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
           <div
             style={{
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
-              padding: 16,
-              border: `2px solid ${COLORS.textDim}40`,
+              borderRadius: 12 * scale,
+              padding: 16 * scale,
+              border: `${2 * scale}px solid ${COLORS.textDim}40`,
             }}
           >
             <div
               style={{
-                fontSize: 14,
+                fontSize: 14 * scale,
                 color: COLORS.textDim,
-                marginBottom: 12,
+                marginBottom: 12 * scale,
                 textAlign: "center",
                 fontWeight: 600,
               }}
             >
               Waiting Queue
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 * scale }}>
               {INCOMING_SEQUENCES.map((seq, idx) => {
                 const hasEntered = currentStep >= seq.arrivesAfter;
                 return (
                   <div
                     key={seq.id}
                     style={{
-                      width: 80,
-                      height: 36,
+                      width: 80 * scale,
+                      height: 36 * scale,
                       backgroundColor: hasEntered ? COLORS.slotEmpty : seq.color + "40",
-                      border: `2px solid ${hasEntered ? COLORS.slotEmpty : seq.color}`,
-                      borderRadius: 6,
+                      border: `${2 * scale}px solid ${hasEntered ? COLORS.slotEmpty : seq.color}`,
+                      borderRadius: 6 * scale,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -506,7 +511,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                   >
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 14 * scale,
                         fontWeight: 600,
                         color: hasEntered ? COLORS.textDim : seq.color,
                         textDecoration: hasEntered ? "line-through" : "none",
@@ -526,7 +531,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
       <div
         style={{
           position: "absolute",
-          bottom: 100,
+          bottom: 100 * scale,
           left: 0,
           right: 0,
           display: "flex",
@@ -537,7 +542,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
         <div
           style={{
             display: "flex",
-            gap: 40,
+            gap: 40 * scale,
             alignItems: "stretch",
           }}
         >
@@ -545,25 +550,25 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
           <div
             style={{
               backgroundColor: "#ff475720",
-              border: "2px solid #ff4757",
-              borderRadius: 12,
-              padding: "16px 24px",
-              maxWidth: 320,
+              border: `${2 * scale}px solid #ff4757`,
+              borderRadius: 12 * scale,
+              padding: `${16 * scale}px ${24 * scale}px`,
+              maxWidth: 320 * scale,
             }}
           >
             <div
               style={{
-                fontSize: 16,
+                fontSize: 16 * scale,
                 fontWeight: 700,
                 color: "#ff4757",
-                marginBottom: 8,
+                marginBottom: 8 * scale,
               }}
             >
-              ❌ Static Batching
+              Static Batching
             </div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: 14 * scale,
                 color: COLORS.text,
                 lineHeight: 1.5,
               }}
@@ -576,25 +581,25 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
           <div
             style={{
               backgroundColor: COLORS.success + "20",
-              border: `2px solid ${COLORS.success}`,
-              borderRadius: 12,
-              padding: "16px 24px",
-              maxWidth: 320,
+              border: `${2 * scale}px solid ${COLORS.success}`,
+              borderRadius: 12 * scale,
+              padding: `${16 * scale}px ${24 * scale}px`,
+              maxWidth: 320 * scale,
             }}
           >
             <div
               style={{
-                fontSize: 16,
+                fontSize: 16 * scale,
                 fontWeight: 700,
                 color: COLORS.success,
-                marginBottom: 8,
+                marginBottom: 8 * scale,
               }}
             >
-              ✓ Continuous Batching
+              Continuous Batching
             </div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: 14 * scale,
                 color: COLORS.text,
                 lineHeight: 1.5,
               }}
@@ -610,7 +615,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
         <div
           style={{
             position: "absolute",
-            bottom: 40,
+            bottom: 40 * scale,
             left: 0,
             right: 0,
             textAlign: "center",
@@ -622,7 +627,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
             ),
           }}
         >
-          <span style={{ fontSize: 18, color: COLORS.text }}>
+          <span style={{ fontSize: 18 * scale, color: COLORS.text }}>
             {currentStep < 4 ? (
               <>All 4 slots processing sequences...</>
             ) : currentStep < 6 ? (

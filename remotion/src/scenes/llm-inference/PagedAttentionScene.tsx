@@ -43,7 +43,8 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
+  const scale = Math.min(width / 1920, height / 1080);
   const localFrame = frame - startFrame;
 
   // Phase timings
@@ -141,7 +142,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -150,7 +151,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -160,9 +161,9 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
         </h1>
         <p
           style={{
-            fontSize: 18,
+            fontSize: 18 * scale,
             color: COLORS.block,
-            marginTop: 8,
+            marginTop: 8 * scale,
             opacity: conceptOpacity,
           }}
         >
@@ -174,16 +175,16 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 140,
-          left: 80,
-          right: 80,
+          top: 140 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
         {/* Block pool visualization */}
         <div
           style={{
-            marginBottom: 32,
+            marginBottom: 32 * scale,
           }}
         >
           <div
@@ -191,17 +192,17 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 16,
+              marginBottom: 16 * scale,
             }}
           >
-            <span style={{ color: COLORS.textDim, fontSize: 16 }}>
+            <span style={{ color: COLORS.textDim, fontSize: 16 * scale }}>
               GPU Memory Block Pool ({BLOCK_SIZE} tokens per block)
             </span>
-            <div style={{ display: "flex", gap: 16 }}>
-              <span style={{ color: COLORS.free, fontSize: 14 }}>
+            <div style={{ display: "flex", gap: 16 * scale }}>
+              <span style={{ color: COLORS.free, fontSize: 14 * scale }}>
                 Free: {freeBlocks}
               </span>
-              <span style={{ color: COLORS.used, fontSize: 14 }}>
+              <span style={{ color: COLORS.used, fontSize: 14 * scale }}>
                 Used: {usedBlocks}
               </span>
             </div>
@@ -212,10 +213,10 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(12, 1fr)",
-              gap: 8,
-              padding: 20,
+              gap: 8 * scale,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
+              borderRadius: 12 * scale,
               border: `2px solid ${COLORS.block}40`,
             }}
           >
@@ -232,12 +233,12 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                   style={{
                     aspectRatio: "1",
                     backgroundColor: block.owner ? block.color + "60" : COLORS.free + "20",
-                    borderRadius: 6,
+                    borderRadius: 6 * scale,
                     border: `2px solid ${block.owner ? block.color : COLORS.free}40`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 11,
+                    fontSize: 11 * scale,
                     fontWeight: 600,
                     color: block.owner ? block.color : COLORS.free,
                     transform: `scale(${0.9 + blockSpring * 0.1})`,
@@ -255,8 +256,8 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 24,
-            marginBottom: 32,
+            gap: 24 * scale,
+            marginBottom: 32 * scale,
             opacity: conceptOpacity,
           }}
         >
@@ -270,20 +271,20 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
               <div
                 key={seq.id}
                 style={{
-                  padding: 16,
+                  padding: 16 * scale,
                   backgroundColor: COLORS.surface,
-                  borderRadius: 12,
+                  borderRadius: 12 * scale,
                   border: `2px solid ${isActive ? seq.color : "#333"}`,
                   opacity: isActive ? 1 : 0.5,
-                  minWidth: 140,
+                  minWidth: 140 * scale,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 14,
+                    fontSize: 14 * scale,
                     fontWeight: 600,
                     color: seq.color,
-                    marginBottom: 8,
+                    marginBottom: 8 * scale,
                     textAlign: "center",
                   }}
                 >
@@ -291,7 +292,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 </div>
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 12 * scale,
                     color: COLORS.textDim,
                     textAlign: "center",
                   }}
@@ -301,8 +302,8 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 <div
                   style={{
                     display: "flex",
-                    gap: 4,
-                    marginTop: 8,
+                    gap: 4 * scale,
+                    marginTop: 8 * scale,
                     justifyContent: "center",
                   }}
                 >
@@ -310,11 +311,11 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                     <div
                       key={i}
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 24 * scale,
+                        height: 24 * scale,
                         backgroundColor:
                           i < allocatedBlocks ? seq.color + "60" : "#333",
-                        borderRadius: 4,
+                        borderRadius: 4 * scale,
                         border: `1px solid ${seq.color}40`,
                       }}
                     />
@@ -322,10 +323,10 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 </div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 11 * scale,
                     color: COLORS.textDim,
                     textAlign: "center",
-                    marginTop: 8,
+                    marginTop: 8 * scale,
                   }}
                 >
                   {allocatedBlocks * BLOCK_SIZE} tokens
@@ -340,7 +341,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 32,
+            gap: 32 * scale,
           }}
         >
           {[
@@ -352,9 +353,9 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
               key={i}
               style={{
                 textAlign: "center",
-                padding: 16,
+                padding: 16 * scale,
                 backgroundColor: COLORS.surface,
-                borderRadius: 12,
+                borderRadius: 12 * scale,
                 border: "1px solid #333",
                 opacity: interpolate(
                   localFrame,
@@ -366,15 +367,15 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
             >
               <div
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 32 * scale,
+                  height: 32 * scale,
                   borderRadius: "50%",
                   backgroundColor: COLORS.block + "40",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  margin: "0 auto 8px",
-                  fontSize: 16,
+                  margin: `0 auto ${8 * scale}px`,
+                  fontSize: 16 * scale,
                   fontWeight: 700,
                   color: COLORS.block,
                 }}
@@ -382,11 +383,11 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 {feature.icon}
               </div>
               <div
-                style={{ fontSize: 14, color: COLORS.text, marginBottom: 4 }}
+                style={{ fontSize: 14 * scale, color: COLORS.text, marginBottom: 4 * scale }}
               >
                 {feature.label}
               </div>
-              <div style={{ fontSize: 12, color: COLORS.textDim }}>
+              <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
                 {feature.desc}
               </div>
             </div>
@@ -398,19 +399,19 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 140,
+          bottom: 140 * scale,
           left: 0,
           right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: 80,
+          gap: 80 * scale,
           opacity: statsOpacity,
         }}
       >
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 56 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: "#ff4757",
@@ -418,7 +419,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           >
             35%
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             Before (Pre-allocation)
           </div>
         </div>
@@ -427,7 +428,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           style={{
             display: "flex",
             alignItems: "center",
-            fontSize: 32,
+            fontSize: 32 * scale,
             color: COLORS.textDim,
           }}
         >
@@ -437,7 +438,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 56 * scale,
               fontWeight: 700,
               fontFamily: "JetBrains Mono",
               color: COLORS.free,
@@ -445,7 +446,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           >
             95%+
           </div>
-          <div style={{ fontSize: 14, color: COLORS.textDim }}>
+          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
             After (PagedAttention)
           </div>
         </div>
@@ -455,7 +456,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 50,
+          bottom: 50 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -467,7 +468,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           <span style={{ color: COLORS.block, fontWeight: 700 }}>3×</span> more
           sequences per batch ={" "}
           <span style={{ color: COLORS.free, fontWeight: 700 }}>3×</span> higher

@@ -43,6 +43,9 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
   const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
 
+  // Responsive scaling based on viewport size
+  const scale = Math.min(width / 1920, height / 1080);
+
   // Phase timings (in local frames)
   const phase1End = fps * 3; // Show the setup
   const phase2End = fps * 8; // Animate weight loading
@@ -127,7 +130,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 60,
+          top: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -136,7 +139,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -150,10 +153,10 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 150,
-          left: 100,
-          right: 100,
-          bottom: 200,
+          top: 150 * scale,
+          left: 100 * scale,
+          right: 100 * scale,
+          bottom: 200 * scale,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -163,33 +166,33 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         {/* GPU Box */}
         <div
           style={{
-            width: 300,
-            height: 350,
+            width: 300 * scale,
+            height: 350 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
-            border: `2px solid ${COLORS.compute}`,
+            borderRadius: 16 * scale,
+            border: `${2 * scale}px solid ${COLORS.compute}`,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            padding: 24,
-            boxShadow: `0 0 30px ${COLORS.compute}30`,
+            padding: 24 * scale,
+            boxShadow: `0 0 ${30 * scale}px ${COLORS.compute}30`,
           }}
         >
           <div
             style={{
-              fontSize: 24,
+              fontSize: 24 * scale,
               fontWeight: 600,
               color: COLORS.compute,
-              marginBottom: 16,
+              marginBottom: 16 * scale,
             }}
           >
             GPU
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
-              marginBottom: 24,
+              marginBottom: 24 * scale,
             }}
           >
             Tensor Cores
@@ -199,22 +202,22 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               width: "100%",
-              marginBottom: 8,
+              marginBottom: 8 * scale,
             }}
           >
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginBottom: 8,
+                marginBottom: 8 * scale,
               }}
             >
-              <span style={{ fontSize: 14, color: COLORS.textDim }}>
+              <span style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                 Compute Usage
               </span>
               <span
                 style={{
-                  fontSize: 14,
+                  fontSize: 14 * scale,
                   fontWeight: 600,
                   color: gpuUtilization < 20 ? COLORS.problem : COLORS.compute,
                   fontFamily: "JetBrains Mono, monospace",
@@ -225,9 +228,9 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
             </div>
             <div
               style={{
-                height: 24,
+                height: 24 * scale,
                 backgroundColor: "#333",
-                borderRadius: 12,
+                borderRadius: 12 * scale,
                 overflow: "hidden",
               }}
             >
@@ -237,7 +240,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
                   height: "100%",
                   backgroundColor:
                     gpuUtilization < 20 ? COLORS.problem : COLORS.compute,
-                  borderRadius: 12,
+                  borderRadius: 12 * scale,
                   transition: "width 0.1s",
                 }}
               />
@@ -247,8 +250,8 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           {/* Status text */}
           <div
             style={{
-              marginTop: 24,
-              fontSize: 16,
+              marginTop: 24 * scale,
+              fontSize: 16 * scale,
               color: gpuUtilization < 20 ? COLORS.problem : COLORS.textDim,
               textAlign: "center",
               opacity: problemOpacity,
@@ -261,7 +264,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               marginTop: "auto",
-              fontSize: 18,
+              fontSize: 18 * scale,
               color: COLORS.text,
             }}
           >
@@ -273,8 +276,8 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         <div
           style={{
             flex: 1,
-            height: 120,
-            margin: "0 40px",
+            height: 120 * scale,
+            margin: `0 ${40 * scale}px`,
             position: "relative",
           }}
         >
@@ -285,10 +288,10 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
               top: "50%",
               left: 0,
               right: 0,
-              height: 40,
+              height: 40 * scale,
               transform: "translateY(-50%)",
               backgroundColor: "#333",
-              borderRadius: 20,
+              borderRadius: 20 * scale,
               overflow: "hidden",
             }}
           >
@@ -314,12 +317,12 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
                 top: "50%",
                 left: `${progress * 100}%`,
                 transform: "translate(-50%, -50%)",
-                width: 16,
-                height: 16,
+                width: 16 * scale,
+                height: 16 * scale,
                 borderRadius: "50%",
                 backgroundColor: COLORS.memory,
                 opacity: progress > 0 && progress < 1 ? 0.8 : 0,
-                boxShadow: `0 0 10px ${COLORS.memory}`,
+                boxShadow: `0 0 ${10 * scale}px ${COLORS.memory}`,
               }}
             />
           ))}
@@ -328,11 +331,11 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               position: "absolute",
-              bottom: -30,
+              bottom: -30 * scale,
               left: 0,
               right: 0,
               textAlign: "center",
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
             }}
           >
@@ -343,11 +346,11 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               position: "absolute",
-              top: -30,
+              top: -30 * scale,
               left: 0,
               right: 0,
               textAlign: "center",
-              fontSize: 16,
+              fontSize: 16 * scale,
               fontWeight: 600,
               color: memoryBandwidthUsage > 90 ? COLORS.memory : COLORS.textDim,
             }}
@@ -359,34 +362,34 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         {/* Memory Box */}
         <div
           style={{
-            width: 300,
-            height: 350,
+            width: 300 * scale,
+            height: 350 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
-            border: `2px solid ${COLORS.memory}`,
+            borderRadius: 16 * scale,
+            border: `${2 * scale}px solid ${COLORS.memory}`,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            padding: 24,
-            boxShadow: `0 0 30px ${COLORS.memory}30`,
+            padding: 24 * scale,
+            boxShadow: `0 0 ${30 * scale}px ${COLORS.memory}30`,
             overflow: "hidden",
           }}
         >
           <div
             style={{
-              fontSize: 24,
+              fontSize: 24 * scale,
               fontWeight: 600,
               color: COLORS.memory,
-              marginBottom: 16,
+              marginBottom: 16 * scale,
             }}
           >
             GPU Memory
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
-              marginBottom: 24,
+              marginBottom: 24 * scale,
             }}
           >
             HBM (High Bandwidth Memory)
@@ -397,7 +400,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 8,
+              gap: 8 * scale,
               width: "100%",
             }}
           >
@@ -407,8 +410,8 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
                 style={{
                   aspectRatio: "1",
                   backgroundColor: COLORS.memory + "40",
-                  borderRadius: 4,
-                  border: `1px solid ${COLORS.memory}60`,
+                  borderRadius: 4 * scale,
+                  border: `${1 * scale}px solid ${COLORS.memory}60`,
                 }}
               />
             ))}
@@ -416,8 +419,8 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
 
           <div
             style={{
-              marginTop: 24,
-              fontSize: 32,
+              marginTop: 24 * scale,
+              fontSize: 32 * scale,
               fontWeight: 700,
               color: COLORS.memory,
               fontFamily: "JetBrains Mono, monospace",
@@ -427,7 +430,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 14 * scale,
               color: COLORS.textDim,
             }}
           >
@@ -440,7 +443,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 140,
+          bottom: 140 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -451,14 +454,14 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           style={{
             display: "inline-block",
             backgroundColor: COLORS.problem + "20",
-            border: `2px solid ${COLORS.problem}`,
-            borderRadius: 12,
-            padding: "16px 32px",
+            border: `${2 * scale}px solid ${COLORS.problem}`,
+            borderRadius: 12 * scale,
+            padding: `${16 * scale}px ${32 * scale}px`,
           }}
         >
           <span
             style={{
-              fontSize: 24,
+              fontSize: 24 * scale,
               fontWeight: 600,
               color: COLORS.problem,
             }}
@@ -472,7 +475,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 50,
+          bottom: 50 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -481,7 +484,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
       >
         <span
           style={{
-            fontSize: 28,
+            fontSize: 28 * scale,
             fontWeight: 500,
             color: COLORS.text,
           }}

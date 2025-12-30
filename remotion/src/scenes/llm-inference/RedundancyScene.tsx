@@ -41,8 +41,9 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 3; // Intro
@@ -99,7 +100,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -108,7 +109,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -122,9 +123,9 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 80,
-          right: 80,
+          top: 120 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: introOpacity,
         }}
       >
@@ -133,8 +134,8 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 20,
-            marginBottom: 40,
+            gap: 20 * scale,
+            marginBottom: 40 * scale,
           }}
         >
           {TOKENS.slice(0, currentTokenIndex + 1).map((token, i) => {
@@ -148,23 +149,23 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 8 * scale,
                 }}
               >
                 {/* Token */}
                 <div
                   style={{
-                    padding: "12px 20px",
+                    padding: `${12 * scale}px ${20 * scale}px`,
                     backgroundColor: isCurrentToken
                       ? COLORS.primary + "40"
                       : COLORS.surface,
                     border: `2px solid ${isCurrentToken ? COLORS.primary : "#444"}`,
-                    borderRadius: 8,
-                    fontSize: 18,
+                    borderRadius: 8 * scale,
+                    fontSize: 18 * scale,
                     fontWeight: 600,
                     color: isCurrentToken ? COLORS.primary : COLORS.text,
                     boxShadow: isCurrentToken
-                      ? `0 0 20px ${COLORS.primary}40`
+                      ? `0 0 ${20 * scale}px ${COLORS.primary}40`
                       : "none",
                   }}
                 >
@@ -174,7 +175,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                 {/* Token index */}
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: 12 * scale,
                     color: COLORS.textDim,
                   }}
                 >
@@ -185,11 +186,11 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                 {isPreviousToken && (
                   <div
                     style={{
-                      marginTop: 8,
-                      padding: "4px 12px",
+                      marginTop: 8 * scale,
+                      padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.waste + "20",
-                      borderRadius: 4,
-                      fontSize: 12,
+                      borderRadius: 4 * scale,
+                      fontSize: 12 * scale,
                       color: COLORS.waste,
                     }}
                   >
@@ -199,11 +200,11 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                 {isCurrentToken && (
                   <div
                     style={{
-                      marginTop: 8,
-                      padding: "4px 12px",
+                      marginTop: 8 * scale,
+                      padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.primary + "20",
-                      borderRadius: 4,
-                      fontSize: 12,
+                      borderRadius: 4 * scale,
+                      fontSize: 12 * scale,
                       color: COLORS.primary,
                     }}
                   >
@@ -219,9 +220,9 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
         <div
           style={{
             textAlign: "center",
-            fontSize: 20,
+            fontSize: 20 * scale,
             color: COLORS.text,
-            marginBottom: 40,
+            marginBottom: 40 * scale,
           }}
         >
           Generating token <span style={{ color: COLORS.primary, fontWeight: 700 }}>
@@ -237,22 +238,22 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            marginBottom: 32,
+            marginBottom: 32 * scale,
           }}
         >
           <div
             style={{
               backgroundColor: COLORS.surface,
-              borderRadius: 12,
-              padding: 24,
+              borderRadius: 12 * scale,
+              padding: 24 * scale,
               border: `1px solid #333`,
             }}
           >
             <div
               style={{
-                fontSize: 16,
+                fontSize: 16 * scale,
                 color: COLORS.textDim,
-                marginBottom: 16,
+                marginBottom: 16 * scale,
                 textAlign: "center",
               }}
             >
@@ -264,18 +265,18 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 4,
+                gap: 4 * scale,
               }}
             >
               {Array.from({ length: currentTokenIndex + 1 }).map((_, row) => (
-                <div key={row} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <div key={row} style={{ display: "flex", gap: 4 * scale, alignItems: "center" }}>
                   <span
                     style={{
-                      width: 80,
-                      fontSize: 12,
+                      width: 80 * scale,
+                      fontSize: 12 * scale,
                       color: COLORS.textDim,
                       textAlign: "right",
-                      paddingRight: 8,
+                      paddingRight: 8 * scale,
                     }}
                   >
                     Gen tok {row + 1}:
@@ -289,19 +290,19 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                       <div
                         key={col}
                         style={{
-                          width: 32,
-                          height: 24,
+                          width: 32 * scale,
+                          height: 24 * scale,
                           backgroundColor: isNew
                             ? COLORS.primary + "60"
                             : isCurrent
                             ? COLORS.waste + "60"
                             : COLORS.waste + "30",
-                          borderRadius: 4,
+                          borderRadius: 4 * scale,
                           border: `1px solid ${isNew ? COLORS.primary : COLORS.waste}40`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: 10,
+                          fontSize: 10 * scale,
                           color: isNew ? COLORS.primary : COLORS.waste,
                         }}
                       >
@@ -320,13 +321,13 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 60,
+            gap: 60 * scale,
           }}
         >
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.waste,
@@ -334,7 +335,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
             >
               {totalComputations}
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Total K,V computations
             </div>
           </div>
@@ -342,7 +343,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.primary,
@@ -350,7 +351,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
             >
               {necessaryComputations}
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Actually necessary
             </div>
           </div>
@@ -358,7 +359,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                fontSize: 48,
+                fontSize: 48 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.waste,
@@ -366,7 +367,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
             >
               {wastePercentage}%
             </div>
-            <div style={{ fontSize: 14, color: COLORS.textDim }}>
+            <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
               Wasted computation
             </div>
           </div>
@@ -377,7 +378,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 120,
+          bottom: 120 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -389,13 +390,13 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
             display: "inline-block",
             backgroundColor: COLORS.waste + "20",
             border: `2px solid ${COLORS.waste}`,
-            borderRadius: 12,
-            padding: "16px 40px",
+            borderRadius: 12 * scale,
+            padding: `${16 * scale}px ${40 * scale}px`,
           }}
         >
           <span
             style={{
-              fontSize: 32,
+              fontSize: 32 * scale,
               fontWeight: 700,
               color: COLORS.waste,
               fontFamily: "JetBrains Mono",
@@ -410,7 +411,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 50,
+          bottom: 50 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -422,7 +423,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           For 1,000 tokens: <span style={{ color: COLORS.waste, fontWeight: 700 }}>500,000</span> redundant computations
         </span>
       </div>

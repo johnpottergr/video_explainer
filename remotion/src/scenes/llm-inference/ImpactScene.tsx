@@ -35,8 +35,9 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 5; // Recap
@@ -102,7 +103,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -111,7 +112,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -125,9 +126,9 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 80,
-          right: 80,
+          top: 120 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: recapProgress,
         }}
       >
@@ -135,18 +136,18 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 40,
-            marginBottom: 40,
+            gap: 40 * scale,
+            marginBottom: 40 * scale,
           }}
         >
           {/* Before */}
           <div
             style={{
               flex: 1,
-              maxWidth: 400,
+              maxWidth: 400 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
-              padding: 24,
+              borderRadius: 16 * scale,
+              padding: 24 * scale,
               border: "2px solid #ff4757",
               opacity: interpolate(localFrame, [fps * 0.5, fps * 1], [0, 1], {
                 extrapolateLeft: "clamp",
@@ -156,10 +157,10 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           >
             <div
               style={{
-                fontSize: 20,
+                fontSize: 20 * scale,
                 fontWeight: 700,
                 color: "#ff4757",
-                marginBottom: 16,
+                marginBottom: 16 * scale,
                 textAlign: "center",
               }}
             >
@@ -170,13 +171,13 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
                 listStyle: "none",
                 padding: 0,
                 margin: 0,
-                fontSize: 16,
+                fontSize: 16 * scale,
                 color: COLORS.textDim,
               }}
             >
-              <li style={{ marginBottom: 8 }}>• Recompute K,V every token</li>
-              <li style={{ marginBottom: 8 }}>• O(n²) computation</li>
-              <li style={{ marginBottom: 8 }}>• ~40 tokens/second</li>
+              <li style={{ marginBottom: 8 * scale }}>• Recompute K,V every token</li>
+              <li style={{ marginBottom: 8 * scale }}>• O(n²) computation</li>
+              <li style={{ marginBottom: 8 * scale }}>• ~40 tokens/second</li>
               <li>• GPU mostly waiting</li>
             </ul>
           </div>
@@ -185,10 +186,10 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           <div
             style={{
               flex: 1,
-              maxWidth: 400,
+              maxWidth: 400 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
-              padding: 24,
+              borderRadius: 16 * scale,
+              padding: 24 * scale,
               border: `2px solid ${COLORS.success}`,
               opacity: interpolate(localFrame, [fps * 1.5, fps * 2], [0, 1], {
                 extrapolateLeft: "clamp",
@@ -198,10 +199,10 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           >
             <div
               style={{
-                fontSize: 20,
+                fontSize: 20 * scale,
                 fontWeight: 700,
                 color: COLORS.success,
-                marginBottom: 16,
+                marginBottom: 16 * scale,
                 textAlign: "center",
               }}
             >
@@ -212,13 +213,13 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
                 listStyle: "none",
                 padding: 0,
                 margin: 0,
-                fontSize: 16,
+                fontSize: 16 * scale,
                 color: COLORS.textDim,
               }}
             >
-              <li style={{ marginBottom: 8 }}>• Compute K,V once</li>
-              <li style={{ marginBottom: 8 }}>• O(n) computation</li>
-              <li style={{ marginBottom: 8 }}>• ~3,500 tokens/second</li>
+              <li style={{ marginBottom: 8 * scale }}>• Compute K,V once</li>
+              <li style={{ marginBottom: 8 * scale }}>• O(n) computation</li>
+              <li style={{ marginBottom: 8 * scale }}>• ~3,500 tokens/second</li>
               <li>• Efficient memory access</li>
             </ul>
           </div>
@@ -229,9 +230,9 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 380,
-          left: 80,
-          right: 80,
+          top: 380 * scale,
+          left: 80 * scale,
+          right: 80 * scale,
           opacity: numbersProgress,
         }}
       >
@@ -239,7 +240,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 80,
+            gap: 80 * scale,
           }}
         >
           {/* Speedup */}
@@ -256,7 +257,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           >
             <div
               style={{
-                fontSize: 72,
+                fontSize: 72 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.success,
@@ -264,7 +265,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
             >
               {Math.round(speedupValue)}×
             </div>
-            <div style={{ fontSize: 18, color: COLORS.textDim }}>
+            <div style={{ fontSize: 18 * scale, color: COLORS.textDim }}>
               Faster Inference
             </div>
           </div>
@@ -283,7 +284,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           >
             <div
               style={{
-                fontSize: 72,
+                fontSize: 72 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.warning,
@@ -291,7 +292,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
             >
               {Math.round(memoryValue)} GB
             </div>
-            <div style={{ fontSize: 18, color: COLORS.textDim }}>
+            <div style={{ fontSize: 18 * scale, color: COLORS.textDim }}>
               Cache Memory (70B model)
             </div>
           </div>
@@ -310,7 +311,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           >
             <div
               style={{
-                fontSize: 72,
+                fontSize: 72 * scale,
                 fontWeight: 700,
                 fontFamily: "JetBrains Mono",
                 color: COLORS.primary,
@@ -318,7 +319,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
             >
               &lt;50ms
             </div>
-            <div style={{ fontSize: 18, color: COLORS.textDim }}>
+            <div style={{ fontSize: 18 * scale, color: COLORS.textDim }}>
               Per Token Latency
             </div>
           </div>
@@ -328,8 +329,8 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
         <div
           style={{
             textAlign: "center",
-            marginTop: 32,
-            fontSize: 16,
+            marginTop: 32 * scale,
+            fontSize: 16 * scale,
             color: COLORS.textDim,
             opacity: interpolate(
               localFrame,
@@ -348,7 +349,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 560,
+          top: 560 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -357,9 +358,9 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       >
         <div
           style={{
-            fontSize: 20,
+            fontSize: 20 * scale,
             color: COLORS.textDim,
-            marginBottom: 24,
+            marginBottom: 24 * scale,
           }}
         >
           Used by every major LLM provider
@@ -368,18 +369,18 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: 48,
+            gap: 48 * scale,
           }}
         >
           {["GPT-4", "Claude", "Gemini", "LLaMA", "Mistral"].map((name, i) => (
             <div
               key={name}
               style={{
-                padding: "12px 24px",
+                padding: `${12 * scale}px ${24 * scale}px`,
                 backgroundColor: COLORS.surface,
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 border: `1px solid ${COLORS.primary}40`,
-                fontSize: 18,
+                fontSize: 18 * scale,
                 fontWeight: 600,
                 color: COLORS.text,
                 opacity: interpolate(
@@ -400,7 +401,7 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 80,
+          bottom: 80 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -413,23 +414,23 @@ export const ImpactScene: React.FC<ImpactSceneProps> = ({
             display: "inline-block",
             backgroundColor: COLORS.success + "15",
             border: `3px solid ${COLORS.success}`,
-            borderRadius: 16,
-            padding: "24px 48px",
+            borderRadius: 16 * scale,
+            padding: `${24 * scale}px ${48 * scale}px`,
           }}
         >
           <div
             style={{
-              fontSize: 32,
+              fontSize: 32 * scale,
               fontWeight: 700,
               color: COLORS.success,
-              marginBottom: 8,
+              marginBottom: 8 * scale,
             }}
           >
             KV Cache: The Foundation of Fast LLM Inference
           </div>
           <div
             style={{
-              fontSize: 20,
+              fontSize: 20 * scale,
               color: COLORS.text,
             }}
           >

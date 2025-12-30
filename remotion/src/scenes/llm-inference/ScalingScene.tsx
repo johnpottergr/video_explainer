@@ -39,8 +39,9 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
   startFrame = 0,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   const localFrame = frame - startFrame;
+  const scale = Math.min(width / 1920, height / 1080);
 
   // Phase timings
   const phase1End = fps * 6; // Tensor parallelism
@@ -85,7 +86,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 40,
+          top: 40 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -94,7 +95,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
       >
         <h1
           style={{
-            fontSize: 48,
+            fontSize: 48 * scale,
             fontWeight: 700,
             color: COLORS.text,
             margin: 0,
@@ -108,9 +109,9 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 120,
-          left: 60,
-          right: 60,
+          top: 120 * scale,
+          left: 60 * scale,
+          right: 60 * scale,
           opacity: introOpacity,
         }}
       >
@@ -118,27 +119,27 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
         <div
           style={{
             display: "flex",
-            gap: 24,
-            marginBottom: 32,
+            gap: 24 * scale,
+            marginBottom: 32 * scale,
           }}
         >
           {/* Tensor Parallelism */}
           <div
             style={{
               flex: 1,
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.tensor}`,
               opacity: tensorOpacity,
             }}
           >
             <div
               style={{
-                fontSize: 18,
+                fontSize: 18 * scale,
                 fontWeight: 700,
                 color: COLORS.tensor,
-                marginBottom: 12,
+                marginBottom: 12 * scale,
                 textAlign: "center",
               }}
             >
@@ -151,19 +152,19 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
+                gap: 8 * scale,
+                marginBottom: 16 * scale,
               }}
             >
-              <div style={{ fontSize: 12, color: COLORS.textDim }}>
+              <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
                 One Layer Split Across GPUs
               </div>
               <div
                 style={{
                   display: "flex",
-                  gap: 4,
+                  gap: 4 * scale,
                   width: "100%",
-                  height: 48,
+                  height: 48 * scale,
                 }}
               >
                 {[0, 1, 2, 3].map((i) => (
@@ -172,12 +173,12 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
                     style={{
                       flex: 1,
                       backgroundColor: COLORS.gpu + "60",
-                      borderRadius: 6,
+                      borderRadius: 6 * scale,
                       border: `2px solid ${COLORS.gpu}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 11,
+                      fontSize: 11 * scale,
                       fontWeight: 600,
                       color: COLORS.gpu,
                     }}
@@ -188,7 +189,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               </div>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 11 * scale,
                   color: COLORS.tensor,
                   textAlign: "center",
                 }}
@@ -197,17 +198,17 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               </div>
             </div>
 
-            <div style={{ fontSize: 12, color: COLORS.textDim, textAlign: "center" }}>
+            <div style={{ fontSize: 12 * scale, color: COLORS.textDim, textAlign: "center" }}>
               Split weight matrices across GPUs
             </div>
             <div
               style={{
-                marginTop: 8,
-                padding: "6px 12px",
+                marginTop: 8 * scale,
+                padding: `${6 * scale}px ${12 * scale}px`,
                 backgroundColor: COLORS.tensor + "20",
-                borderRadius: 6,
+                borderRadius: 6 * scale,
                 textAlign: "center",
-                fontSize: 12,
+                fontSize: 12 * scale,
                 color: COLORS.tensor,
               }}
             >
@@ -219,19 +220,19 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
           <div
             style={{
               flex: 1,
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.pipeline}`,
               opacity: pipelineOpacity,
             }}
           >
             <div
               style={{
-                fontSize: 18,
+                fontSize: 18 * scale,
                 fontWeight: 700,
                 color: COLORS.pipeline,
-                marginBottom: 12,
+                marginBottom: 12 * scale,
                 textAlign: "center",
               }}
             >
@@ -244,18 +245,18 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
+                gap: 8 * scale,
+                marginBottom: 16 * scale,
               }}
             >
-              <div style={{ fontSize: 12, color: COLORS.textDim }}>
+              <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
                 Different Layers on Each GPU
               </div>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 4,
+                  gap: 4 * scale,
                 }}
               >
                 {[
@@ -267,43 +268,43 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
                   <React.Fragment key={i}>
                     <div
                       style={{
-                        width: 60,
-                        height: 56,
+                        width: 60 * scale,
+                        height: 56 * scale,
                         backgroundColor: COLORS.gpu + "60",
-                        borderRadius: 6,
+                        borderRadius: 6 * scale,
                         border: `2px solid ${COLORS.gpu}`,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 10,
+                        fontSize: 10 * scale,
                         color: COLORS.gpu,
                       }}
                     >
                       <span style={{ fontWeight: 600 }}>{gpu.label}</span>
-                      <span style={{ fontSize: 9, color: COLORS.textDim }}>
+                      <span style={{ fontSize: 9 * scale, color: COLORS.textDim }}>
                         {gpu.layers}
                       </span>
                     </div>
                     {i < 3 && (
-                      <span style={{ color: COLORS.pipeline, fontSize: 14 }}>→</span>
+                      <span style={{ color: COLORS.pipeline, fontSize: 14 * scale }}>→</span>
                     )}
                   </React.Fragment>
                 ))}
               </div>
             </div>
 
-            <div style={{ fontSize: 12, color: COLORS.textDim, textAlign: "center" }}>
+            <div style={{ fontSize: 12 * scale, color: COLORS.textDim, textAlign: "center" }}>
               Chain GPUs sequentially
             </div>
             <div
               style={{
-                marginTop: 8,
-                padding: "6px 12px",
+                marginTop: 8 * scale,
+                padding: `${6 * scale}px ${12 * scale}px`,
                 backgroundColor: COLORS.pipeline + "20",
-                borderRadius: 6,
+                borderRadius: 6 * scale,
                 textAlign: "center",
-                fontSize: 12,
+                fontSize: 12 * scale,
                 color: COLORS.pipeline,
               }}
             >
@@ -315,19 +316,19 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
           <div
             style={{
               flex: 1,
-              padding: 20,
+              padding: 20 * scale,
               backgroundColor: COLORS.surface,
-              borderRadius: 16,
+              borderRadius: 16 * scale,
               border: `2px solid ${COLORS.horizontal}`,
               opacity: horizontalOpacity,
             }}
           >
             <div
               style={{
-                fontSize: 18,
+                fontSize: 18 * scale,
                 fontWeight: 700,
                 color: COLORS.horizontal,
-                marginBottom: 12,
+                marginBottom: 12 * scale,
                 textAlign: "center",
               }}
             >
@@ -340,18 +341,18 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
+                gap: 8 * scale,
+                marginBottom: 16 * scale,
               }}
             >
               {/* Load balancer */}
               <div
                 style={{
-                  padding: "6px 16px",
+                  padding: `${6 * scale}px ${16 * scale}px`,
                   backgroundColor: COLORS.primary + "40",
-                  borderRadius: 6,
+                  borderRadius: 6 * scale,
                   border: `2px solid ${COLORS.primary}`,
-                  fontSize: 11,
+                  fontSize: 11 * scale,
                   fontWeight: 600,
                   color: COLORS.primary,
                 }}
@@ -363,9 +364,9 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               <div
                 style={{
                   display: "flex",
-                  gap: 16,
+                  gap: 16 * scale,
                   color: COLORS.textDim,
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                 }}
               >
                 <span>↓</span>
@@ -374,20 +375,20 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               </div>
 
               {/* Replicas */}
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8 * scale }}>
                 {["R1", "R2", "R3"].map((replica) => (
                   <div
                     key={replica}
                     style={{
-                      width: 48,
-                      height: 40,
+                      width: 48 * scale,
+                      height: 40 * scale,
                       backgroundColor: COLORS.horizontal + "40",
-                      borderRadius: 6,
+                      borderRadius: 6 * scale,
                       border: `2px solid ${COLORS.horizontal}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 11,
+                      fontSize: 11 * scale,
                       fontWeight: 600,
                       color: COLORS.horizontal,
                     }}
@@ -398,17 +399,17 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               </div>
             </div>
 
-            <div style={{ fontSize: 12, color: COLORS.textDim, textAlign: "center" }}>
+            <div style={{ fontSize: 12 * scale, color: COLORS.textDim, textAlign: "center" }}>
               Independent model replicas
             </div>
             <div
               style={{
-                marginTop: 8,
-                padding: "6px 12px",
+                marginTop: 8 * scale,
+                padding: `${6 * scale}px ${12 * scale}px`,
                 backgroundColor: COLORS.horizontal + "20",
-                borderRadius: 6,
+                borderRadius: 6 * scale,
                 textAlign: "center",
-                fontSize: 12,
+                fontSize: 12 * scale,
                 color: COLORS.horizontal,
               }}
             >
@@ -420,9 +421,9 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
         {/* Combined approach */}
         <div
           style={{
-            padding: 24,
+            padding: 24 * scale,
             backgroundColor: COLORS.surface,
-            borderRadius: 16,
+            borderRadius: 16 * scale,
             border: "1px solid #333",
             opacity: interpolate(
               localFrame,
@@ -434,9 +435,9 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
         >
           <div
             style={{
-              fontSize: 18,
+              fontSize: 18 * scale,
               color: COLORS.text,
-              marginBottom: 16,
+              marginBottom: 16 * scale,
               textAlign: "center",
             }}
           >
@@ -448,17 +449,17 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              gap: 24,
+              gap: 24 * scale,
             }}
           >
             {/* Example config */}
             <div
               style={{
-                padding: 16,
+                padding: 16 * scale,
                 backgroundColor: "#222",
-                borderRadius: 8,
+                borderRadius: 8 * scale,
                 fontFamily: "JetBrains Mono",
-                fontSize: 14,
+                fontSize: 14 * scale,
               }}
             >
               <div style={{ color: COLORS.tensor }}>TP=4</div>
@@ -466,13 +467,13 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               <div style={{ color: COLORS.horizontal }}>Replicas=1000+</div>
             </div>
 
-            <div style={{ color: COLORS.textDim, fontSize: 24 }}>=</div>
+            <div style={{ color: COLORS.textDim, fontSize: 24 * scale }}>=</div>
 
             {/* Result */}
             <div style={{ textAlign: "center" }}>
               <div
                 style={{
-                  fontSize: 32,
+                  fontSize: 32 * scale,
                   fontWeight: 700,
                   fontFamily: "JetBrains Mono",
                   color: COLORS.primary,
@@ -480,7 +481,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
               >
                 8+ GPUs/replica
               </div>
-              <div style={{ fontSize: 14, color: COLORS.textDim }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                 Thousands of total GPUs
               </div>
             </div>
@@ -492,7 +493,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 60,
+          bottom: 60 * scale,
           left: 0,
           right: 0,
           textAlign: "center",
@@ -504,7 +505,7 @@ export const ScalingScene: React.FC<ScalingSceneProps> = ({
           ),
         }}
       >
-        <span style={{ fontSize: 22, color: COLORS.text }}>
+        <span style={{ fontSize: 22 * scale, color: COLORS.text }}>
           Smart routing sends similar requests to same replica for{" "}
           <span style={{ color: COLORS.primary, fontWeight: 700 }}>
             better cache hits
