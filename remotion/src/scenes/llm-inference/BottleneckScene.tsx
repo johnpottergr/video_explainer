@@ -166,7 +166,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         {/* GPU Box */}
         <div
           style={{
-            width: 300 * scale,
+            width: 360 * scale,
             height: 350 * scale,
             backgroundColor: COLORS.surface,
             borderRadius: 16 * scale,
@@ -180,7 +180,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         >
           <div
             style={{
-              fontSize: 24 * scale,
+              fontSize: 28 * scale,
               fontWeight: 600,
               color: COLORS.compute,
               marginBottom: 16 * scale,
@@ -190,7 +190,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           </div>
           <div
             style={{
-              fontSize: 14 * scale,
+              fontSize: 18 * scale,
               color: COLORS.textDim,
               marginBottom: 24 * scale,
             }}
@@ -212,12 +212,12 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
                 marginBottom: 8 * scale,
               }}
             >
-              <span style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
+              <span style={{ fontSize: 16 * scale, color: COLORS.textDim }}>
                 Compute Usage
               </span>
               <span
                 style={{
-                  fontSize: 14 * scale,
+                  fontSize: 16 * scale,
                   fontWeight: 600,
                   color: gpuUtilization < 20 ? COLORS.problem : COLORS.compute,
                   fontFamily: "JetBrains Mono, monospace",
@@ -251,7 +251,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               marginTop: 24 * scale,
-              fontSize: 16 * scale,
+              fontSize: 20 * scale,
               color: gpuUtilization < 20 ? COLORS.problem : COLORS.textDim,
               textAlign: "center",
               opacity: problemOpacity,
@@ -264,7 +264,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               marginTop: "auto",
-              fontSize: 18 * scale,
+              fontSize: 22 * scale,
               color: COLORS.text,
             }}
           >
@@ -335,7 +335,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
               left: 0,
               right: 0,
               textAlign: "center",
-              fontSize: 14 * scale,
+              fontSize: 16 * scale,
               color: COLORS.textDim,
             }}
           >
@@ -362,7 +362,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         {/* Memory Box */}
         <div
           style={{
-            width: 300 * scale,
+            width: 360 * scale,
             height: 350 * scale,
             backgroundColor: COLORS.surface,
             borderRadius: 16 * scale,
@@ -377,7 +377,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
         >
           <div
             style={{
-              fontSize: 24 * scale,
+              fontSize: 28 * scale,
               fontWeight: 600,
               color: COLORS.memory,
               marginBottom: 16 * scale,
@@ -387,7 +387,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           </div>
           <div
             style={{
-              fontSize: 14 * scale,
+              fontSize: 18 * scale,
               color: COLORS.textDim,
               marginBottom: 24 * scale,
             }}
@@ -420,7 +420,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           <div
             style={{
               marginTop: 24 * scale,
-              fontSize: 32 * scale,
+              fontSize: 38 * scale,
               fontWeight: 700,
               color: COLORS.memory,
               fontFamily: "JetBrains Mono, monospace",
@@ -430,7 +430,7 @@ export const BottleneckScene: React.FC<BottleneckSceneProps> = ({
           </div>
           <div
             style={{
-              fontSize: 14 * scale,
+              fontSize: 18 * scale,
               color: COLORS.textDim,
             }}
           >

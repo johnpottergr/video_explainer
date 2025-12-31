@@ -400,7 +400,7 @@ export const ContinuousBatchingScene: React.FC<ContinuousBatchingSceneProps> = (
                               right: 4 * scale,
                               backgroundColor: COLORS.success,
                               color: COLORS.background,
-                              fontSize: 10 * scale,
+                              fontSize: 12 * scale,
                               fontWeight: 700,
                               padding: `${2 * scale}px ${6 * scale}px`,
                               borderRadius: 4 * scale,

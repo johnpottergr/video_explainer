@@ -248,7 +248,7 @@ export const ConclusionScene: React.FC<ConclusionSceneProps> = ({
                 >
                   {tech.name}
                 </div>
-                <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
+                <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                   {tech.benefit}
                 </div>
               </div>

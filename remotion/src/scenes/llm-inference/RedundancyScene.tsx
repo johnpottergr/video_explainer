@@ -175,7 +175,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                 {/* Token index */}
                 <span
                   style={{
-                    fontSize: 12 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.textDim,
                   }}
                 >
@@ -190,7 +190,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                       padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.waste + "20",
                       borderRadius: 4 * scale,
-                      fontSize: 12 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.waste,
                     }}
                   >
@@ -204,7 +204,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                       padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: COLORS.primary + "20",
                       borderRadius: 4 * scale,
-                      fontSize: 12 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.primary,
                     }}
                   >
@@ -272,8 +272,8 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                 <div key={row} style={{ display: "flex", gap: 4 * scale, alignItems: "center" }}>
                   <span
                     style={{
-                      width: 80 * scale,
-                      fontSize: 12 * scale,
+                      width: 85 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.textDim,
                       textAlign: "right",
                       paddingRight: 8 * scale,
@@ -290,8 +290,8 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                       <div
                         key={col}
                         style={{
-                          width: 32 * scale,
-                          height: 24 * scale,
+                          width: 36 * scale,
+                          height: 28 * scale,
                           backgroundColor: isNew
                             ? COLORS.primary + "60"
                             : isCurrent
@@ -302,7 +302,7 @@ export const RedundancyScene: React.FC<RedundancySceneProps> = ({
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: 10 * scale,
+                          fontSize: 14 * scale,
                           color: isNew ? COLORS.primary : COLORS.waste,
                         }}
                       >

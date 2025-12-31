@@ -286,20 +286,20 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                 >
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.textDim,
-                      width: 40 * scale,
+                      width: 44 * scale,
                     }}
                   >
                     {token}
                   </span>
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.key,
                       fontFamily: "JetBrains Mono",
                       fontWeight: 600,
-                      width: 30 * scale,
+                      width: 34 * scale,
                     }}
                   >
                     K{i + 1}
@@ -324,10 +324,10 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                   </div>
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.key,
                       fontFamily: "JetBrains Mono",
-                      width: 40 * scale,
+                      width: 44 * scale,
                       textAlign: "right",
                     }}
                   >
@@ -379,9 +379,9 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                 >
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.textDim,
-                      width: 36 * scale,
+                      width: 40 * scale,
                     }}
                   >
                     {token}
@@ -406,10 +406,10 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                   </div>
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.attention,
                       fontFamily: "JetBrains Mono",
-                      width: 45 * scale,
+                      width: 48 * scale,
                       textAlign: "right",
                     }}
                   >
@@ -464,7 +464,7 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                 >
                   <span
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.value,
                       fontFamily: "JetBrains Mono",
                       fontWeight: 600,
@@ -474,7 +474,7 @@ export const MechanicsScene: React.FC<MechanicsSceneProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: 13 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.textDim,
                     }}
                   >

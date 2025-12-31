@@ -241,7 +241,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                     >
                       <span
                         style={{
-                          fontSize: 12 * scale,
+                          fontSize: 14 * scale,
                           fontWeight: 600,
                           color: COLORS.used,
                         }}
@@ -259,7 +259,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                         top: "50%",
                         left: `${usedPercent + 2}%`,
                         transform: "translateY(-50%)",
-                        fontSize: 11 * scale,
+                        fontSize: 14 * scale,
                         color: COLORS.wasted,
                         opacity: 0.8,
                       }}
@@ -273,7 +273,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
                 <div
                   style={{
                     width: 100 * scale,
-                    fontSize: 12 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.allocated,
                     fontFamily: "JetBrains Mono",
                   }}
@@ -352,7 +352,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           >
             {wastePercentage}%
           </div>
-          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
+          <div style={{ fontSize: 16 * scale, color: COLORS.textDim }}>
             Memory Wasted
           </div>
         </div>
@@ -368,7 +368,7 @@ export const MemoryFragmentationScene: React.FC<MemoryFragmentationSceneProps> =
           >
             97
           </div>
-          <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
+          <div style={{ fontSize: 16 * scale, color: COLORS.textDim }}>
             Max Sequences (could be 2000+)
           </div>
         </div>

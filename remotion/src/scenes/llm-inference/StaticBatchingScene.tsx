@@ -267,7 +267,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                     </div>
                     <div
                       style={{
-                        fontSize: 11 * scale,
+                        fontSize: 14 * scale,
                         color: COLORS.textDim,
                         fontStyle: "italic",
                         whiteSpace: "nowrap",
@@ -307,7 +307,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           content = (
                             <span
                               style={{
-                                fontSize: 9 * scale,
+                                fontSize: 11 * scale,
                                 color: seq.color,
                                 fontWeight: 600,
                               }}
@@ -323,7 +323,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           content = (
                             <span
                               style={{
-                                fontSize: 8 * scale,
+                                fontSize: 10 * scale,
                                 color: COLORS.waste,
                                 fontWeight: 700,
                               }}
@@ -373,7 +373,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           padding: `${4 * scale}px ${8 * scale}px`,
                           backgroundColor: COLORS.success + "20",
                           borderRadius: 4 * scale,
-                          fontSize: 11 * scale,
+                          fontSize: 14 * scale,
                           color: COLORS.success,
                           fontWeight: 600,
                         }}
@@ -386,7 +386,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                           padding: `${4 * scale}px ${8 * scale}px`,
                           backgroundColor: seq.color + "20",
                           borderRadius: 4 * scale,
-                          fontSize: 11 * scale,
+                          fontSize: 14 * scale,
                           color: seq.color,
                           fontWeight: 600,
                         }}
@@ -504,7 +504,7 @@ export const StaticBatchingScene: React.FC<StaticBatchingSceneProps> = ({
                   />
                   <span
                     style={{
-                      fontSize: 11 * scale,
+                      fontSize: 14 * scale,
                       color: COLORS.textDim,
                     }}
                   >

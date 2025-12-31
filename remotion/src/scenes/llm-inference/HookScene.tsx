@@ -131,6 +131,14 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
     config: { damping: 12, stiffness: 200 },
   });
 
+  // Pulse/glow animation for the 87x badge (starts after spring animation settles)
+  const glowPulse = interpolate(
+    Math.sin((localFrame - phase5End) * 0.15),
+    [-1, 1],
+    [0.4, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
   // Which mode are we showing?
   const showingFast = localFrame > phase3End;
   const currentTokens = showingFast ? fastTokenCount : slowTokenCount;
@@ -313,7 +321,7 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </div>
       </div>
 
-      {/* 87x faster reveal - positioned on the right */}
+      {/* 87x faster reveal - positioned on the right with dramatic glow effect */}
       {revealProgress > 0 && (
         <div
           style={{
@@ -329,17 +337,21 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
           <div
             style={{
               display: "inline-block",
-              backgroundColor: COLORS.success + "20",
-              border: `${3 * scale}px solid ${COLORS.success}`,
-              borderRadius: 16 * scale,
-              padding: `${16 * scale}px ${48 * scale}px`,
+              backgroundColor: COLORS.success + "25",
+              border: `${5 * scale}px solid ${COLORS.success}`,
+              borderRadius: 20 * scale,
+              padding: `${24 * scale}px ${56 * scale}px`,
+              boxShadow: `0 0 ${30 * glowPulse * scale}px rgba(0, 255, 136, ${0.5 * glowPulse}),
+                          0 0 ${60 * glowPulse * scale}px rgba(0, 255, 136, ${0.3 * glowPulse}),
+                          0 0 ${100 * glowPulse * scale}px rgba(0, 255, 136, ${0.15 * glowPulse})`,
             }}
           >
             <span
               style={{
-                fontSize: 48 * scale,
+                fontSize: 80 * scale,
                 fontWeight: 700,
                 color: COLORS.success,
+                textShadow: `0 0 ${20 * glowPulse * scale}px rgba(0, 255, 136, ${0.6 * glowPulse})`,
               }}
             >
               87× faster

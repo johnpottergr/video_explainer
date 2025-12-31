@@ -177,7 +177,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               </div>
               <div
                 style={{
-                  fontSize: 14 * scale,
+                  fontSize: 16 * scale,
                   color: COLORS.textDim,
                   marginTop: 4 * scale,
                 }}
@@ -190,7 +190,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.prefill + "20",
                 borderRadius: 8 * scale,
-                fontSize: 14 * scale,
+                fontSize: 16 * scale,
                 color: COLORS.prefill,
                 fontWeight: 600,
                 opacity: showPrefillLabel ? 1 : 0,
@@ -226,7 +226,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 />
                 <span
                   style={{
-                    fontSize: 12 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.prefill,
                     fontWeight: 600,
                     whiteSpace: "nowrap",
@@ -334,7 +334,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
               </div>
               <div
                 style={{
-                  fontSize: 14 * scale,
+                  fontSize: 16 * scale,
                   color: COLORS.textDim,
                   marginTop: 4 * scale,
                 }}
@@ -347,7 +347,7 @@ export const PhasesScene: React.FC<PhasesSceneProps> = ({ startFrame = 0 }) => {
                 padding: `${8 * scale}px ${16 * scale}px`,
                 backgroundColor: COLORS.decode + "20",
                 borderRadius: 8 * scale,
-                fontSize: 14 * scale,
+                fontSize: 16 * scale,
                 color: COLORS.decode,
                 fontWeight: 600,
                 opacity: showDecodeLabel ? 1 : 0,

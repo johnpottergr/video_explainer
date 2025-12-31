@@ -234,7 +234,7 @@ export const QuantizationScene: React.FC<QuantizationSceneProps> = ({
                   {/* Accuracy */}
                   <div
                     style={{
-                      fontSize: 14 * scale,
+                      fontSize: 15 * scale,
                       color: COLORS.textDim,
                       padding: `${4 * scale}px ${12 * scale}px`,
                       backgroundColor: "#222",

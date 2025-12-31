@@ -238,7 +238,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 11 * scale,
+                    fontSize: 14 * scale,
                     fontWeight: 600,
                     color: block.owner ? block.color : COLORS.free,
                     transform: `scale(${0.9 + blockSpring * 0.1})`,
@@ -292,7 +292,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 </div>
                 <div
                   style={{
-                    fontSize: 12 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.textDim,
                     textAlign: "center",
                   }}
@@ -323,7 +323,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
                 </div>
                 <div
                   style={{
-                    fontSize: 11 * scale,
+                    fontSize: 14 * scale,
                     color: COLORS.textDim,
                     textAlign: "center",
                     marginTop: 8 * scale,
@@ -387,7 +387,7 @@ export const PagedAttentionScene: React.FC<PagedAttentionSceneProps> = ({
               >
                 {feature.label}
               </div>
-              <div style={{ fontSize: 12 * scale, color: COLORS.textDim }}>
+              <div style={{ fontSize: 14 * scale, color: COLORS.textDim }}>
                 {feature.desc}
               </div>
             </div>

@@ -260,7 +260,7 @@
       "type": "llm-inference/conclusion",
       "title": "The Full Picture",
       "audio_file": "scene16_conclusion.mp3",
-      "audio_duration_seconds": 37.94,
+      "audio_duration_seconds": 45.0,
       "sfx_cues": [
         {"sound": "ui_pop", "frame": 15, "volume": 0.08},
         {"sound": "transition_whoosh", "frame": 90, "volume": 0.08},
@@ -269,7 +269,9 @@
         {"sound": "ui_pop", "frame": 360, "volume": 0.08},
         {"sound": "ui_pop", "frame": 450, "volume": 0.08},
         {"sound": "success_tone", "frame": 600, "volume": 0.1},
-        {"sound": "reveal_hit", "frame": 900, "volume": 0.15}
+        {"sound": "reveal_hit", "frame": 900, "volume": 0.15},
+        {"sound": "transition_whoosh", "frame": 960, "volume": 0.1},
+        {"sound": "ui_pop", "frame": 1020, "volume": 0.08}
       ]
     }
   ],
@@ -277,5 +279,5 @@
     "voiceover_dir": "voiceover",
     "buffer_between_scenes_seconds": 1.0
   },
-  "total_duration_seconds": 444.96
+  "total_duration_seconds": 452.02
 }

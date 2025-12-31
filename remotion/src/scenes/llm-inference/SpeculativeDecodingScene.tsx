@@ -173,7 +173,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
               </div>
               <div
                 style={{
-                  fontSize: 12 * scale,
+                  fontSize: 14 * scale,
                   color: COLORS.textDim,
                   padding: `${4 * scale}px ${8 * scale}px`,
                   backgroundColor: "#222",
@@ -270,7 +270,7 @@ export const SpeculativeDecodingScene: React.FC<SpeculativeDecodingSceneProps> =
               </div>
               <div
                 style={{
-                  fontSize: 12 * scale,
+                  fontSize: 14 * scale,
                   color: COLORS.textDim,
                   padding: `${4 * scale}px ${8 * scale}px`,
                   backgroundColor: "#222",
