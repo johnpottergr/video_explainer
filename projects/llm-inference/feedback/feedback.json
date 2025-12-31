@@ -507,6 +507,46 @@
       ],
       "preview_branch": null,
       "error_message": null
+    },
+    {
+      "id": "fb_0011_1767150715",
+      "timestamp": "2025-12-30T19:11:55.445564",
+      "feedback_text": "In the first scene, Naive 40 tok/s and Optimized 3500 tok/s text is overlapping with the generated text above and the 80x text below. Can we fix that? Let's also remove the 'This is how they do it.' text. We should make the various elemnts non-overlapping by moving them to left or right where it makes sense",
+      "status": "applied",
+      "scope": "scene",
+      "affected_scenes": [
+        "scene1_hook"
+      ],
+      "interpretation": "User wants to fix overlapping text elements in the first scene (HookScene). Specifically: 1) The 'Naive 40 tok/s' and 'Optimized 3500 tok/s' speed indicator is overlapping with the generated text above it and the '87x faster' badge below it. 2) Remove the 'This is how they do it.' hook text entirely. 3) Reposition elements horizontally (left/right) to prevent overlap.",
+      "suggested_changes": {
+        "description": "Fix overlapping text elements in HookScene by repositioning the speed indicator and 87x badge to non-overlapping positions, and removing the 'This is how they do it.' text",
+        "files_to_modify": [
+          "remotion/src/scenes/llm-inference/HookScene.tsx"
+        ],
+        "changes": [
+          {
+            "file": "remotion/src/scenes/llm-inference/HookScene.tsx",
+            "action": "modify",
+            "what": "Move the speed indicator (showing Naive/Optimized and tok/s) to the left side of the screen instead of centered, adjusting positioning to avoid overlap with generated text"
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/HookScene.tsx",
+            "action": "modify",
+            "what": "Move the '87\u00d7 faster' reveal badge to the right side of the screen instead of centered, to avoid overlap with the speed indicator"
+          },
+          {
+            "file": "remotion/src/scenes/llm-inference/HookScene.tsx",
+            "action": "remove",
+            "what": "Remove the 'This is how they do it.' hook text div entirely (lines 351-376)"
+          }
+        ]
+      },
+      "files_modified": [
+        "projects/llm-inference/feedback/feedback.json",
+        "remotion/src/scenes/llm-inference/HookScene.tsx"
+      ],
+      "preview_branch": null,
+      "error_message": null
     }
   ]
 }

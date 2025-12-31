@@ -11,7 +11,8 @@
  * 4. Reset and show optimized version
  * 5. Tokens stream rapidly
  * 6. "87x faster" reveal
- * 7. "This is how they do it" hook
+ *
+ * Layout: Speed indicator on left, 87x badge on right (non-overlapping)
  */
 
 import React from "react";
@@ -273,14 +274,13 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </div>
       </div>
 
-      {/* Speed indicator */}
+      {/* Speed indicator - positioned on the left */}
       <div
         style={{
           position: "absolute",
-          bottom: height * 0.185,
-          left: "50%",
-          transform: "translateX(-50%)",
-          textAlign: "center",
+          bottom: height * 0.12,
+          left: 80 * scale,
+          textAlign: "left",
           opacity: localFrame > phase1End ? 1 : 0,
         }}
       >
@@ -313,17 +313,17 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </div>
       </div>
 
-      {/* 87x faster reveal */}
+      {/* 87x faster reveal - positioned on the right */}
       {revealProgress > 0 && (
         <div
           style={{
             position: "absolute",
-            bottom: height * 0.074,
-            left: 0,
-            right: 0,
-            textAlign: "center",
+            bottom: height * 0.12,
+            right: 80 * scale,
+            textAlign: "right",
             opacity: revealProgress,
             transform: `scale(${0.5 + revealScale * 0.5})`,
+            transformOrigin: "right center",
           }}
         >
           <div
@@ -348,32 +348,6 @@ export const HookScene: React.FC<HookSceneProps> = ({ startFrame = 0 }) => {
         </div>
       )}
 
-      {/* Hook text */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 20 * scale,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          opacity: interpolate(
-            localFrame,
-            [phase6End - fps * 0.5, phase6End],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          ),
-        }}
-      >
-        <span
-          style={{
-            fontSize: 28 * scale,
-            color: COLORS.text,
-            fontStyle: "italic",
-          }}
-        >
-          This is how they do it.
-        </span>
-      </div>
     </AbsoluteFill>
   );
 };
