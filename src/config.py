@@ -20,7 +20,7 @@ class VideoConfig(BaseModel):
 class LLMConfig(BaseModel):
     """LLM provider configuration."""
 
-    provider: str = "mock"
+    provider: str = "claude-code"
     model: str = "claude-sonnet-4-20250514"
     max_tokens: int = 4096
     temperature: float = 0.7

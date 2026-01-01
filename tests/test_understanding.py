@@ -8,7 +8,7 @@ from src.config import Config, LLMConfig
 from src.ingestion import parse_document
 from src.models import ContentAnalysis, ParsedDocument, SourceType
 from src.understanding import ContentAnalyzer, LLMProvider, get_llm_provider
-from src.understanding.llm_provider import MockLLMProvider
+from src.understanding.llm_provider import ClaudeCodeLLMProvider, MockLLMProvider
 
 
 class TestMockLLMProvider:
@@ -67,10 +67,10 @@ class TestMockLLMProvider:
 class TestGetLLMProvider:
     """Tests for provider factory function."""
 
-    def test_returns_mock_provider_by_default(self):
-        config = Config()  # Default config has mock provider
+    def test_returns_claude_code_provider_by_default(self):
+        config = Config()  # Default config has claude-code provider
         provider = get_llm_provider(config)
-        assert isinstance(provider, MockLLMProvider)
+        assert isinstance(provider, ClaudeCodeLLMProvider)
 
     def test_raises_for_unknown_provider(self):
         config = Config()

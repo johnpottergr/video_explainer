@@ -54,11 +54,8 @@ output/storyboards/*.yaml
 !output/**/.gitkeep
 output/
 
-# Generated music (can be regenerated with music CLI)
-projects/*/music/
-
-# Generated voiceovers (can be regenerated with voiceover CLI)
-projects/*/voiceover/*.mp3
+# Projects directory (project-specific content, not committed)
+projects/
 
 # Remotion public symlinks (project-specific)
 remotion/public/voiceover
