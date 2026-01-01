@@ -384,20 +384,141 @@ def cmd_storyboard(args: argparse.Namespace) -> int:
             storyboard = json.load(f)
 
         print(f"Storyboard: {storyboard.get('title', 'Untitled')}")
-        print(f"Duration: {storyboard.get('duration_seconds', 0)}s")
-        print(f"Beats: {len(storyboard.get('beats', []))}")
+        print(f"Scenes: {len(storyboard.get('scenes', []))}")
+        total_duration = storyboard.get('total_duration_seconds', 0)
+        print(f"Duration: {total_duration:.1f}s ({total_duration/60:.1f} min)")
         print()
 
-        for i, beat in enumerate(storyboard.get("beats", []), 1):
-            print(f"  Beat {i}: {beat.get('id', 'unnamed')}")
-            print(f"    Time: {beat.get('start_seconds', 0):.1f}s - {beat.get('end_seconds', 0):.1f}s")
-            print(f"    Elements: {len(beat.get('elements', []))}")
+        for i, scene in enumerate(storyboard.get("scenes", []), 1):
+            duration = scene.get('audio_duration_seconds', 0)
+            print(f"  {i}. {scene.get('id', 'unnamed')}: {scene.get('title', '')}")
+            print(f"     Type: {scene.get('type', 'unknown')} | Duration: {duration:.1f}s")
+            if scene.get('sfx_cues'):
+                print(f"     SFX: {len(scene['sfx_cues'])} cues")
 
         return 0
 
-    # Generate storyboard (placeholder - would use LLM)
-    print("Storyboard generation from LLM not yet implemented.")
-    print("Use --view to view existing storyboard.")
+    # Check if storyboard exists and --force not specified
+    if storyboard_path.exists() and not args.force:
+        print(f"Storyboard already exists: {storyboard_path}")
+        print("Use --force to regenerate, or --view to view.")
+        return 0
+
+    # Generate storyboard
+    print(f"Generating storyboard for {project.id}")
+
+    # Check for required files
+    narration_path = project.get_path("narration")
+    voiceover_manifest = project.root_dir / "voiceover" / "manifest.json"
+    scenes_dir = project.root_dir / "scenes"
+
+    if not narration_path.exists():
+        print(f"Error: Narrations not found: {narration_path}", file=sys.stderr)
+        print("Run 'narration' command first.")
+        return 1
+
+    # Load narrations
+    with open(narration_path) as f:
+        narrations = json.load(f)
+
+    # Load voiceover manifest if it exists (for audio durations)
+    voiceover_data = {}
+    if voiceover_manifest.exists():
+        with open(voiceover_manifest) as f:
+            manifest = json.load(f)
+            for scene in manifest.get("scenes", []):
+                voiceover_data[scene["scene_id"]] = {
+                    "audio_file": Path(scene["audio_path"]).name,
+                    "duration": scene.get("duration_seconds", 0),
+                }
+        print(f"Found voiceover manifest with {len(voiceover_data)} scenes")
+    else:
+        print("Warning: No voiceover manifest found. Using narration durations.")
+
+    # Check for scenes directory to determine scene types
+    scene_types = {}
+    if scenes_dir.exists():
+        index_path = scenes_dir / "index.ts"
+        if index_path.exists():
+            # Parse scene types from index.ts
+            index_content = index_path.read_text()
+            import re
+            # Match patterns like: hook: HookScene,
+            matches = re.findall(r'(\w+):\s*(\w+Scene)', index_content)
+            for key, component in matches:
+                scene_types[key] = component
+            print(f"Found {len(scene_types)} scene types in scenes/index.ts")
+
+    # Build storyboard
+    storyboard = {
+        "title": project.title,
+        "description": f"Storyboard for {project.title}",
+        "version": "2.0.0",
+        "project": project.id,
+        "video": {
+            "width": 1920,
+            "height": 1080,
+            "fps": 30,
+        },
+        "style": {
+            "background_color": "#0f0f1a",
+            "primary_color": "#00d9ff",
+            "secondary_color": "#ff6b35",
+            "font_family": "Inter",
+        },
+        "scenes": [],
+        "audio": {
+            "background_music": None,
+            "music_volume": 0.15,
+        },
+        "total_duration_seconds": 0,
+    }
+
+    total_duration = 0
+    for scene in narrations.get("scenes", []):
+        scene_id = scene.get("scene_id", "")
+        title = scene.get("title", "")
+
+        # Determine scene type from scene_id (e.g., "scene1_hook" -> "hook")
+        scene_type_key = scene_id.split("_", 1)[1] if "_" in scene_id else scene_id
+        scene_type = f"{project.id}/{scene_type_key}"
+
+        # Get audio info from voiceover manifest or narration
+        if scene_id in voiceover_data:
+            audio_file = voiceover_data[scene_id]["audio_file"]
+            audio_duration = voiceover_data[scene_id]["duration"]
+        else:
+            audio_file = f"{scene_id}.mp3"
+            audio_duration = scene.get("duration_seconds", 20)
+
+        storyboard_scene = {
+            "id": scene_id,
+            "type": scene_type,
+            "title": title,
+            "audio_file": audio_file,
+            "audio_duration_seconds": audio_duration,
+            "sfx_cues": [],  # Empty by default, can be added later
+        }
+
+        storyboard["scenes"].append(storyboard_scene)
+        total_duration += audio_duration
+
+    storyboard["total_duration_seconds"] = total_duration
+
+    # Write storyboard
+    storyboard_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(storyboard_path, "w") as f:
+        json.dump(storyboard, f, indent=2)
+
+    print(f"\nGenerated storyboard with {len(storyboard['scenes'])} scenes")
+    print(f"Total duration: {total_duration:.1f}s ({total_duration/60:.1f} min)")
+    print(f"Saved to: {storyboard_path}")
+
+    if args.verbose:
+        print("\nScenes:")
+        for scene in storyboard["scenes"]:
+            print(f"  {scene['id']}: {scene['title']} ({scene['audio_duration_seconds']:.1f}s)")
+
     return 0
 
 
@@ -1285,6 +1406,16 @@ def main() -> int:
         "--view",
         action="store_true",
         help="View existing storyboard instead of generating",
+    )
+    storyboard_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing storyboard",
+    )
+    storyboard_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show detailed output",
     )
     storyboard_parser.set_defaults(func=cmd_storyboard)
 

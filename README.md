@@ -129,12 +129,19 @@ Output: `projects/<project>/voiceover/*.mp3`, `manifest.json`
 
 #### Storyboard
 
-View or generate storyboard linking scenes with audio:
+Generate or view the storyboard that links scenes with audio:
 
 ```bash
-python -m src.cli storyboard llm-inference --view  # View existing
-python -m src.cli storyboard llm-inference         # Generate new
+python -m src.cli storyboard llm-inference         # Generate from narrations
+python -m src.cli storyboard llm-inference --view  # View existing storyboard
+python -m src.cli storyboard llm-inference --force # Regenerate storyboard
+python -m src.cli storyboard llm-inference -v      # Verbose output
 ```
+
+The storyboard combines:
+- Scene metadata from narrations (titles, IDs)
+- Audio durations from voiceover manifest
+- Scene types from generated Remotion components
 
 Output: `projects/<project>/storyboard/storyboard.json`
 

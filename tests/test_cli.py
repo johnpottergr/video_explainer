@@ -327,7 +327,10 @@ class TestCmdStoryboard:
         config = {
             "id": "test-project",
             "title": "Test Project",
-            "paths": {"storyboard": "storyboard/storyboard.json"},
+            "paths": {
+                "storyboard": "storyboard/storyboard.json",
+                "narration": "narration/narrations.json",
+            },
         }
         with open(project_dir / "config.json", "w") as f:
             json.dump(config, f)
@@ -336,14 +339,46 @@ class TestCmdStoryboard:
         storyboard_dir.mkdir()
         storyboard = {
             "title": "Test Storyboard",
-            "duration_seconds": 60,
-            "beats": [
-                {"id": "beat1", "start_seconds": 0, "end_seconds": 30, "elements": []},
-                {"id": "beat2", "start_seconds": 30, "end_seconds": 60, "elements": []},
+            "total_duration_seconds": 60,
+            "scenes": [
+                {"id": "scene1_hook", "type": "test-project/hook", "title": "Hook", "audio_file": "scene1.mp3", "audio_duration_seconds": 30},
+                {"id": "scene2_main", "type": "test-project/main", "title": "Main", "audio_file": "scene2.mp3", "audio_duration_seconds": 30},
             ],
         }
         with open(storyboard_dir / "storyboard.json", "w") as f:
             json.dump(storyboard, f)
+
+        return project_dir
+
+    @pytest.fixture
+    def project_with_narration(self, tmp_path):
+        """Create a project with narration for storyboard generation."""
+        project_dir = tmp_path / "gen-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "gen-project",
+            "title": "Generation Test Project",
+            "paths": {
+                "narration": "narration/narrations.json",
+                "storyboard": "storyboard/storyboard.json",
+            },
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        # Create narration
+        narration_dir = project_dir / "narration"
+        narration_dir.mkdir()
+        narrations = {
+            "scenes": [
+                {"scene_id": "scene1_hook", "title": "The Hook", "duration_seconds": 20},
+                {"scene_id": "scene2_explanation", "title": "Explanation", "duration_seconds": 30},
+            ],
+            "total_duration_seconds": 50,
+        }
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump(narrations, f)
 
         return project_dir
 
@@ -353,14 +388,16 @@ class TestCmdStoryboard:
         args.projects_dir = str(tmp_path)
         args.project = "test-project"
         args.view = True
+        args.force = False
+        args.verbose = False
 
         result = cmd_storyboard(args)
         assert result == 0
 
         captured = capsys.readouterr()
         assert "Storyboard: Test Storyboard" in captured.out
-        assert "Duration: 60s" in captured.out
-        assert "Beats: 2" in captured.out
+        assert "Scenes: 2" in captured.out
+        assert "Duration: 60.0s" in captured.out
 
     def test_storyboard_view_missing(self, tmp_path, capsys):
         """Test viewing nonexistent storyboard."""
@@ -375,24 +412,111 @@ class TestCmdStoryboard:
         args.projects_dir = str(tmp_path)
         args.project = "no-storyboard"
         args.view = True
+        args.force = False
+        args.verbose = False
 
         result = cmd_storyboard(args)
         assert result == 1
         captured = capsys.readouterr()
         assert "Error" in captured.err
 
-    def test_storyboard_generate_not_implemented(self, project_with_storyboard, tmp_path, capsys):
-        """Test storyboard generation shows not implemented."""
+    def test_storyboard_generate_from_narration(self, project_with_narration, tmp_path, capsys):
+        """Test storyboard generation from narration."""
         args = MagicMock()
         args.projects_dir = str(tmp_path)
-        args.project = "test-project"
+        args.project = "gen-project"
         args.view = False
+        args.force = False
+        args.verbose = True
 
         result = cmd_storyboard(args)
         assert result == 0
 
         captured = capsys.readouterr()
-        assert "not yet implemented" in captured.out
+        assert "Generating storyboard" in captured.out
+        assert "Generated storyboard with 2 scenes" in captured.out
+
+        # Verify storyboard was created
+        storyboard_path = tmp_path / "gen-project" / "storyboard" / "storyboard.json"
+        assert storyboard_path.exists()
+
+        with open(storyboard_path) as f:
+            storyboard = json.load(f)
+        assert storyboard["title"] == "Generation Test Project"
+        assert len(storyboard["scenes"]) == 2
+        assert storyboard["total_duration_seconds"] == 50
+
+    def test_storyboard_generate_missing_narration(self, tmp_path, capsys):
+        """Test storyboard generation fails without narration."""
+        project_dir = tmp_path / "no-narration"
+        project_dir.mkdir()
+        config = {"id": "no-narration", "title": "No Narration"}
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "no-narration"
+        args.view = False
+        args.force = False
+        args.verbose = False
+
+        result = cmd_storyboard(args)
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "Narrations not found" in captured.err
+
+    def test_storyboard_exists_no_force(self, project_with_storyboard, tmp_path, capsys):
+        """Test storyboard generation skips if exists without --force."""
+        # Add narration to allow generation
+        narration_dir = tmp_path / "test-project" / "narration"
+        narration_dir.mkdir()
+        narrations = {"scenes": [{"scene_id": "scene1", "title": "Test", "duration_seconds": 10}]}
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump(narrations, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.view = False
+        args.force = False
+        args.verbose = False
+
+        result = cmd_storyboard(args)
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "already exists" in captured.out
+
+    def test_storyboard_generate_with_force(self, project_with_storyboard, tmp_path, capsys):
+        """Test storyboard generation with --force overwrites existing."""
+        # Add narration
+        narration_dir = tmp_path / "test-project" / "narration"
+        narration_dir.mkdir()
+        narrations = {
+            "scenes": [{"scene_id": "scene1_new", "title": "New Scene", "duration_seconds": 15}],
+            "total_duration_seconds": 15,
+        }
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump(narrations, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.view = False
+        args.force = True
+        args.verbose = False
+
+        result = cmd_storyboard(args)
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "Generated storyboard" in captured.out
+
+        # Verify new storyboard was created
+        storyboard_path = tmp_path / "test-project" / "storyboard" / "storyboard.json"
+        with open(storyboard_path) as f:
+            storyboard = json.load(f)
+        assert len(storyboard["scenes"]) == 1
+        assert storyboard["scenes"][0]["id"] == "scene1_new"
 
 
 class TestCmdRender:
