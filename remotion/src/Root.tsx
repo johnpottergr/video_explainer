@@ -1,6 +1,10 @@
 import { Composition } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Neucha";
 import { ExplainerVideo } from "./scenes/ExplainerVideo";
 import { StoryboardPlayer } from "./scenes/StoryboardPlayer";
+
+// Load Neucha handwritten font globally - this makes it available to all scenes
+loadFont();
 import {
   SceneStoryboardPlayer,
   SceneStoryboard,
