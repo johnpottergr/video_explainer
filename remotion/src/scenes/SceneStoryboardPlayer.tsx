@@ -428,4 +428,68 @@ export function calculateStoryboardDuration(storyboard: SceneStoryboard): number
   );
 }
 
+/**
+ * Dynamic Storyboard Player - loads storyboard from build-time injection or props
+ *
+ * For dev preview: Uses storyboard injected at build time via webpack DefinePlugin
+ * For rendering: Pass the storyboard prop directly to SceneStoryboardPlayer
+ *
+ * The storyboard is loaded from process.env.__STORYBOARD_JSON__ which is set
+ * in remotion.config.ts based on the PROJECT environment variable.
+ */
+
+// Get build-time injected storyboard (set in remotion.config.ts)
+const getInjectedStoryboard = (): SceneStoryboard | null => {
+  try {
+    // This is replaced at build time by webpack DefinePlugin
+    const injected = process.env.__STORYBOARD_JSON__;
+    if (injected && typeof injected === "object") {
+      return injected as unknown as SceneStoryboard;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+export const DynamicStoryboardPlayer: React.FC<SceneStoryboardPlayerProps> = ({
+  storyboard: providedStoryboard,
+  voiceoverBasePath = "voiceover",
+}) => {
+  // Priority: props > build-time injection
+  const storyboard = providedStoryboard || getInjectedStoryboard();
+
+  if (!storyboard) {
+    return (
+      <AbsoluteFill
+        style={{
+          backgroundColor: "#1a1a2e",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <div style={{ fontSize: 48, fontWeight: 700, color: "#ff4757", marginBottom: 20 }}>
+          No Storyboard Found
+        </div>
+        <div style={{ fontSize: 24, color: "#888" }}>
+          Make sure storyboard/storyboard.json exists in your project
+        </div>
+        <div style={{ fontSize: 18, color: "#666", marginTop: 20 }}>
+          Run with: PROJECT=your-project npm run dev
+        </div>
+      </AbsoluteFill>
+    );
+  }
+
+  return (
+    <SceneStoryboardPlayer
+      storyboard={storyboard}
+      voiceoverBasePath={voiceoverBasePath}
+    />
+  );
+};
+
 export default SceneStoryboardPlayer;
