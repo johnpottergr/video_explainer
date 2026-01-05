@@ -186,6 +186,145 @@ export const SceneName: React.FC<SceneNameProps> = ({ startFrame = 0 }) => {
 - **Subtle highlights**: Use box-shadow sparingly for emphasis
 - **Citations**: Always include paper references for technical concepts
 
+## Advanced Visual Patterns (HIGHLY RECOMMENDED)
+
+### 1. Phase-Based Narration Sync (CRITICAL)
+Analyze the voiceover to identify key moments, then create phase timings:
+```typescript
+// Phase timings based on narration flow (~30 second scene example)
+const phase1 = Math.round(durationInFrames * 0.08);  // First concept mentioned
+const phase2 = Math.round(durationInFrames * 0.25);  // Second concept
+const phase3 = Math.round(durationInFrames * 0.42);  // Main point
+const phase4 = Math.round(durationInFrames * 0.60);  // Key insight
+const phase5 = Math.round(durationInFrames * 0.80);  // Conclusion builds
+const phase6 = Math.round(durationInFrames * 0.92);  // Final message
+```
+
+### 2. Dynamic Pulsing Effects
+Create living, breathing animations:
+```typescript
+const pulse = Math.sin(localFrame * 0.1) * 0.15 + 0.85;
+const cellPulse = (index: number) => Math.sin(localFrame * 0.12 + index * 0.4) * 0.3 + 0.7;
+// Use: opacity: pulse, boxShadow: pulse > 0.8 ? `0 0 ${15 * scale}px ${color}60` : "none"
+```
+
+### 3. Flowing Particle Animations
+Show data flow with moving particles:
+```typescript
+const flowOffset = (localFrame * 2) % 200;
+const renderFlowingParticles = (count: number, startX: number, endX: number) => {{
+  return Array.from({{ length: count }}, (_, i) => {{
+    const progress = ((flowOffset / 200) + (i / count)) % 1;
+    const x = startX + (endX - startX) * progress;
+    const opacity = Math.sin(progress * Math.PI);
+    return <div key={{i}} style={{{{ left: x * scale, opacity }}}} />;
+  }});
+}};
+```
+
+### 4. SVG-Based Visualizations
+Use SVG for complex shapes like brain diagrams, waves, connections:
+```typescript
+<svg width={{400 * scale}} height={{300 * scale}} viewBox="0 0 400 300">
+  <path
+    d={{`M 50 150 Q ${{100 + Math.sin(localFrame * 0.1) * 20}} 100 200 150`}}
+    stroke={{COLORS.primary}}
+    strokeWidth={{3}}
+    fill="none"
+  />
+</svg>
+```
+
+### 5. Comparison Layouts (Problem vs Solution)
+Side-by-side layouts with animated transitions:
+```typescript
+// LEFT: Old/Problem | CENTER: Arrow/Transform | RIGHT: New/Solution
+<div style={{{{ display: "flex", gap: 80 * scale }}}}>
+  <div style={{{{ opacity: oldOpacity, filter: oldOpacity < 0.5 ? "grayscale(100%)" : "none" }}}}>
+    {{/* Old state */}}
+  </div>
+  <svg>{{/* Animated arrow */}}</svg>
+  <div style={{{{ opacity: newOpacity, transform: `scale(${{newScale}})` }}}}>
+    {{/* New state with glow effect */}}
+  </div>
+</div>
+```
+
+### 6. Animated Wave Frequencies
+Show multi-frequency concepts (brain waves, signals):
+```typescript
+const wavePoints = Array.from({{ length: 50 }}, (_, i) => {{
+  const x = i * 8;
+  const y = 50 + Math.sin(i * 0.3 + localFrame * 0.15) * amplitude;
+  return `${{i === 0 ? "M" : "L"}} ${{x}} ${{y}}`;
+}}).join(" ");
+```
+
+### 7. Scene Layout Structure (RECOMMENDED)
+Consistent structure for all scenes:
+```typescript
+return (
+  <AbsoluteFill style={{{{ backgroundColor: COLORS.background, fontFamily: FONTS.handwritten }}}}>
+    {{/* Scene indicator - top left */}}
+    <div style={{{{ ...getSceneIndicatorStyle(scale), opacity: titleOpacity }}}}>
+      <span style={{getSceneIndicatorTextStyle(scale)}}>{{sceneNumber}}</span>
+    </div>
+
+    {{/* Title - centered top */}}
+    <div style={{{{ position: "absolute", top: 50 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
+      {{title}}
+    </div>
+
+    {{/* Subtitle - below title */}}
+    <div style={{{{ position: "absolute", top: 115 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
+      {{subtitle}}
+    </div>
+
+    {{/* Main content - large center area, 60-70% of canvas */}}
+    <div style={{{{ position: "absolute", top: 170 * scale, left: 80 * scale, right: 80 * scale, bottom: 150 * scale }}}}>
+      {{/* Your visualization here - USE THIS SPACE FULLY */}}
+    </div>
+
+    {{/* Bottom insight/message */}}
+    <div style={{{{ position: "absolute", bottom: 70 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
+      {{/* Key takeaway with colored background */}}
+    </div>
+
+    {{/* Citation - bottom right */}}
+    <div style={{{{ position: "absolute", bottom: 20 * scale, right: 30 * scale }}}}>
+      "Paper Title" — Authors et al., Year
+    </div>
+  </AbsoluteFill>
+);
+```
+
+## Scene Type Archetypes
+
+### Problem/Challenge Scenes
+- Show broken/failing state with red highlights
+- Use dissolution/fading effects for "forgetting" concepts
+- Comparison grids showing before/after degradation
+
+### Solution/Introduction Scenes
+- Build up progressively from simple to complex
+- Use green/success colors for revelations
+- Spring animations for "aha moment" appearances
+
+### Technical Deep-Dive Scenes
+- Side-by-side comparison views
+- Animated arrows showing data/concept flow
+- Memory cell grids with pulsing effects
+
+### Results/Performance Scenes
+- Animated bar charts that grow
+- Large numerical callouts with emphasis
+- Before/after comparisons with metrics
+
+### Conclusion/Vision Scenes
+- Timeline visualizations
+- Glowing final message with box-shadow
+- Old vs New comparison fading
+
 ## Color Scheme (import from ./styles)
 
 - primary: "#00d9ff" (cyan - main headings, key elements, emphasis)
@@ -215,9 +354,51 @@ SCENE_GENERATION_PROMPT = """Generate a Remotion scene component for the followi
 **Key Elements to Animate**:
 {elements}
 
-## Reference: Example Scene Structure
+## STEP 1: Analyze the Narration (CRITICAL)
 
-Here's a well-structured example scene for reference:
+Before writing code, mentally parse the voiceover to identify:
+1. When each concept is first mentioned (calculate as % of duration)
+2. Key transition words ("But", "However", "The solution", "This means")
+3. The emotional arc (problem → insight → solution)
+
+Create phase timings based on this analysis:
+- phase1: When the first key concept appears (~8-15% into scene)
+- phase2: Second concept or development (~20-30%)
+- phase3: Main point or transition (~35-45%)
+- phase4: Key insight revelation (~55-65%)
+- phase5: Building to conclusion (~75-85%)
+- phase6: Final message (~90-95%)
+
+## STEP 2: Choose Visual Patterns Based on Scene Type
+
+For "{scene_type}" scenes, use these patterns:
+
+**If problem/challenge**:
+- Red/error colors for broken states
+- Dissolution/fading effects
+- Comparison showing degradation
+
+**If solution/introduction**:
+- Green/success colors for revelations
+- Build-up animations
+- Spring effects for "aha moments"
+
+**If technical/deep-dive**:
+- Side-by-side comparisons
+- Animated data flow arrows
+- Pulsing memory/node visualizations
+
+**If results/performance**:
+- Animated bar charts
+- Large numerical callouts
+- Before/after metrics
+
+**If conclusion/vision**:
+- Timeline with milestones
+- Glowing final message
+- Transition from old to new
+
+## Reference: Example Scene Structure
 
 ```typescript
 {example_scene}
@@ -234,17 +415,25 @@ Here's a well-structured example scene for reference:
 7. Make all sizes responsive using the scale factor
 8. Import styles from "./styles" (COLORS, FONTS, getSceneIndicatorStyle, getSceneIndicatorTextStyle)
 9. Phase timings should be proportional to durationInFrames
-10. Add a detailed comment block at the top explaining the visual flow
+10. Add a detailed comment block at the top explaining the visual flow and the narration text
 
 ## CRITICAL Layout & Style Requirements
 
 11. **CITATIONS**: Include a citation element in bottom-right that fades in when the technical concept is introduced
 12. **NO OVERFLOW**: All elements MUST stay within 1920x1080 bounds at ALL animation keyframes
 13. **NO CHAOTIC MOTION**: No shaking, trembling, or erratic animations
-14. **FILL THE SPACE**: Main content should use at least 60% of the canvas area
+14. **FILL THE SPACE**: Main content should use at least 60-70% of the canvas area
 15. **TYPOGRAPHY**: Use fontWeight: 400 for FONTS.handwritten, lineHeight: 1.5 for body text
 16. **SIZING**: Titles 42-48px, body 18-22px, labels 14-18px, citations 14-16px (all scaled)
 17. **SPACING**: Use 60-80px scaled margins from canvas edges
+
+## CRITICAL Visual Quality Requirements
+
+18. **DYNAMIC EFFECTS**: Use pulsing (Math.sin), flowing particles, or wave animations for living visuals
+19. **SVG FOR COMPLEXITY**: Use SVG for brain diagrams, wave patterns, connection arrows
+20. **CONSISTENT LAYOUT**: Title at top, subtitle below, main visualization in center, insight at bottom, citation bottom-right
+21. **LARGE VISUALIZATIONS**: Main visual elements should be substantial (200-400px scaled), not tiny with whitespace
+22. **VISUAL METAPHORS**: Translate abstract concepts into concrete visuals (e.g., "memory" → pulsing grid cells)
 
 ## Output
 
@@ -276,6 +465,12 @@ export const COLORS = {{
   text: "#ffffff",         // Primary text
   textDim: "#888888",      // Secondary text
   textMuted: "#666666",    // Muted text
+}};
+
+// ===== FONTS =====
+export const FONTS = {{
+  handwritten: "Neucha, cursive",
+  mono: "JetBrains Mono, monospace",
 }};
 
 // ===== TYPOGRAPHY =====
@@ -643,27 +838,53 @@ Write the complete component code to the file: {output_path}
             f.write(content)
 
     def _load_example_scene(self, example_dir: Path | None = None) -> str:
-        """Load an example scene for reference."""
-        # Default to llm-inference scenes
-        if example_dir is None:
-            example_dir = Path(__file__).parent.parent.parent / "projects" / "llm-inference" / "scenes"
+        """Load an example scene for reference.
 
-        if not example_dir.exists():
-            return "// No example scene available"
+        Prioritizes well-designed scenes with rich animations and clear structure.
+        If example_dir is provided, only that directory is searched.
+        """
+        projects_dir = Path(__file__).parent.parent.parent / "projects"
 
-        # Try to load a good example scene
-        example_files = ["PhasesScene.tsx", "HookScene.tsx", "BottleneckScene.tsx"]
-        for filename in example_files:
-            path = example_dir / filename
-            if path.exists():
-                with open(path) as f:
+        # If specific directory provided, only use that (don't fall back)
+        if example_dir:
+            example_dirs = [example_dir]
+        else:
+            # Try multiple project directories in order of quality
+            example_dirs = [
+                projects_dir / "continual-learning" / "scenes",  # Best examples
+                projects_dir / "llm-inference" / "scenes",
+            ]
+
+        # Priority list of example scenes (these have rich animations)
+        priority_files = [
+            "TheAmnesiaProblemScene.tsx",      # Good problem scene with timeline
+            "IntroducingNestedLearningScene.tsx",  # Good solution scene with Russian dolls
+            "PerformanceBreakthroughScene.tsx",  # Good results scene with bar charts
+            "TheFutureOfLearningScene.tsx",    # Good conclusion scene
+            "PhasesScene.tsx",
+            "HookScene.tsx",
+            "BottleneckScene.tsx",
+        ]
+
+        for dir_path in example_dirs:
+            if not dir_path.exists():
+                continue
+
+            # Try priority files first
+            for filename in priority_files:
+                path = dir_path / filename
+                if path.exists():
+                    with open(path) as f:
+                        return f.read()
+
+            # Fall back to any .tsx file (not styles or index)
+            tsx_files = [
+                f for f in dir_path.glob("*.tsx")
+                if f.name not in ("styles.ts", "index.ts", "index.tsx")
+            ]
+            if tsx_files:
+                with open(tsx_files[0]) as f:
                     return f.read()
-
-        # Fall back to any .tsx file
-        tsx_files = list(example_dir.glob("*.tsx"))
-        if tsx_files:
-            with open(tsx_files[0]) as f:
-                return f.read()
 
         return "// No example scene available"
 
