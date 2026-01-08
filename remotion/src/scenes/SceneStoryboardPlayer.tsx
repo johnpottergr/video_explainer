@@ -113,41 +113,41 @@ export interface SceneStoryboardPlayerProps {
 // Transition duration in seconds
 const TRANSITION_DURATION = 0.7;
 
+// Transition types for variety
+type TransitionType = "fadeScale" | "slideLeft" | "slideRight" | "slideUp" | "zoomIn" | "wipe" | "crossfade";
+
+const TRANSITION_TYPES: TransitionType[] = ["fadeScale", "slideLeft", "slideRight", "slideUp", "zoomIn", "wipe", "crossfade"];
+
+// Deterministic "random" selection based on scene index (so it's consistent across renders)
+const getTransitionType = (sceneIndex: number): TransitionType => {
+  // Use a simple hash to pick transition type
+  const hash = (sceneIndex * 7 + 3) % TRANSITION_TYPES.length;
+  return TRANSITION_TYPES[hash];
+};
+
 /**
- * Fade transition component with cinematic scale and motion effects
+ * Dynamic transition component that varies based on scene index
  */
-const FadeTransition: React.FC<{
+const SceneTransition: React.FC<{
   children: React.ReactNode;
   durationInFrames: number;
-}> = ({ children, durationInFrames }) => {
+  sceneIndex: number;
+}> = ({ children, durationInFrames, sceneIndex }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
+  const { fps, width } = useVideoConfig();
   const transitionFrames = Math.floor(TRANSITION_DURATION * fps);
   const easing = Easing.out(Easing.cubic);
+  const easingIn = Easing.in(Easing.cubic);
 
-  // Fade in at start (opacity: 0 -> 1)
+  const transitionType = getTransitionType(sceneIndex);
+
+  // Common fade values
   const fadeIn = interpolate(frame, [0, transitionFrames], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing,
   });
 
-  // Scale in at start (0.98 -> 1)
-  const scaleIn = interpolate(frame, [0, transitionFrames], [0.98, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing,
-  });
-
-  // Translate Y in at start (-10px -> 0)
-  const translateYIn = interpolate(frame, [0, transitionFrames], [-10, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing,
-  });
-
-  // Fade out at end (opacity: 1 -> 0)
   const fadeOut = interpolate(
     frame,
     [durationInFrames - transitionFrames, durationInFrames],
@@ -155,43 +155,145 @@ const FadeTransition: React.FC<{
     {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
-      easing,
+      easing: easingIn,
     }
   );
 
-  // Scale out at end (1 -> 0.98)
-  const scaleOut = interpolate(
-    frame,
-    [durationInFrames - transitionFrames, durationInFrames],
-    [1, 0.98],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing,
-    }
-  );
-
-  // Translate Y out at end (0 -> 10px)
-  const translateYOut = interpolate(
-    frame,
-    [durationInFrames - transitionFrames, durationInFrames],
-    [0, 10],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing,
-    }
-  );
-
-  // Combine fade in and fade out
   const opacity = Math.min(fadeIn, fadeOut);
-
-  // Combine scale in and scale out
-  const scale = Math.min(scaleIn, scaleOut);
-
-  // Combine translateY in and out (use in value during fade-in, out value during fade-out)
   const isInFadeOutPhase = frame > durationInFrames - transitionFrames;
-  const translateY = isInFadeOutPhase ? translateYOut : translateYIn;
+
+  let transform = "";
+  let filter = "";
+
+  switch (transitionType) {
+    case "fadeScale": {
+      // Original fade + scale + translateY
+      const scaleIn = interpolate(frame, [0, transitionFrames], [0.96, 1], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const scaleOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [1, 0.96], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const translateYIn = interpolate(frame, [0, transitionFrames], [-20, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const translateYOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, 20], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const scale = Math.min(scaleIn, scaleOut);
+      const translateY = isInFadeOutPhase ? translateYOut : translateYIn;
+      transform = `scale(${scale}) translateY(${translateY}px)`;
+      break;
+    }
+
+    case "slideLeft": {
+      // Slide in from right, slide out to left
+      const slideIn = interpolate(frame, [0, transitionFrames], [100, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const slideOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, -100], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const translateX = isInFadeOutPhase ? slideOut : slideIn;
+      transform = `translateX(${translateX}px)`;
+      break;
+    }
+
+    case "slideRight": {
+      // Slide in from left, slide out to right
+      const slideIn = interpolate(frame, [0, transitionFrames], [-100, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const slideOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, 100], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const translateX = isInFadeOutPhase ? slideOut : slideIn;
+      transform = `translateX(${translateX}px)`;
+      break;
+    }
+
+    case "slideUp": {
+      // Slide in from bottom, slide out to top
+      const slideIn = interpolate(frame, [0, transitionFrames], [80, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const slideOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, -80], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const scaleIn = interpolate(frame, [0, transitionFrames], [0.98, 1], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const scaleOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [1, 0.98], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const translateY = isInFadeOutPhase ? slideOut : slideIn;
+      const scale = Math.min(scaleIn, scaleOut);
+      transform = `translateY(${translateY}px) scale(${scale})`;
+      break;
+    }
+
+    case "zoomIn": {
+      // Zoom in from larger, zoom out to smaller
+      const scaleIn = interpolate(frame, [0, transitionFrames], [1.15, 1], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const scaleOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [1, 0.85], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const scale = isInFadeOutPhase ? scaleOut : scaleIn;
+      transform = `scale(${scale})`;
+      break;
+    }
+
+    case "wipe": {
+      // Horizontal wipe with scale
+      const clipIn = interpolate(frame, [0, transitionFrames], [100, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const clipOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, 100], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const scaleIn = interpolate(frame, [0, transitionFrames], [0.98, 1], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const scaleOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [1, 0.98], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const clip = isInFadeOutPhase ? clipOut : clipIn;
+      const scale = Math.min(scaleIn, scaleOut);
+      transform = `scale(${scale})`;
+      // Use clip-path for wipe effect (handled via style below)
+      break;
+    }
+
+    case "crossfade": {
+      // Pure crossfade with slight blur
+      const blurIn = interpolate(frame, [0, transitionFrames], [8, 0], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+      });
+      const blurOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, 8], {
+        extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+      });
+      const blur = isInFadeOutPhase ? blurOut : blurIn;
+      filter = `blur(${blur}px)`;
+      break;
+    }
+  }
+
+  // Special handling for wipe transition clip-path
+  let clipPath = "none";
+  if (transitionType === "wipe") {
+    const clipIn = interpolate(frame, [0, transitionFrames], [100, 0], {
+      extrapolateLeft: "clamp", extrapolateRight: "clamp", easing,
+    });
+    const clipOut = interpolate(frame, [durationInFrames - transitionFrames, durationInFrames], [0, 100], {
+      extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easingIn,
+    });
+    const clip = isInFadeOutPhase ? clipOut : clipIn;
+    clipPath = isInFadeOutPhase
+      ? `inset(0 ${clip}% 0 0)`
+      : `inset(0 0 0 ${clip}%)`;
+  }
 
   return (
     <div
@@ -202,7 +304,9 @@ const FadeTransition: React.FC<{
         right: 0,
         bottom: 0,
         opacity,
-        transform: `scale(${scale}) translateY(${translateY}px)`,
+        transform: transform || "none",
+        filter: filter || "none",
+        clipPath,
         transformOrigin: "center center",
       }}
     >
@@ -384,14 +488,14 @@ export const SceneStoryboardPlayer: React.FC<SceneStoryboardPlayerProps> = ({
             durationInFrames={scene.durationInFrames}
             name={`Scene ${index + 1}: ${scene.title}`}
           >
-            {/* Visual content with fade transition */}
-            <FadeTransition durationInFrames={scene.durationInFrames}>
+            {/* Visual content with varied transitions */}
+            <SceneTransition durationInFrames={scene.durationInFrames} sceneIndex={index}>
               {SceneComponent ? (
                 <SceneComponent startFrame={0} />
               ) : (
                 <MissingScene sceneType={scene.type} />
               )}
-            </FadeTransition>
+            </SceneTransition>
 
             {/* Voiceover/mixed audio track */}
             <Audio src={staticFile(audioPath)} volume={1} />
