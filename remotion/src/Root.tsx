@@ -64,7 +64,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ScenePlayer"
         component={DynamicStoryboardPlayer}
-        durationInFrames={30 * 600} // 10 min max - actual duration set by storyboard
+        durationInFrames={30 * 1800} // 30 min max - actual duration set by storyboard
         fps={30}
         width={1920}
         height={1080}
@@ -83,7 +83,7 @@ export const RemotionRoot: React.FC = () => {
           // For dynamic loading (dev preview), use a long default
           // The actual content will be clipped to storyboard duration
           return {
-            durationInFrames: 30 * 600, // 10 min max
+            durationInFrames: 30 * 1800, // 30 min max
           };
         }}
       />

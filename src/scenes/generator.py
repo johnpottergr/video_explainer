@@ -41,35 +41,105 @@ import {{ Reference }} from "./components/Reference";
 
 Note: Not all scenes need references. Hook scenes, transitions, and conclusion scenes may skip this.
 
-### 2. Layout Zone System (MANDATORY - PREVENTS OVERLAPS)
+### 2. DYNAMIC LAYOUT System (MANDATORY - PREVENTS OVERLAPS)
 
-Use this exact zone layout to prevent element overlaps:
+The layout system dynamically calculates all positions from base constraints. NEVER use hardcoded pixel values.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Title (40-50 * scale from top, 80 * scale from left)   TechStack│
-│ Subtitle (20 * scale below title)                      (right)  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│                    MAIN VISUALIZATION ZONE                      │
-│               (top: 130-150 * scale, 60-70% of canvas)          │
-│                    left: 80 * scale, right: varies              │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ Stats/Info (bottom: 100-180 * scale)           Reference        │
-│ (left: 80 * scale)                             (bottom-right)   │
-└─────────────────────────────────────────────────────────────────┘
+**Import the layout system:**
+```typescript
+import {{ LAYOUT, getCenteredPosition, getTwoColumnLayout, getThreeColumnLayout, getTwoRowLayout, getFlexibleGrid, getCenteredStyle }} from "./styles";
 ```
 
-**Zone Coordinates (at scale=1):**
-- Title: top: 40, left: 80
-- Subtitle: top: 90, left: 80
-- Main content: top: 130-150, left: 80, right: 300 (if TechStack), bottom: 200
-- Stats/Info: bottom: 100-180, left: 80
-- Reference: bottom: 20-40, right: 30-80
-- TechStack: right side, full height
+**Base constraints (defined in styles.ts):**
+- Canvas: 1920x1080
+- TechStack sidebar: 260px on right with 30px gap
+- Left margin: 60px, Right margin: 40px
+- Title area: 120px from top
+- Bottom margin: 160px (for references)
 
-**CRITICAL**: Before positioning any element, check if it conflicts with other zones.
+**Usable content area (calculated automatically):**
+```typescript
+LAYOUT.content.startX   // 60px - left edge of content
+LAYOUT.content.endX     // 1630px - right edge (before TechStack gap)
+LAYOUT.content.width    // 1570px - full usable width
+LAYOUT.content.startY   // 120px - top of content area
+LAYOUT.content.endY     // 920px - bottom of content area
+LAYOUT.content.height   // 800px - full usable height
+```
+
+**Layout Helpers - Choose the right one for your scene:**
+
+1. **4 QUADRANTS** (for scenes with 4 main elements):
+```typescript
+const {{ quadrants }} = LAYOUT;
+// Use: quadrants.topLeft, topRight, bottomLeft, bottomRight
+// Each has: {{ cx: centerX, cy: centerY }}
+
+<div style={{{{
+  position: "absolute",
+  left: quadrants.topLeft.cx * scale,
+  top: quadrants.topLeft.cy * scale,
+  transform: "translate(-50%, -50%)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+}}}}>
+  {{/* Element centered in top-left quadrant */}}
+</div>
+```
+
+2. **2 COLUMNS** (for left/right split layouts):
+```typescript
+const layout = getTwoColumnLayout();
+// layout.left and layout.right have: {{ cx, cy, width, height }}
+
+<div style={{{{
+  position: "absolute",
+  left: layout.left.cx * scale,
+  top: layout.left.cy * scale,
+  transform: "translate(-50%, -50%)",
+}}}}>
+  {{/* Left side content */}}
+</div>
+```
+
+3. **3 COLUMNS** (for left/center/right layouts):
+```typescript
+const layout = getThreeColumnLayout();
+// layout.left, layout.center, layout.right have: {{ cx, cy, width, height }}
+```
+
+4. **2 ROWS** (for top/bottom split layouts):
+```typescript
+const layout = getTwoRowLayout();
+// layout.top and layout.bottom have: {{ cx, cy, width, height }}
+```
+
+5. **CENTERED** (for single main element):
+```typescript
+const center = getCenteredPosition();
+// center has: {{ cx, cy, width, height }}
+```
+
+6. **FLEXIBLE GRID** (for any N×M grid):
+```typescript
+const cells = getFlexibleGrid(3, 2);  // 3 columns, 2 rows = 6 cells
+// Each cell has: {{ cx, cy, width, height }}
+```
+
+**PROPORTIONAL Positioning (for complex layouts):**
+Use percentages of the usable area instead of absolute pixels:
+```typescript
+const leftX = LAYOUT.content.startX + LAYOUT.content.width * 0.12;   // 12% from left
+const rightX = LAYOUT.content.startX + LAYOUT.content.width * 0.88;  // 88% from left
+const centerY = LAYOUT.content.startY + LAYOUT.content.height * 0.5; // centered vertically
+```
+
+**CRITICAL**:
+- ALWAYS use LAYOUT constants or helper functions, NEVER hardcode pixel values
+- Use transform: "translate(-50%, -50%)" to center elements at their position
+- Each element should be self-contained with title + visualization + caption
+- Size elements relative to their container: `width: LAYOUT.content.width * 0.8`
 
 ### 2.1 Layout Requirements (MANDATORY)
 
@@ -77,7 +147,7 @@ Use this exact zone layout to prevent element overlaps:
 - **No overlapping**: Elements must NEVER overlap unless intentionally layered
   - Calculate exact positions for all elements before placing them
   - When showing new content, either: (a) position it in empty space, or (b) fade out/remove previous elements first
-  - Stack elements vertically or horizontally with proper gaps (20-40px scaled)
+  - Stack elements vertically or horizontally with proper gaps (16-20px scaled, NOT 24+)
 - **Fill the space**: Main content should use at least 60-70% of canvas - AVOID empty/wasted space
 - **Consistent margins**: Use 60-80px scaled margins from edges
 - **Component sizing**: Make elements LARGE and readable
@@ -85,8 +155,64 @@ Use this exact zone layout to prevent element overlaps:
   - Don't make elements tiny with lots of whitespace around them
 - **Container overflow prevention**: Content inside boxes must fit within the box bounds
   - Calculate content size before setting container size
-  - Add padding inside containers (15-20px scaled)
+  - Add padding inside containers (12-16px scaled, NOT 24+)
   - Use overflow: "hidden" if needed, but prefer proper sizing
+
+### 2.2 CRITICAL: Content Positioning to Avoid Header Overlap
+
+**ALWAYS add offset from the header/subtitle area:**
+```typescript
+// Main content container - ALWAYS use this pattern:
+<div style={{{{
+  position: "absolute",
+  left: LAYOUT.content.startX * scale,
+  top: (LAYOUT.content.startY + 30) * scale,  // +30 offset from header!
+  width: LAYOUT.content.width * scale,
+  height: (LAYOUT.content.height - 60) * scale,  // Reduce height to compensate
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gridTemplateRows: "1fr 0.85fr",  // Use uneven rows to prevent bottom overflow
+  gap: 16 * scale,  // 16, not 24
+}}}}>
+```
+
+### 2.3 CRITICAL: Preventing Bottom Overflow
+
+When using CSS Grid layouts:
+1. **Reduce content height**: Use `(LAYOUT.content.height - 60) * scale` instead of full height
+2. **Use uneven grid rows**: `"1fr 0.85fr"` or `"1.3fr 0.7fr"` instead of `"1fr 1fr"`
+3. **Keep gaps small**: Use `gap: 16 * scale` not `gap: 24 * scale`
+4. **Reduce padding**: Use `padding: 12-16 * scale` not `padding: 24 * scale`
+5. **Compact SVG viewBoxes**: Size SVG viewBox to fit content, not oversized
+
+**Example of proper 2x2 grid that doesn't overflow:**
+```typescript
+<div style={{{{
+  position: "absolute",
+  left: LAYOUT.content.startX * scale,
+  top: (LAYOUT.content.startY + 30) * scale,
+  width: LAYOUT.content.width * scale,
+  height: (LAYOUT.content.height - 60) * scale,  // Account for offset
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gridTemplateRows: "1fr 0.85fr",  // Bottom row slightly smaller
+  gap: 16 * scale,
+}}}}>
+  {{/* Top-left panel */}}
+  <div style={{{{ padding: 16 * scale, borderRadius: 12 * scale }}}}>
+    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid meet">
+      {{/* Compact SVG content */}}
+    </svg>
+  </div>
+  {{/* ... other panels */}}
+</div>
+```
+
+### 2.4 Scene Indicator (OPTIONAL)
+
+Scene indicators showing scene numbers are optional and often not needed:
+- Skip scene indicators for cleaner visuals
+- If used, keep them small and unobtrusive
 
 ### 3. Animation Requirements (MANDATORY)
 
@@ -238,18 +364,22 @@ Show continuous activity at the bottom of scenes:
 ## Code Patterns
 
 ```typescript
-// Standard scene structure
+// Standard scene structure with dynamic layout
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig, spring } from "remotion";
-import { COLORS, FONTS, getSceneIndicatorStyle, getSceneIndicatorTextStyle } from "./styles";
+import {{ AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig, spring }} from "remotion";
+import {{
+  COLORS, FONTS, LAYOUT,
+  getSceneIndicatorStyle, getSceneIndicatorTextStyle,
+  getTwoColumnLayout, getCenteredPosition, getCenteredStyle
+}} from "./styles";
 
-interface SceneNameProps {
+interface SceneNameProps {{
   startFrame?: number;
-}
+}}
 
-export const SceneName: React.FC<SceneNameProps> = ({ startFrame = 0 }) => {
+export const SceneName: React.FC<SceneNameProps> = ({{ startFrame = 0 }}) => {{
   const frame = useCurrentFrame();
-  const { fps, width, height, durationInFrames } = useVideoConfig();
+  const {{ fps, width, height, durationInFrames }} = useVideoConfig();
   const localFrame = frame - startFrame;
   const scale = Math.min(width / 1920, height / 1080);
 
@@ -258,42 +388,63 @@ export const SceneName: React.FC<SceneNameProps> = ({ startFrame = 0 }) => {
   const phase2End = Math.round(durationInFrames * 0.50);
   // ...
 
-  // Animations using interpolate
-  const titleOpacity = interpolate(localFrame, [0, 15], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  // Get layout positions (choose one based on your scene)
+  const {{ quadrants }} = LAYOUT;  // For 4-element scenes
+  // OR: const layout = getTwoColumnLayout();  // For left/right split
+  // OR: const center = getCenteredPosition(); // For single centered element
 
-  // Citation appears when concept is introduced
-  const citationOpacity = interpolate(localFrame, [phase1End, phase1End + 20], [0, 1], {
+  // Animations using interpolate
+  const titleOpacity = interpolate(localFrame, [0, 15], [0, 1], {{
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-  });
+  }});
 
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.background, fontFamily: FONTS.handwritten }}>
-      {/* Scene indicator */}
-      <div style={{ ...getSceneIndicatorStyle(scale), opacity: titleOpacity }}>
-        <span style={getSceneIndicatorTextStyle(scale)}>1</span>
+    <AbsoluteFill style={{{{ backgroundColor: COLORS.background, fontFamily: FONTS.primary }}}}>
+      {{/* Scene indicator */}}
+      <div style={{{{ ...getSceneIndicatorStyle(scale), opacity: titleOpacity }}}}>
+        <span style={{getSceneIndicatorTextStyle(scale)}}>1</span>
       </div>
 
-      {/* Main content - use at least 60% of canvas */}
-
-      {/* Citation - bottom right, fades in with concept */}
-      <div style={{
+      {{/* Main content - positioned using LAYOUT quadrants */}}
+      <div style={{{{
         position: "absolute",
-        bottom: 20 * scale,
-        right: 30 * scale,
+        left: quadrants.topLeft.cx * scale,
+        top: quadrants.topLeft.cy * scale,
+        transform: "translate(-50%, -50%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}}}>
+        {{/* Top-left quadrant content */}}
+      </div>
+
+      <div style={{{{
+        position: "absolute",
+        left: quadrants.topRight.cx * scale,
+        top: quadrants.topRight.cy * scale,
+        transform: "translate(-50%, -50%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}}}>
+        {{/* Top-right quadrant content */}}
+      </div>
+
+      {{/* Citation - bottom right */}}
+      <div style={{{{
+        position: "absolute",
+        bottom: LAYOUT.margin.bottom * scale,
+        right: (LAYOUT.techStack.width + LAYOUT.techStack.gap + 30) * scale,
         fontSize: 14 * scale,
         color: COLORS.textMuted,
-        opacity: citationOpacity,
         fontStyle: "italic",
-      }}>
-        "Paper Title" — Authors et al., Venue Year
+      }}}}>
+        "Paper Title" — Authors et al., Year
       </div>
     </AbsoluteFill>
   );
-};
+}};
 ```
 
 ## Reusable Components (USE THESE)
@@ -432,41 +583,128 @@ const wavePoints = Array.from({{ length: 50 }}, (_, i) => {{
 ```
 
 ### 7. Scene Layout Structure (RECOMMENDED)
-Consistent structure for all scenes:
+Consistent structure for all scenes - NOTE: Scene indicators are OPTIONAL and often not needed:
 ```typescript
 return (
-  <AbsoluteFill style={{{{ backgroundColor: COLORS.background, fontFamily: FONTS.handwritten }}}}>
-    {{/* Scene indicator - top left */}}
-    <div style={{{{ ...getSceneIndicatorStyle(scale), opacity: titleOpacity }}}}>
-      <span style={{getSceneIndicatorTextStyle(scale)}}>{{sceneNumber}}</span>
+  <AbsoluteFill style={{{{ backgroundColor: COLORS.background, fontFamily: FONTS.primary }}}}>
+    {{/* Title - left aligned at top */}}
+    <div style={{{{ position: "absolute", top: LAYOUT.title.y * scale, left: LAYOUT.title.x * scale }}}}>
+      <div style={{{{ fontSize: 52 * scale, fontWeight: 600, color: COLORS.text }}}}>{{title}}</div>
+      <div style={{{{ fontSize: 22 * scale, color: COLORS.textMuted, marginTop: 8 * scale }}}}>{{subtitle}}</div>
     </div>
 
-    {{/* Title - centered top */}}
-    <div style={{{{ position: "absolute", top: 50 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
-      {{title}}
+    {{/* Main content - USE GRID LAYOUT with proper offset */}}
+    <div style={{{{
+      position: "absolute",
+      left: LAYOUT.content.startX * scale,
+      top: (LAYOUT.content.startY + 30) * scale,  // CRITICAL: +30 offset from header!
+      width: LAYOUT.content.width * scale,
+      height: (LAYOUT.content.height - 60) * scale,  // CRITICAL: Reduce height to prevent overflow
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gridTemplateRows: "1fr 0.85fr",  // CRITICAL: Uneven rows prevent bottom overflow
+      gap: 16 * scale,  // CRITICAL: 16, not 24
+    }}}}>
+      {{/* Grid panels here */}}
     </div>
 
-    {{/* Subtitle - below title */}}
-    <div style={{{{ position: "absolute", top: 115 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
-      {{subtitle}}
-    </div>
+    {{/* TechStack sidebar on right - imported component */}}
+    <TechStack currentLayer={{layerNumber}} startFrame={{0}} side="right" />
 
-    {{/* Main content - large center area, 60-70% of canvas */}}
-    <div style={{{{ position: "absolute", top: 170 * scale, left: 80 * scale, right: 80 * scale, bottom: 150 * scale }}}}>
-      {{/* Your visualization here - USE THIS SPACE FULLY */}}
-    </div>
-
-    {{/* Bottom insight/message */}}
-    <div style={{{{ position: "absolute", bottom: 70 * scale, left: "50%", transform: "translateX(-50%)" }}}}>
-      {{/* Key takeaway with colored background */}}
-    </div>
-
-    {{/* Citation - bottom right */}}
-    <div style={{{{ position: "absolute", bottom: 20 * scale, right: 30 * scale }}}}>
-      "Paper Title" — Authors et al., Year
-    </div>
+    {{/* Reference component for citations */}}
+    <Reference sources={{sources}} startFrame={{startFrame}} delay={{90}} />
   </AbsoluteFill>
 );
+```
+
+### 8. COMMON PITFALLS TO AVOID (CRITICAL)
+
+Based on real production issues, NEVER make these mistakes:
+
+**1. Content Overlapping Header/Subtitle:**
+```typescript
+// BAD - content starts at LAYOUT.content.startY directly
+top: LAYOUT.content.startY * scale,
+
+// GOOD - always add 30px offset
+top: (LAYOUT.content.startY + 30) * scale,
+```
+
+**2. Bottom Overflow with Equal Grid Rows:**
+```typescript
+// BAD - equal rows often cause bottom overflow
+gridTemplateRows: "1fr 1fr",
+height: LAYOUT.content.height * scale,
+
+// GOOD - uneven rows and reduced height
+gridTemplateRows: "1fr 0.85fr",  // or "1.3fr 0.7fr"
+height: (LAYOUT.content.height - 60) * scale,
+```
+
+**3. Excessive Padding and Gaps:**
+```typescript
+// BAD - too much padding causes overflow
+padding: 24 * scale,
+gap: 24 * scale,
+borderRadius: 16 * scale,
+
+// GOOD - compact values
+padding: 12 * scale,  // or 16 max
+gap: 16 * scale,
+borderRadius: 12 * scale,
+```
+
+**4. Oversized SVG ViewBoxes:**
+```typescript
+// BAD - viewBox too large for container
+<svg viewBox="0 0 400 300">
+
+// GOOD - size viewBox to actual content needs
+<svg viewBox="0 0 400 250">  // Reduced height
+```
+
+**5. Multiple Sections Vertically Without Height Constraints:**
+```typescript
+// BAD - flex column with no height management
+display: "flex",
+flexDirection: "column",
+gap: 20 * scale,
+
+// GOOD - use minHeight: 0 on flex children and careful gap sizing
+display: "flex",
+flexDirection: "column",
+gap: 14 * scale,
+// Children should have: flex: 1, minHeight: 0
+```
+
+**6. Font Sizes Too Large:**
+```typescript
+// BAD - oversized fonts
+fontSize: 28 * scale,  // for body text
+
+// GOOD - appropriate sizes
+// Titles: 48-52px, Section headers: 16-18px, Body: 12-14px, Labels: 10-12px
+fontSize: 14 * scale,
+```
+
+**7. Stats/Metrics Too Large:**
+```typescript
+// BAD
+fontSize: 36 * scale,
+gap: 50 * scale,
+
+// GOOD
+fontSize: 28 * scale,  // or smaller
+gap: 40 * scale,
+```
+
+**8. Not Using minHeight: 0 in Flex Containers:**
+```typescript
+// BAD - flex child can overflow
+<div style={{{{ flex: 1 }}}}>
+
+// GOOD - prevents overflow
+<div style={{{{ flex: 1, minHeight: 0 }}}}>
 ```
 
 ## Scene Type Archetypes
@@ -582,29 +820,42 @@ For "{scene_type}" scenes, use these patterns:
 3. Export it as a named export
 4. Include proper TypeScript interface for props
 5. Use frame-based animations that match the narration timing
-6. Include a scene indicator showing scene number {scene_number}
+6. Scene indicators are OPTIONAL - skip them for cleaner visuals
 7. Make all sizes responsive using the scale factor
-8. Import styles from "./styles" (COLORS, FONTS, getSceneIndicatorStyle, getSceneIndicatorTextStyle)
+8. Import styles from "./styles" (COLORS, FONTS, LAYOUT)
 9. Phase timings should be proportional to durationInFrames
 10. Add a detailed comment block at the top explaining the visual flow and the narration text
 
-## CRITICAL Layout & Style Requirements
+## CRITICAL Layout & Style Requirements (PREVENTING OVERFLOW)
 
-11. **CITATIONS**: Include a citation element in bottom-right that fades in when the technical concept is introduced
-12. **NO OVERFLOW**: All elements MUST stay within 1920x1080 bounds at ALL animation keyframes
-13. **NO CHAOTIC MOTION**: No shaking, trembling, or erratic animations
-14. **FILL THE SPACE**: Main content should use at least 60-70% of the canvas area
-15. **TYPOGRAPHY**: Use fontWeight: 400 for FONTS.handwritten, lineHeight: 1.5 for body text
-16. **SIZING**: Titles 42-48px, body 18-22px, labels 14-18px, citations 14-16px (all scaled)
-17. **SPACING**: Use 60-80px scaled margins from canvas edges
+11. **CONTENT OFFSET**: ALWAYS use `top: (LAYOUT.content.startY + 30) * scale` to avoid header overlap
+12. **CONTENT HEIGHT**: ALWAYS use `height: (LAYOUT.content.height - 60) * scale` to prevent bottom overflow
+13. **GRID ROWS**: Use UNEVEN row ratios like "1fr 0.85fr" or "1.3fr 0.7fr", NOT "1fr 1fr"
+14. **COMPACT GAPS**: Use `gap: 16 * scale`, NOT 24 or higher
+15. **COMPACT PADDING**: Use `padding: 12-16 * scale`, NOT 24 or higher
+16. **COMPACT BORDER RADIUS**: Use `borderRadius: 12 * scale`, NOT 16 or higher
+17. **SVG VIEWBOX**: Size SVG viewBox to fit content compactly (e.g., "0 0 400 250" not "0 0 400 300")
+18. **FLEX CHILDREN**: Always add `minHeight: 0` to flex children to prevent overflow
+19. **NO OVERFLOW**: All elements MUST stay within 1920x1080 bounds at ALL animation keyframes
+20. **NO CHAOTIC MOTION**: No shaking, trembling, or erratic animations
+
+## Typography & Sizing Requirements
+
+21. **TITLE**: 48-52px scaled, fontWeight: 600
+22. **SUBTITLE**: 20-22px scaled, color: COLORS.textMuted
+23. **SECTION HEADERS**: 16-18px scaled, fontWeight: 600
+24. **BODY TEXT**: 12-14px scaled
+25. **LABELS**: 10-12px scaled
+26. **STATS/METRICS**: 28px scaled max (not 36+)
+27. **Citations**: Use Reference component, not manual positioning
 
 ## CRITICAL Visual Quality Requirements
 
-18. **DYNAMIC EFFECTS**: Use pulsing (Math.sin), flowing particles, or wave animations for living visuals
-19. **SVG FOR COMPLEXITY**: Use SVG for brain diagrams, wave patterns, connection arrows
-20. **CONSISTENT LAYOUT**: Title at top, subtitle below, main visualization in center, insight at bottom, citation bottom-right
-21. **LARGE VISUALIZATIONS**: Main visual elements should be substantial (200-400px scaled), not tiny with whitespace
-22. **VISUAL METAPHORS**: Translate abstract concepts into concrete visuals (e.g., "memory" → pulsing grid cells)
+28. **DYNAMIC EFFECTS**: Use pulsing (Math.sin), flowing particles, or wave animations for living visuals
+29. **SVG FOR COMPLEXITY**: Use SVG for brain diagrams, wave patterns, connection arrows
+30. **CONSISTENT LAYOUT**: Title at top, subtitle below, main visualization in center
+31. **LARGE VISUALIZATIONS**: Main visual elements should be substantial (200-400px scaled), not tiny with whitespace
+32. **VISUAL METAPHORS**: Translate abstract concepts into concrete visuals (e.g., "memory" → pulsing grid cells)
 
 ## Output
 
@@ -616,91 +867,341 @@ The component should be saved to: {output_path}
 STYLES_TEMPLATE = '''/**
  * Shared Style Constants for {project_title}
  *
- * Centralizes visual styling for consistency across all scenes.
+ * Light theme with glow effects and dynamic layout system.
+ * Uses Outfit font - modern geometric sans-serif for tech content.
  */
 
 import React from "react";
 
-// ===== COLOR PALETTE =====
-export const COLORS = {{
-  // Primary colors
-  primary: "#00d9ff",      // Primary cyan - titles and highlights
-  secondary: "#ff6b35",    // Orange - secondary elements
-  success: "#00ff88",      // Green - positive indicators
-  warning: "#f1c40f",      // Yellow - caution/warning
-  error: "#ff4757",        // Red - errors/problems
+// Outfit font family (loaded via @remotion/google-fonts in Root.tsx)
+const outfitFont = '"Outfit", -apple-system, BlinkMacSystemFont, sans-serif';
 
-  // Neutral colors
-  background: "#0f0f1a",   // Dark background
-  surface: "#1a1a2e",      // Surface/card background
-  text: "#ffffff",         // Primary text
-  textDim: "#888888",      // Secondary text
-  textMuted: "#666666",    // Muted text
+// ===== COLOR PALETTE - LIGHT THEME WITH GLOW =====
+export const COLORS = {{
+  // Background colors
+  background: "#FAFAFA",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F5F5F7",
+
+  // Text colors
+  text: "#1A1A1A",
+  textDim: "#555555",
+  textMuted: "#888888",
+
+  // Accent colors (optimized for glow effects)
+  primary: "#0066FF",
+  primaryGlow: "#0088FF",
+  secondary: "#FF6600",
+  secondaryGlow: "#FF8800",
+  success: "#00AA55",
+  successGlow: "#00DD77",
+  warning: "#F5A623",
+  warningGlow: "#FFB840",
+  error: "#E53935",
+  errorGlow: "#FF5555",
+  purple: "#8844FF",
+  purpleGlow: "#AA66FF",
+  cyan: "#00BCD4",
+  cyanGlow: "#00E5FF",
+  pink: "#E91E63",
+  pinkGlow: "#FF4081",
+  lime: "#76B900",
+  limeGlow: "#9BE000",
+
+  // Layer visualization
+  layerActive: "#0066FF",
+  layerCompleted: "#00AA55",
+  layerPending: "#E0E0E5",
+
+  // Borders and shadows
+  border: "#E0E0E5",
+  borderLight: "#EEEEEE",
+  shadow: "rgba(0, 0, 0, 0.08)",
+
+  // Glow-specific
+  glowSubtle: "rgba(0, 102, 255, 0.15)",
+  glowMedium: "rgba(0, 102, 255, 0.3)",
+  glowStrong: "rgba(0, 102, 255, 0.5)",
 }};
 
 // ===== FONTS =====
 export const FONTS = {{
-  handwritten: "Neucha, cursive",
-  mono: "JetBrains Mono, monospace",
-}};
-
-// ===== TYPOGRAPHY =====
-export const TYPOGRAPHY = {{
-  title: {{
-    fontSize: 56,
-    fontWeight: 700 as const,
-    color: COLORS.primary,
-    margin: 0,
-  }},
-  subtitle: {{
-    fontSize: 28,
-    fontWeight: 400 as const,
-    color: COLORS.textDim,
-    marginTop: 8,
-  }},
-  body: {{
-    fontSize: 22,
-    fontWeight: 400 as const,
-    color: COLORS.text,
-    lineHeight: 1.6,
-  }},
-  mono: {{
-    fontFamily: "JetBrains Mono, monospace",
-  }},
+  primary: outfitFont,
+  heading: outfitFont,
+  mono: "SF Mono, Monaco, Consolas, monospace",
+  system: outfitFont,
 }};
 
 // ===== SCENE INDICATOR =====
 export const SCENE_INDICATOR = {{
   container: {{
-    top: 20,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    top: 24,
+    left: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
   }},
   text: {{
-    fontSize: 18,
-    fontWeight: 700 as const,
-    fontFamily: "JetBrains Mono, monospace",
+    fontSize: 16,
+    fontWeight: 600 as const,
   }},
 }};
 
-// ===== ANIMATION CONSTANTS =====
-export const ANIMATION = {{
-  fadeInDuration: 15,
-  springConfig: {{
-    damping: 12,
-    stiffness: 100,
-    mass: 1,
+// ===== TECH STACK SIDEBAR =====
+export const TECH_STACK = {{
+  width: 260,
+  padding: 16,
+  itemHeight: 32,
+  gap: 4,
+  borderRadius: 8,
+}};
+
+// ===== LAYOUT GRID SYSTEM =====
+// Designed for 1920x1080 canvas with TechStack sidebar on right
+// All values are CALCULATED from base constraints - no hardcoded positions
+
+// Base constraints (these are the only "magic numbers")
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
+const TECHSTACK_WIDTH = 260;  // Width of TechStack sidebar
+const TECHSTACK_GAP = 30;     // Gap between content and TechStack
+const MARGIN_LEFT = 60;
+const MARGIN_RIGHT = 40;
+const TITLE_HEIGHT = 120;     // Space for title at top
+const BOTTOM_MARGIN = 160;    // Space for references at bottom
+
+// Derived values
+const USABLE_LEFT = MARGIN_LEFT;
+const USABLE_RIGHT = CANVAS_WIDTH - TECHSTACK_WIDTH - TECHSTACK_GAP;
+const USABLE_WIDTH = USABLE_RIGHT - USABLE_LEFT;
+const USABLE_TOP = TITLE_HEIGHT;
+const USABLE_BOTTOM = CANVAS_HEIGHT - BOTTOM_MARGIN;
+const USABLE_HEIGHT = USABLE_BOTTOM - USABLE_TOP;
+
+// Quadrant calculations
+const QUADRANT_WIDTH = USABLE_WIDTH / 2;
+const QUADRANT_HEIGHT = USABLE_HEIGHT / 2;
+const LEFT_CENTER_X = USABLE_LEFT + QUADRANT_WIDTH / 2;
+const RIGHT_CENTER_X = USABLE_LEFT + QUADRANT_WIDTH + QUADRANT_WIDTH / 2;
+const TOP_CENTER_Y = USABLE_TOP + QUADRANT_HEIGHT / 2;
+const BOTTOM_CENTER_Y = USABLE_TOP + QUADRANT_HEIGHT + QUADRANT_HEIGHT / 2;
+
+export const LAYOUT = {{
+  // Canvas dimensions
+  canvas: {{
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
   }},
-  quickSpring: {{
-    damping: 15,
-    stiffness: 200,
+
+  // Margins from edges
+  margin: {{
+    left: MARGIN_LEFT,
+    right: MARGIN_RIGHT,
+    top: 40,
+    bottom: 60,
+  }},
+
+  // TechStack sidebar
+  techStack: {{
+    width: TECHSTACK_WIDTH,
+    gap: TECHSTACK_GAP,
+  }},
+
+  // Content area bounds
+  content: {{
+    startX: USABLE_LEFT,
+    endX: USABLE_RIGHT,
+    width: USABLE_WIDTH,
+    startY: USABLE_TOP,
+    endY: USABLE_BOTTOM,
+    height: USABLE_HEIGHT,
+  }},
+
+  // QUADRANT SYSTEM - dynamically calculated from constraints
+  // Elements are CENTERED within their quadrant using transform: translate(-50%, -50%)
+  quadrants: {{
+    // Usable bounds
+    bounds: {{
+      left: USABLE_LEFT,
+      right: USABLE_RIGHT,
+      top: USABLE_TOP,
+      bottom: USABLE_BOTTOM,
+      width: USABLE_WIDTH,
+      height: USABLE_HEIGHT,
+    }},
+    // Quadrant centers (for centering elements)
+    topLeft: {{ cx: LEFT_CENTER_X, cy: TOP_CENTER_Y }},
+    topRight: {{ cx: RIGHT_CENTER_X, cy: TOP_CENTER_Y }},
+    bottomLeft: {{ cx: LEFT_CENTER_X, cy: BOTTOM_CENTER_Y }},
+    bottomRight: {{ cx: RIGHT_CENTER_X, cy: BOTTOM_CENTER_Y }},
+    // Quadrant dimensions
+    quadrantWidth: QUADRANT_WIDTH,
+    quadrantHeight: QUADRANT_HEIGHT,
+  }},
+
+  // Title area
+  title: {{
+    x: 80,
+    y: 40,
+    subtitleY: 90,
   }},
 }};
+
+// ===== ANIMATION =====
+export const ANIMATION = {{
+  fadeIn: 20,
+  stagger: 5,
+  spring: {{ damping: 20, stiffness: 120, mass: 1 }},
+}};
+
+// ===== FLEXIBLE LAYOUT HELPERS =====
+// These functions dynamically calculate positions for any grid configuration
+
+/**
+ * Get layout positions for a flexible grid (any number of columns/rows)
+ * Returns center positions for each cell, meant to be used with transform: translate(-50%, -50%)
+ */
+export const getFlexibleGrid = (
+  cols: number,
+  rows: number
+): {{ cx: number; cy: number; width: number; height: number }}[] => {{
+  const cellWidth = USABLE_WIDTH / cols;
+  const cellHeight = USABLE_HEIGHT / rows;
+  const positions: {{ cx: number; cy: number; width: number; height: number }}[] = [];
+
+  for (let row = 0; row < rows; row++) {{
+    for (let col = 0; col < cols; col++) {{
+      positions.push({{
+        cx: USABLE_LEFT + cellWidth * col + cellWidth / 2,
+        cy: USABLE_TOP + cellHeight * row + cellHeight / 2,
+        width: cellWidth,
+        height: cellHeight,
+      }});
+    }}
+  }}
+  return positions;
+}};
+
+/**
+ * Get a single centered position (for scenes with one main element)
+ */
+export const getCenteredPosition = (): {{ cx: number; cy: number; width: number; height: number }} => ({{
+  cx: USABLE_LEFT + USABLE_WIDTH / 2,
+  cy: USABLE_TOP + USABLE_HEIGHT / 2,
+  width: USABLE_WIDTH,
+  height: USABLE_HEIGHT,
+}});
+
+/**
+ * Get 2-column layout (left and right halves)
+ */
+export const getTwoColumnLayout = (): {{
+  left: {{ cx: number; cy: number; width: number; height: number }};
+  right: {{ cx: number; cy: number; width: number; height: number }};
+}} => {{
+  const colWidth = USABLE_WIDTH / 2;
+  return {{
+    left: {{
+      cx: USABLE_LEFT + colWidth / 2,
+      cy: USABLE_TOP + USABLE_HEIGHT / 2,
+      width: colWidth,
+      height: USABLE_HEIGHT,
+    }},
+    right: {{
+      cx: USABLE_LEFT + colWidth + colWidth / 2,
+      cy: USABLE_TOP + USABLE_HEIGHT / 2,
+      width: colWidth,
+      height: USABLE_HEIGHT,
+    }},
+  }};
+}};
+
+/**
+ * Get 3-column layout
+ */
+export const getThreeColumnLayout = (): {{
+  left: {{ cx: number; cy: number; width: number; height: number }};
+  center: {{ cx: number; cy: number; width: number; height: number }};
+  right: {{ cx: number; cy: number; width: number; height: number }};
+}} => {{
+  const colWidth = USABLE_WIDTH / 3;
+  return {{
+    left: {{
+      cx: USABLE_LEFT + colWidth / 2,
+      cy: USABLE_TOP + USABLE_HEIGHT / 2,
+      width: colWidth,
+      height: USABLE_HEIGHT,
+    }},
+    center: {{
+      cx: USABLE_LEFT + colWidth + colWidth / 2,
+      cy: USABLE_TOP + USABLE_HEIGHT / 2,
+      width: colWidth,
+      height: USABLE_HEIGHT,
+    }},
+    right: {{
+      cx: USABLE_LEFT + colWidth * 2 + colWidth / 2,
+      cy: USABLE_TOP + USABLE_HEIGHT / 2,
+      width: colWidth,
+      height: USABLE_HEIGHT,
+    }},
+  }};
+}};
+
+/**
+ * Get 2-row layout (top and bottom halves)
+ */
+export const getTwoRowLayout = (): {{
+  top: {{ cx: number; cy: number; width: number; height: number }};
+  bottom: {{ cx: number; cy: number; width: number; height: number }};
+}} => {{
+  const rowHeight = USABLE_HEIGHT / 2;
+  return {{
+    top: {{
+      cx: USABLE_LEFT + USABLE_WIDTH / 2,
+      cy: USABLE_TOP + rowHeight / 2,
+      width: USABLE_WIDTH,
+      height: rowHeight,
+    }},
+    bottom: {{
+      cx: USABLE_LEFT + USABLE_WIDTH / 2,
+      cy: USABLE_TOP + rowHeight + rowHeight / 2,
+      width: USABLE_WIDTH,
+      height: rowHeight,
+    }},
+  }};
+}};
+
+/**
+ * Get style for centering an element at a position
+ * Use with: left: pos.cx * scale, top: pos.cy * scale, transform: "translate(-50%, -50%)"
+ */
+export const getCenteredStyle = (
+  pos: {{ cx: number; cy: number }},
+  scale: number
+): React.CSSProperties => ({{
+  position: 'absolute',
+  left: pos.cx * scale,
+  top: pos.cy * scale,
+  transform: 'translate(-50%, -50%)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+}});
+
+/**
+ * Convert a position to scaled pixel values
+ */
+export const scalePosition = (
+  pos: {{ cx: number; cy: number; width: number; height: number }},
+  scale: number
+): {{ cx: number; cy: number; width: number; height: number }} => ({{
+  cx: pos.cx * scale,
+  cy: pos.cy * scale,
+  width: pos.width * scale,
+  height: pos.height * scale,
+}});
 
 // ===== HELPER FUNCTIONS =====
-
 export const getScale = (width: number, height: number): number => {{
   return Math.min(width / 1920, height / 1080);
 }};
@@ -715,25 +1216,19 @@ export const getSceneIndicatorStyle = (scale: number): React.CSSProperties => ({
   width: SCENE_INDICATOR.container.width * scale,
   height: SCENE_INDICATOR.container.height * scale,
   borderRadius: SCENE_INDICATOR.container.borderRadius * scale,
-  backgroundColor: COLORS.primary + "20",
-  border: `${{2 * scale}}px solid ${{COLORS.primary}}`,
+  backgroundColor: `${{COLORS.primary}}20`,
+  border: `2px solid ${{COLORS.primary}}`,
+  boxShadow: `0 2px 12px ${{COLORS.primary}}30`,
 }});
 
 export const getSceneIndicatorTextStyle = (scale: number): React.CSSProperties => ({{
   fontSize: SCENE_INDICATOR.text.fontSize * scale,
   fontWeight: SCENE_INDICATOR.text.fontWeight,
   color: COLORS.primary,
-  fontFamily: SCENE_INDICATOR.text.fontFamily,
+  fontFamily: FONTS.mono,
 }});
 
-export const getTitleStyle = (scale: number): React.CSSProperties => ({{
-  fontSize: TYPOGRAPHY.title.fontSize * scale,
-  fontWeight: TYPOGRAPHY.title.fontWeight,
-  color: TYPOGRAPHY.title.color,
-  margin: 0,
-}});
-
-export default {{ COLORS, TYPOGRAPHY, ANIMATION }};
+export default {{ COLORS, FONTS, ANIMATION, TECH_STACK }};
 '''
 
 
