@@ -61,6 +61,9 @@ python -m src.cli voiceover <project>     # 4. Generate audio from narrations
 python -m src.cli storyboard <project>    # 5. Create storyboard linking scenes + audio
 python -m src.cli render <project>        # 6. Render final video
 
+# Or run the entire pipeline with a single command
+python -m src.cli generate <project>      # Run all steps end-to-end
+
 # Optional: Sound Design
 python -m src.cli sound <project> plan    # Plan SFX for scenes
 python -m src.cli sound <project> mix     # Mix voiceover + SFX + music
@@ -69,6 +72,46 @@ python -m src.cli music <project> generate  # Generate AI background music
 # Iteration
 python -m src.cli feedback <project> add "Make text larger in scene 1"
 ```
+
+#### End-to-End Generation
+
+Run the entire video generation pipeline with a single command:
+
+```bash
+python -m src.cli generate llm-inference           # Run all steps end-to-end
+python -m src.cli generate llm-inference --force   # Regenerate everything
+python -m src.cli generate llm-inference --mock    # Use mock LLM/TTS for testing
+```
+
+**Partial Pipeline Runs:**
+
+```bash
+# Resume from a specific step (skips earlier completed steps)
+python -m src.cli generate llm-inference --from scenes
+
+# Run only up to a specific step
+python -m src.cli generate llm-inference --to voiceover
+
+# Run a specific range of steps
+python -m src.cli generate llm-inference --from narration --to storyboard
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--force` | Regenerate all steps, even if outputs exist |
+| `--from STEP` | Start from this step (script, narration, scenes, voiceover, storyboard, render) |
+| `--to STEP` | Stop after this step |
+| `--resolution` | Output resolution: 4k, 1440p, 1080p (default), 720p, 480p |
+| `--voice-provider` | TTS provider: elevenlabs, edge, mock |
+| `--mock` | Use mock LLM and TTS (for testing without API calls) |
+| `--timeout` | Timeout per scene generation in seconds (default: 300) |
+
+The pipeline automatically:
+- Skips steps that already have output files (use `--force` to override)
+- Shows progress with step numbers and descriptions
+- Stops gracefully if any step fails
 
 #### Script Generation
 
@@ -300,7 +343,7 @@ video_explainer/
 │   └── schema/
 │       └── storyboard.schema.json
 │
-├── tests/                       # Test suite (425+ Python tests + 45 JS tests)
+├── tests/                       # Test suite (695+ Python tests + 45 JS tests)
 ├── config.yaml                  # Global configuration
 └── pyproject.toml               # Python package configuration
 ```
@@ -370,7 +413,7 @@ Note: The default LLM provider is `claude-code`, which uses the Claude Code CLI 
 
 ## Testing
 
-The project includes 600+ tests (560+ Python + 45 JavaScript).
+The project includes 740+ tests (695+ Python + 45 JavaScript).
 
 ### Python Tests
 
