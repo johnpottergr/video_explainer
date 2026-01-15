@@ -1538,3 +1538,134 @@ export const HookScene = () => {
             assert result == 1
             captured = capsys.readouterr()
             assert "Failed: 1 scenes" in captured.out
+
+
+class TestCmdScenesRegenerateSingle:
+    """Tests for the scenes --scene command (single scene regeneration)."""
+
+    @pytest.fixture
+    def mock_args(self, tmp_path):
+        """Create mock args for scenes command with --scene."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.force = False
+        args.sync = False
+        args.scene = "6"  # Will be overridden in tests
+        args.timeout = 60
+        args.verbose = False
+        return args
+
+    @pytest.fixture
+    def project_with_script(self, tmp_path):
+        """Create a project with script for single scene regeneration."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        # Create config
+        config = {"id": "test-project", "title": "Test Project"}
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        # Create script with multiple scenes
+        script_dir = project_dir / "script"
+        script_dir.mkdir()
+        script = {
+            "title": "Test Video",
+            "scenes": [
+                {"scene_id": "scene1_hook", "title": "The Hook", "scene_type": "hook", "voiceover": "Hook text"},
+                {"scene_id": "scene2_context", "title": "The Context", "scene_type": "context", "voiceover": "Context text"},
+                {"scene_id": "scene3_deep", "title": "Deep Dive", "scene_type": "explanation", "voiceover": "Deep text"},
+            ]
+        }
+        with open(script_dir / "script.json", "w") as f:
+            json.dump(script, f)
+
+        # Create scenes directory
+        scenes_dir = project_dir / "scenes"
+        scenes_dir.mkdir()
+
+        return project_dir
+
+    def test_regenerate_scene_by_number(self, mock_args, project_with_script, capsys):
+        """Test regenerating a scene by number."""
+        from src.cli.main import cmd_scenes
+        from unittest.mock import patch, MagicMock
+
+        mock_args.scene = "2"
+
+        # Mock the _generate_scene method
+        with patch("src.scenes.generator.SceneGenerator._generate_scene") as mock_gen:
+            mock_gen.return_value = {
+                "scene_number": 2,
+                "title": "The Context",
+                "component_name": "ContextScene",
+                "filename": "ContextScene.tsx",
+            }
+            with patch("src.scenes.generator.SceneGenerator._generate_index"):
+                result = cmd_scenes(mock_args)
+
+        captured = capsys.readouterr()
+        assert "Regenerating scene 2: The Context" in captured.out
+        assert result == 0
+
+    def test_regenerate_scene_by_filename(self, mock_args, project_with_script, capsys):
+        """Test regenerating a scene by filename."""
+        from src.cli.main import cmd_scenes
+        from unittest.mock import patch
+
+        mock_args.scene = "HookScene.tsx"
+
+        with patch("src.scenes.generator.SceneGenerator._generate_scene") as mock_gen:
+            mock_gen.return_value = {
+                "scene_number": 1,
+                "title": "The Hook",
+                "component_name": "HookScene",
+                "filename": "HookScene.tsx",
+            }
+            with patch("src.scenes.generator.SceneGenerator._generate_index"):
+                result = cmd_scenes(mock_args)
+
+        captured = capsys.readouterr()
+        assert "Regenerating scene 1: The Hook" in captured.out
+        assert result == 0
+
+    def test_regenerate_scene_invalid_number(self, mock_args, project_with_script, capsys):
+        """Test error when scene number is out of range."""
+        from src.cli.main import cmd_scenes
+
+        mock_args.scene = "99"
+        result = cmd_scenes(mock_args)
+
+        captured = capsys.readouterr()
+        assert result == 1
+        assert "not found" in captured.err
+
+    def test_regenerate_scene_invalid_filename(self, mock_args, project_with_script, capsys):
+        """Test error when scene filename doesn't exist."""
+        from src.cli.main import cmd_scenes
+
+        mock_args.scene = "NonexistentScene.tsx"
+        result = cmd_scenes(mock_args)
+
+        captured = capsys.readouterr()
+        assert result == 1
+        assert "not found" in captured.err
+
+    def test_regenerate_scene_missing_script(self, mock_args, tmp_path, capsys):
+        """Test error when script.json doesn't exist."""
+        from src.cli.main import cmd_scenes
+
+        # Create project without script
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+        config = {"id": "test-project", "title": "Test Project"}
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        mock_args.scene = "1"
+        result = cmd_scenes(mock_args)
+
+        captured = capsys.readouterr()
+        assert result == 1
+        assert "Script not found" in captured.err

@@ -162,6 +162,8 @@ Generate Remotion scene components (React/TypeScript) from the script:
 ```bash
 python -m src.cli scenes llm-inference           # Generate all scenes
 python -m src.cli scenes llm-inference --force   # Overwrite existing scenes
+python -m src.cli scenes llm-inference --scene 6 # Regenerate just scene 6
+python -m src.cli scenes llm-inference --scene HookScene.tsx  # Regenerate by filename
 python -m src.cli scenes llm-inference --timeout 600  # 10 min per scene
 python -m src.cli scenes llm-inference -v        # Verbose output
 ```

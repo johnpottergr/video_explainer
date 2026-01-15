@@ -944,6 +944,10 @@ def cmd_scenes(args: argparse.Namespace) -> int:
     if args.sync:
         return _cmd_scenes_sync(args, project)
 
+    # Handle single scene regeneration
+    if args.scene:
+        return _cmd_scenes_regenerate_single(args, project)
+
     print(f"Generating scenes for {project.id}")
 
     # Check for script
@@ -1081,6 +1085,152 @@ def _cmd_scenes_sync(args: argparse.Namespace, project) -> int:
         return 1
 
     return 0
+
+
+def _cmd_scenes_regenerate_single(args: argparse.Namespace, project) -> int:
+    """Regenerate a single scene by number or filename."""
+    from ..scenes import SceneGenerator
+
+    scene_spec = args.scene
+
+    # Check for script
+    script_path = project.root_dir / "script" / "script.json"
+    if not script_path.exists():
+        print(f"Error: Script not found at {script_path}", file=sys.stderr)
+        return 1
+
+    # Load script
+    with open(script_path) as f:
+        script = json.load(f)
+
+    scenes = script.get("scenes", [])
+
+    # Find the scene to regenerate
+    scene_index = None
+    scene_data = None
+
+    # Try to match by scene number (e.g., "6", "scene6", "scene_6")
+    scene_num_match = re.match(r"^(?:scene[_]?)?(\d+)$", scene_spec.lower())
+    if scene_num_match:
+        scene_num = int(scene_num_match.group(1))
+        if 1 <= scene_num <= len(scenes):
+            scene_index = scene_num - 1
+            scene_data = scenes[scene_index]
+
+    # Try to match by filename (e.g., "HookScene.tsx" or "HookScene")
+    if scene_data is None:
+        scene_filename = scene_spec.replace(".tsx", "").replace("Scene", "").lower()
+        for idx, scene in enumerate(scenes):
+            title = scene.get("title", f"Scene {idx + 1}")
+            # Convert title to component name (same logic as generator)
+            words = re.sub(r"[^a-zA-Z0-9\s]", "", title).split()
+            component_name = "".join(word.capitalize() for word in words) + "Scene"
+            # Also try without common prefixes like "The", "A", "An"
+            title_words = title.split()
+            if title_words and title_words[0].lower() in ("the", "a", "an"):
+                title_words = title_words[1:]
+            component_name_no_prefix = "".join(re.sub(r"[^a-zA-Z0-9]", "", w).capitalize() for w in title_words) + "Scene"
+
+            if (component_name.lower() == (scene_filename + "scene").lower() or
+                component_name.lower() == scene_filename.lower() or
+                component_name_no_prefix.lower() == (scene_filename + "scene").lower() or
+                component_name_no_prefix.lower() == scene_filename.lower()):
+                scene_index = idx
+                scene_data = scene
+                break
+
+    if scene_data is None:
+        print(f"Error: Scene '{scene_spec}' not found.", file=sys.stderr)
+        print(f"Valid options: 1-{len(scenes)}, or scene filename (e.g., HookScene.tsx)")
+        return 1
+
+    scene_number = scene_index + 1
+    title = scene_data.get("title", f"Scene {scene_number}")
+    print(f"Regenerating scene {scene_number}: {title}")
+
+    # Check for voiceover manifest
+    voiceover_manifest_path = project.root_dir / "voiceover" / "manifest.json"
+    word_timestamps = []
+    if voiceover_manifest_path.exists():
+        with open(voiceover_manifest_path) as f:
+            manifest = json.load(f)
+        scene_id = scene_data.get("scene_id", f"scene{scene_number}")
+        for scene_manifest in manifest.get("scenes", []):
+            if scene_manifest.get("scene_id") == scene_id:
+                word_timestamps = scene_manifest.get("word_timestamps", [])
+                break
+        if word_timestamps:
+            print(f"Using word timestamps from voiceover manifest")
+
+    # Generate the scene
+    generator = SceneGenerator(
+        working_dir=project.root_dir.parent.parent,
+        timeout=args.timeout,
+    )
+
+    scenes_dir = project.root_dir / "scenes"
+    example_scene = generator._load_example_scene()
+
+    try:
+        print()
+        result = generator._generate_scene(
+            scene=scene_data,
+            scene_number=scene_number,
+            scenes_dir=scenes_dir,
+            example_scene=example_scene,
+            word_timestamps=word_timestamps,
+        )
+        print(f"\n✓ Regenerated: {result['filename']}")
+
+        # Update index.ts to ensure scene is registered
+        generator._generate_index(
+            scenes_dir,
+            _collect_scene_info(scenes_dir, script),
+            script.get("title", "Untitled"),
+        )
+        print(f"✓ Updated index.ts")
+
+    except Exception as e:
+        print(f"\n✗ Failed to regenerate scene: {e}", file=sys.stderr)
+        return 1
+
+    return 0
+
+
+def _collect_scene_info(scenes_dir: Path, script: dict) -> list[dict]:
+    """Collect scene info from existing scene files for index generation."""
+    import re
+    scenes_info = []
+
+    for idx, scene in enumerate(script.get("scenes", [])):
+        scene_num = idx + 1
+        title = scene.get("title", f"Scene {scene_num}")
+
+        # Generate component name from title
+        words = re.sub(r"[^a-zA-Z0-9\s]", "", title).split()
+        component_name = "".join(word.capitalize() for word in words) + "Scene"
+        filename = f"{component_name}.tsx"
+
+        # Check if file exists
+        if (scenes_dir / filename).exists():
+            # Derive scene_key from title
+            key_words = title.split()
+            if key_words and key_words[0].lower() in ("the", "a", "an"):
+                key_words = key_words[1:]
+            scene_key = "_".join(word.lower() for word in key_words)
+            scene_key = re.sub(r"[^a-z0-9_]", "", scene_key)
+            scene_key = re.sub(r"_+", "_", scene_key).strip("_")
+
+            scenes_info.append({
+                "scene_number": scene_num,
+                "title": title,
+                "component_name": component_name,
+                "filename": filename,
+                "scene_type": scene.get("scene_type", "explanation"),
+                "scene_key": scene_key,
+            })
+
+    return scenes_info
 
 
 # Resolution presets
@@ -2059,7 +2209,7 @@ Use --force to regenerate all steps.
         "--scene",
         type=str,
         default=None,
-        help="Specific scene file to sync (e.g., HookScene.tsx). Only used with --sync.",
+        help="Regenerate a specific scene by number (e.g., 6) or filename (e.g., HookScene.tsx). With --sync, syncs only that scene.",
     )
     scenes_parser.add_argument(
         "--timeout",
