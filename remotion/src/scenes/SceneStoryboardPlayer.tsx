@@ -56,6 +56,8 @@ export interface StoryboardScene {
   title: string;
   audio_file: string;
   audio_duration_seconds: number;
+  /** Extra seconds to add after audio for visual animations to complete */
+  visual_padding_seconds?: number;
   /** Frame-accurate SFX cues for this scene */
   sfx_cues?: SFXCue[];
 }
@@ -331,8 +333,9 @@ export const SceneStoryboardPlayer: React.FC<SceneStoryboardPlayerProps> = ({
 
   // Prepare scene data with components
   const sceneData = storyboard.scenes.map((scene, index) => {
-    // Scene duration = audio duration + buffer
-    const baseDurationSeconds = scene.audio_duration_seconds + buffer;
+    // Scene duration = audio duration + buffer + optional visual padding
+    const visualPadding = scene.visual_padding_seconds ?? 0;
+    const baseDurationSeconds = scene.audio_duration_seconds + buffer + visualPadding;
     const baseDurationInFrames = Math.ceil(baseDurationSeconds * fps);
 
     // Add transition padding so narration completes BEFORE the transition begins
@@ -472,15 +475,15 @@ export const SceneStoryboardPlayer: React.FC<SceneStoryboardPlayerProps> = ({
  * With TransitionSeries:
  * - Each scene (except last) has transitionPadding added so audio finishes before transition
  * - Transitions overlap by TRANSITION_DURATION_FRAMES
- * - The padding and overlap cancel out, so total = sum(audio + buffer)
+ * - The padding and overlap cancel out, so total = sum(audio + buffer + visual_padding)
  */
 export function calculateStoryboardDuration(storyboard: SceneStoryboard, fps: number = 30): number {
   const buffer = storyboard.audio?.buffer_between_scenes_seconds ?? 1.0;
 
-  // Total duration is simply the sum of all audio durations plus buffers
+  // Total duration is simply the sum of all audio durations plus buffers plus visual padding
   // The transition padding and overlap cancel each other out
   const totalDuration = storyboard.scenes.reduce(
-    (sum, scene) => sum + scene.audio_duration_seconds + buffer,
+    (sum, scene) => sum + scene.audio_duration_seconds + buffer + (scene.visual_padding_seconds ?? 0),
     0
   );
 

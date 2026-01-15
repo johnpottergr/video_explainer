@@ -230,6 +230,84 @@ describe("calculateStoryboardDuration", () => {
     const duration = calculateStoryboardDuration(storyboard);
     expect(duration).toBe(0);
   });
+
+  it("should include visual_padding_seconds in duration calculation", () => {
+    const storyboard: SceneStoryboard = {
+      title: "Test",
+      description: "",
+      version: "2.0.0",
+      project: "test",
+      video: { width: 1920, height: 1080, fps: 30 },
+      style: {
+        background_color: "#000",
+        primary_color: "#fff",
+        secondary_color: "#ccc",
+        font_family: "Inter",
+      },
+      scenes: [
+        {
+          id: "scene1",
+          type: "test/hook",
+          title: "Scene 1",
+          audio_file: "s1.mp3",
+          audio_duration_seconds: 6.5,
+          visual_padding_seconds: 4.0,
+        },
+        {
+          id: "scene2",
+          type: "test/main",
+          title: "Scene 2",
+          audio_file: "s2.mp3",
+          audio_duration_seconds: 20,
+          // No visual padding
+        },
+      ],
+      audio: {
+        voiceover_dir: "voiceover",
+        buffer_between_scenes_seconds: 1.5,
+      },
+      total_duration_seconds: 33.5,
+    };
+
+    const duration = calculateStoryboardDuration(storyboard);
+    // (6.5 + 1.5 + 4.0) + (20 + 1.5 + 0) = 12 + 21.5 = 33.5 seconds
+    expect(duration).toBe(33.5);
+  });
+
+  it("should handle scenes with only visual_padding_seconds (no sfx_cues)", () => {
+    const storyboard: SceneStoryboard = {
+      title: "Test",
+      description: "",
+      version: "2.0.0",
+      project: "test",
+      video: { width: 1920, height: 1080, fps: 30 },
+      style: {
+        background_color: "#000",
+        primary_color: "#fff",
+        secondary_color: "#ccc",
+        font_family: "Inter",
+      },
+      scenes: [
+        {
+          id: "scene1",
+          type: "test/hook",
+          title: "Scene 1",
+          audio_file: "s1.mp3",
+          audio_duration_seconds: 10,
+          visual_padding_seconds: 5.0,
+        },
+      ],
+      audio: {
+        voiceover_dir: "voiceover",
+        buffer_between_scenes_seconds: 1.0,
+      },
+      total_duration_seconds: 16,
+    };
+
+    const duration = calculateStoryboardDuration(storyboard);
+    // 10 + 1.0 + 5.0 = 16 seconds
+    expect(duration).toBe(16);
+  });
 });
 
 describe("StoryboardScene interface", () => {
@@ -249,6 +327,19 @@ describe("StoryboardScene interface", () => {
     expect(scene.sfx_cues).toHaveLength(2);
     expect(scene.sfx_cues[0].sound).toBe("whoosh");
     expect(scene.sfx_cues[1].duration_frames).toBe(30);
+  });
+
+  it("should accept optional visual_padding_seconds", () => {
+    const scene = {
+      id: "scene1",
+      type: "project/hook",
+      title: "Hook",
+      audio_file: "hook.mp3",
+      audio_duration_seconds: 6.5,
+      visual_padding_seconds: 4.0,
+    };
+
+    expect(scene.visual_padding_seconds).toBe(4.0);
   });
 });
 
@@ -480,6 +571,64 @@ describe("Cinematic scene transitions", () => {
     const paddedDurationFrames = baseDurationFrames + TRANSITION_DURATION_FRAMES;
 
     expect(paddedDurationFrames).toBe(baseDurationFrames + 45);
+  });
+
+  it("should include visual_padding_seconds in scene duration calculation", () => {
+    // Scene duration = audio + buffer + visual_padding + transition_padding
+    const TRANSITION_DURATION_FRAMES = 45;
+    const audioDuration = 6.5; // seconds
+    const buffer = 1.5; // seconds
+    const visualPadding = 4.0; // seconds
+    const fps = 30;
+
+    const baseDurationFrames = Math.ceil((audioDuration + buffer + visualPadding) * fps);
+    // For non-last scenes, transition padding is added
+    const paddedDurationFrames = baseDurationFrames + TRANSITION_DURATION_FRAMES;
+
+    // (6.5 + 1.5 + 4.0) * 30 = 360 frames + 45 transition padding = 405 frames
+    expect(baseDurationFrames).toBe(360);
+    expect(paddedDurationFrames).toBe(405);
+  });
+
+  it("should render scenes with visual_padding_seconds", () => {
+    const storyboard: SceneStoryboard = {
+      title: "Test Video",
+      description: "Test description",
+      version: "2.0.0",
+      project: "test-project",
+      video: { width: 1920, height: 1080, fps: 30 },
+      style: {
+        background_color: "#0f0f1a",
+        primary_color: "#00d9ff",
+        secondary_color: "#ff6b35",
+        font_family: "Inter",
+      },
+      scenes: [
+        {
+          id: "scene1_hook",
+          type: "test-project/hook",
+          title: "The Hook",
+          audio_file: "scene1_hook.mp3",
+          audio_duration_seconds: 6.5,
+          visual_padding_seconds: 4.0,
+        },
+        {
+          id: "scene2_phases",
+          type: "test-project/phases",
+          title: "The Phases",
+          audio_file: "scene2_phases.mp3",
+          audio_duration_seconds: 30,
+        },
+      ],
+      audio: {
+        voiceover_dir: "voiceover",
+        buffer_between_scenes_seconds: 1.5,
+      },
+      total_duration_seconds: 43.5,
+    };
+
+    // Should render without throwing
+    expect(() => SceneStoryboardPlayer({ storyboard })).not.toThrow();
   });
 });
 
