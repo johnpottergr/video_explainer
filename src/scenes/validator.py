@@ -155,6 +155,11 @@ class SceneValidator:
             for var in re.findall(r"\b(\w+)\b", match.group(1)):
                 declared_vars.add(var)
 
+        # Import destructuring (import { foo, bar } from "...")
+        for match in re.finditer(r"import\s+\{([^}]+)\}\s+from", content):
+            for var in re.findall(r"\b(\w+)\b", match.group(1)):
+                declared_vars.add(var)
+
         # Array destructuring
         for match in re.finditer(r"(?:const|let|var)\s+\[([^\]]+)\]\s*=", content):
             for var in re.findall(r"\b(\w+)\b", match.group(1)):
