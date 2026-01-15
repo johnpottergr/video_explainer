@@ -52,7 +52,7 @@ import {{ LAYOUT, getCenteredPosition, getTwoColumnLayout, getThreeColumnLayout,
 
 **Base constraints (defined in styles.ts):**
 - Canvas: 1920x1080
-- TechStack sidebar: 260px on right with 30px gap
+- Right sidebar area: 260px on right with 30px gap (reserved for optional sidebars)
 - Left margin: 60px, Right margin: 40px
 - Title area: 120px from top
 - Bottom margin: 160px (for references)
@@ -60,7 +60,7 @@ import {{ LAYOUT, getCenteredPosition, getTwoColumnLayout, getThreeColumnLayout,
 **Usable content area (calculated automatically):**
 ```typescript
 LAYOUT.content.startX   // 60px - left edge of content
-LAYOUT.content.endX     // 1630px - right edge (before TechStack gap)
+LAYOUT.content.endX     // 1630px - right edge (before sidebar gap)
 LAYOUT.content.width    // 1570px - full usable width
 LAYOUT.content.startY   // 120px - top of content area
 LAYOUT.content.endY     // 920px - bottom of content area
@@ -435,7 +435,7 @@ export const SceneName: React.FC<SceneNameProps> = ({{ startFrame = 0 }}) => {{
       <div style={{{{
         position: "absolute",
         bottom: LAYOUT.margin.bottom * scale,
-        right: (LAYOUT.techStack.width + LAYOUT.techStack.gap + 30) * scale,
+        right: (LAYOUT.sidebar.width + LAYOUT.sidebar.gap + 30) * scale,
         fontSize: 14 * scale,
         color: COLORS.textMuted,
         fontStyle: "italic",
@@ -451,18 +451,7 @@ export const SceneName: React.FC<SceneNameProps> = ({{ startFrame = 0 }}) => {{
 
 Import and use these pre-built components for consistency:
 
-### 1. TechStack Component (Shows Layer Context)
-```typescript
-import {{ TechStack, getElapsedMs }} from "./TechStack";
-
-// Usage (right side of screen)
-<TechStack currentLayer={{layerNumber}} startFrame={{0}} side="right" elapsedMs={{getElapsedMs(layerNumber)}} />
-```
-- Shows the current technology layer being explained
-- Highlights the active layer
-- Provides visual context for where we are in the stack
-
-### 2. Reference Component (Citations/Sources)
+### 1. Reference Component (Citations/Sources)
 ```typescript
 import {{ Reference }} from "./components/Reference";
 
@@ -480,22 +469,6 @@ import {{ Reference }} from "./components/Reference";
 - Automatically positioned in bottom-right
 - Fades in after specified delay
 - Consistent styling across all scenes
-
-### 3. WorldMap Component (Global Network Visualization)
-```typescript
-import {{ WorldMap }} from "./components/WorldMap";
-
-<WorldMap
-  startFrame={{startFrame + 30}}
-  showCables={{true}}
-  animatePackets={{true}}
-  width={{600}}
-  height={{300}}
-/>
-```
-- Shows global network routes
-- Animated data packets
-- Use for network/internet scenes
 
 ## Visual Elements to Use
 
@@ -607,9 +580,6 @@ return (
     }}}}>
       {{/* Grid panels here */}}
     </div>
-
-    {{/* TechStack sidebar on right - imported component */}}
-    <TechStack currentLayer={{layerNumber}} startFrame={{0}} side="right" />
 
     {{/* Reference component for citations */}}
     <Reference sources={{sources}} startFrame={{startFrame}} delay={{90}} />
@@ -1058,24 +1028,24 @@ export const SCENE_INDICATOR = {{
   }},
 }};
 
-// ===== TECH STACK SIDEBAR =====
-export const TECH_STACK = {{
+// ===== SIDEBAR AREA =====
+// Reserved space on the right for optional project-specific sidebars
+export const SIDEBAR = {{
   width: 260,
   padding: 16,
-  itemHeight: 32,
   gap: 4,
   borderRadius: 8,
 }};
 
 // ===== LAYOUT GRID SYSTEM =====
-// Designed for 1920x1080 canvas with TechStack sidebar on right
+// Designed for 1920x1080 canvas with optional sidebar on right
 // All values are CALCULATED from base constraints - no hardcoded positions
 
 // Base constraints (these are the only "magic numbers")
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
-const TECHSTACK_WIDTH = 260;  // Width of TechStack sidebar
-const TECHSTACK_GAP = 30;     // Gap between content and TechStack
+const SIDEBAR_WIDTH = 260;  // Width of right sidebar area (reserved)
+const SIDEBAR_GAP = 30;     // Gap between content and sidebar
 const MARGIN_LEFT = 60;
 const MARGIN_RIGHT = 40;
 const TITLE_HEIGHT = 120;     // Space for title at top
@@ -1083,7 +1053,7 @@ const BOTTOM_MARGIN = 160;    // Space for references at bottom
 
 // Derived values
 const USABLE_LEFT = MARGIN_LEFT;
-const USABLE_RIGHT = CANVAS_WIDTH - TECHSTACK_WIDTH - TECHSTACK_GAP;
+const USABLE_RIGHT = CANVAS_WIDTH - SIDEBAR_WIDTH - SIDEBAR_GAP;
 const USABLE_WIDTH = USABLE_RIGHT - USABLE_LEFT;
 const USABLE_TOP = TITLE_HEIGHT;
 const USABLE_BOTTOM = CANVAS_HEIGHT - BOTTOM_MARGIN;
@@ -1112,10 +1082,10 @@ export const LAYOUT = {{
     bottom: 60,
   }},
 
-  // TechStack sidebar
-  techStack: {{
-    width: TECHSTACK_WIDTH,
-    gap: TECHSTACK_GAP,
+  // Sidebar area (reserved for optional project-specific sidebars)
+  sidebar: {{
+    width: SIDEBAR_WIDTH,
+    gap: SIDEBAR_GAP,
   }},
 
   // Content area bounds
@@ -1339,7 +1309,7 @@ export const getSceneIndicatorTextStyle = (scale: number): React.CSSProperties =
   fontFamily: FONTS.mono,
 }});
 
-export default {{ COLORS, FONTS, ANIMATION, TECH_STACK }};
+export default {{ COLORS, FONTS, ANIMATION, SIDEBAR }};
 '''
 
 
