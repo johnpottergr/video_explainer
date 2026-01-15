@@ -341,11 +341,16 @@ def _sync_storyboard_durations(project, voiceover_results: list[dict]) -> int:
 
 def _export_recording_script(project, narrations, args) -> int:
     """Export a recording script for manual voiceover recording."""
+    from ..voiceover.delivery_tags import add_delivery_tags
+
     # Determine output path
     if args.output:
         output_path = Path(args.output)
     else:
         output_path = project.root_dir / "recording_script.txt"
+
+    # Check if we should add delivery tags
+    include_tags = getattr(args, 'with_tags', False)
 
     # Calculate estimated durations (~150 words per minute)
     lines = []
@@ -358,6 +363,23 @@ def _export_recording_script(project, narrations, args) -> int:
     lines.append("2. Name files by scene_id (e.g., scene1_hook.mp3)")
     lines.append("3. Speak naturally - aim for conversational tone")
     lines.append("4. Leave ~0.5s silence at start and end of each recording")
+    if include_tags:
+        lines.append("")
+        lines.append("Delivery Tags Guide:")
+        lines.append("  [thoughtful] - Reflective, contemplative")
+        lines.append("  [puzzled] - Questions, uncertainty")
+        lines.append("  [excited] - Impressive facts, revelations")
+        lines.append("  [serious] - Important technical info")
+        lines.append("  [wonder] - Awe-inspiring moments")
+        lines.append("  [dramatic] - Building tension, key reveals")
+        lines.append("  [warm] - Human, personal moments")
+        lines.append("  [curious] - Inquisitive, exploring")
+        lines.append("  [confident] - Assured, authoritative")
+        lines.append("  [playful] - Light, fun tone")
+        lines.append("  [reverent] - Respectful awe, profound")
+        lines.append("  [urgent] - Time pressure, high stakes")
+        lines.append("  [satisfied] - Resolution, conclusion")
+        lines.append("  [intrigued] - Mystery, hook")
     lines.append("")
     lines.append("-" * 70)
     lines.append("")
@@ -373,7 +395,18 @@ def _export_recording_script(project, narrations, args) -> int:
         lines.append(f"Words: {words} (~{duration_estimate:.0f} seconds)")
         lines.append(f"Output file: {narration.scene_id}.mp3")
         lines.append("")
-        lines.append(f'"{narration.narration}"')
+
+        # Add delivery tags if requested
+        if include_tags:
+            print(f"  Adding delivery tags for scene {i}...")
+            narration_text = add_delivery_tags(
+                narration.narration,
+                working_dir=project.root_dir.parent.parent,
+            )
+        else:
+            narration_text = narration.narration
+
+        lines.append(f'"{narration_text}"')
         lines.append("")
         lines.append("-" * 70)
         lines.append("")
@@ -390,6 +423,8 @@ def _export_recording_script(project, narrations, args) -> int:
     print(f"Recording script exported to: {output_path}")
     print(f"Scenes: {len(narrations)}")
     print(f"Estimated duration: {total_duration/60:.1f} minutes")
+    if include_tags:
+        print(f"Delivery tags: included")
     print()
     print("Next steps:")
     print(f"  1. Record audio files following the script")
@@ -1585,6 +1620,11 @@ def main() -> int:
         "--no-sync",
         action="store_true",
         help="Don't auto-sync storyboard durations with voiceover durations",
+    )
+    voiceover_parser.add_argument(
+        "--with-tags",
+        action="store_true",
+        help="Add delivery tags to guide voice actor (with --export-script)",
     )
     voiceover_parser.set_defaults(func=cmd_voiceover)
 
