@@ -757,18 +757,34 @@ def cmd_narration(args: argparse.Namespace) -> int:
             script_data = json.load(f)
         script_context = f"\n## Existing Script Structure\n```json\n{json.dumps(script_data, indent=2)}\n```"
 
-    # Load input document for source content
+    # Load input document for source content (supports MD and PDF)
     input_context = ""
     input_dir = project.input_dir
     if input_dir.exists():
-        input_files = list(input_dir.glob("*.md"))
+        from ..ingestion import parse_document
+
+        # Find all supported input files
+        input_files = []
+        for pattern in ["*.md", "*.markdown", "*.pdf"]:
+            input_files.extend(input_dir.glob(pattern))
+
         if input_files:
-            with open(input_files[0]) as f:
-                input_content = f.read()
-            # Truncate if too long
-            if len(input_content) > 30000:
-                input_content = input_content[:30000] + "\n... [truncated]"
-            input_context = f"\n## Source Document\n{input_content}"
+            all_content = []
+            for input_file in input_files:
+                try:
+                    doc = parse_document(input_file)
+                    title = doc.title or input_file.name
+                    all_content.append(f"### {title}\n{doc.raw_content}")
+                    print(f"  Loaded source: {input_file.name}")
+                except Exception as e:
+                    print(f"  Warning: Could not parse {input_file.name}: {e}")
+
+            if all_content:
+                combined_content = "\n\n---\n\n".join(all_content)
+                # Truncate if too long (increased limit for multiple docs)
+                if len(combined_content) > 50000:
+                    combined_content = combined_content[:50000] + "\n... [truncated]"
+                input_context = f"\n## Source Document (Reference Only)\n{combined_content}"
 
     # If topic is provided, use it
     topic = args.topic or project.title
@@ -799,6 +815,27 @@ You are an elite technical video scriptwriter creating narrations for a video ab
 
 {script_context}
 {input_context}
+
+---
+
+## CRITICAL: Content Prioritization
+
+**YOUR PRIMARY SOURCE IS THE SCRIPT**. The script defines:
+- The exact scene structure (do NOT add or remove scenes)
+- The narrative flow and progression
+- The key concepts to cover in each scene
+
+**THE SOURCE DOCUMENT IS SUPPLEMENTARY**. Use it ONLY to:
+- Ensure technical accuracy (correct terminology, accurate numbers)
+- Add specific details, statistics, or examples from the original paper
+- Enrich explanations where the script is thin
+- Verify facts and claims
+
+**NEVER**:
+- Change the scene structure defined in the script
+- Add concepts not mentioned in the script
+- Change the narrative arc or progression
+- Deviate from the script's framing of the topic
 
 ---
 
@@ -1911,6 +1948,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
             step_args.mock = args.mock
             step_args.timeout = args.timeout
             step_args.force = args.force or not step_output_exists(step)
+            step_args.topic = None  # Use project title
+            step_args.verbose = False
             result = cmd_narration(step_args)
 
         elif step == "scenes":

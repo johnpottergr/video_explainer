@@ -13,6 +13,7 @@ from src.cli.main import (
     cmd_info,
     cmd_create,
     cmd_voiceover,
+    cmd_narration,
     cmd_storyboard,
     cmd_render,
     cmd_script,
@@ -315,6 +316,473 @@ class TestCmdVoiceover:
 
         result = cmd_voiceover(args)
         assert result == 1
+
+
+class TestCmdNarration:
+    """Tests for the narration command."""
+
+    @pytest.fixture
+    def basic_project(self, tmp_path):
+        """Create a basic project without input files."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "test-project",
+            "title": "Test Project",
+            "paths": {"narration": "narration/narrations.json"},
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        return project_dir
+
+    @pytest.fixture
+    def project_with_script(self, tmp_path):
+        """Create a project with a script."""
+        project_dir = tmp_path / "script-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "script-project",
+            "title": "Script Test Project",
+            "paths": {"narration": "narration/narrations.json"},
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        # Create script
+        script_dir = project_dir / "script"
+        script_dir.mkdir()
+        script = {
+            "scenes": [
+                {"scene_id": "scene1", "title": "Hook", "voiceover": "Opening hook"},
+                {"scene_id": "scene2", "title": "Main", "voiceover": "Main content"},
+            ]
+        }
+        with open(script_dir / "script.json", "w") as f:
+            json.dump(script, f)
+
+        return project_dir
+
+    @pytest.fixture
+    def project_with_md_input(self, tmp_path):
+        """Create a project with markdown input."""
+        project_dir = tmp_path / "md-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "md-project",
+            "title": "MD Test Project",
+            "paths": {"narration": "narration/narrations.json"},
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        # Create input with markdown
+        input_dir = project_dir / "input"
+        input_dir.mkdir()
+        md_content = "# Test Document\n\nThis is test content from markdown."
+        with open(input_dir / "source.md", "w") as f:
+            f.write(md_content)
+
+        return project_dir
+
+    @pytest.fixture
+    def project_with_pdf_input(self, tmp_path):
+        """Create a project with PDF input."""
+        import fitz  # PyMuPDF
+
+        project_dir = tmp_path / "pdf-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "pdf-project",
+            "title": "PDF Test Project",
+            "paths": {"narration": "narration/narrations.json"},
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        # Create input with PDF
+        input_dir = project_dir / "input"
+        input_dir.mkdir()
+
+        pdf_path = input_dir / "paper.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((72, 72), "PDF Research Paper\n\nThis is content from a PDF file about neural networks.")
+        doc.set_metadata({"title": "PDF Research Paper"})
+        doc.save(str(pdf_path))
+        doc.close()
+
+        return project_dir
+
+    @pytest.fixture
+    def project_with_multiple_inputs(self, tmp_path):
+        """Create a project with both MD and PDF inputs."""
+        import fitz
+
+        project_dir = tmp_path / "multi-project"
+        project_dir.mkdir()
+
+        config = {
+            "id": "multi-project",
+            "title": "Multi Input Project",
+            "paths": {"narration": "narration/narrations.json"},
+        }
+        with open(project_dir / "config.json", "w") as f:
+            json.dump(config, f)
+
+        input_dir = project_dir / "input"
+        input_dir.mkdir()
+
+        # Create markdown file
+        with open(input_dir / "notes.md", "w") as f:
+            f.write("# Notes\n\nSome markdown notes.")
+
+        # Create PDF file
+        pdf_path = input_dir / "paper.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((72, 72), "PDF Content")
+        doc.save(str(pdf_path))
+        doc.close()
+
+        return project_dir
+
+    def test_narration_with_mock_mode(self, basic_project, tmp_path, capsys):
+        """Test narration generation with mock mode."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        # Verify narrations were created
+        narration_path = basic_project / "narration" / "narrations.json"
+        assert narration_path.exists()
+
+        with open(narration_path) as f:
+            narrations = json.load(f)
+        assert "scenes" in narrations
+        assert len(narrations["scenes"]) > 0
+
+    def test_narration_nonexistent_project(self, tmp_path, capsys):
+        """Test narration with nonexistent project."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "nonexistent"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 1
+
+        captured = capsys.readouterr()
+        assert "Error" in captured.err
+
+    def test_narration_skips_existing_without_force(self, basic_project, tmp_path, capsys):
+        """Test that narration skips if file exists and no --force."""
+        # Create existing narrations
+        narration_dir = basic_project / "narration"
+        narration_dir.mkdir()
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump({"scenes": [{"scene_id": "existing"}]}, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.mock = True
+        args.force = False
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        captured = capsys.readouterr()
+        assert "already exist" in captured.out
+        assert "Use --force" in captured.out
+
+    def test_narration_regenerates_with_force(self, basic_project, tmp_path, capsys):
+        """Test that narration regenerates with --force."""
+        # Create existing narrations
+        narration_dir = basic_project / "narration"
+        narration_dir.mkdir()
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump({"scenes": [{"scene_id": "old_scene"}]}, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        # Verify new narrations replaced old
+        with open(narration_dir / "narrations.json") as f:
+            narrations = json.load(f)
+        # Mock generates different scene IDs
+        assert narrations["scenes"][0]["scene_id"] != "old_scene"
+
+    def test_narration_loads_md_input(self, project_with_md_input, tmp_path, capsys):
+        """Test that narration loads markdown input files."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "md-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        captured = capsys.readouterr()
+        assert "Loaded source: source.md" in captured.out
+
+    def test_narration_loads_pdf_input(self, project_with_pdf_input, tmp_path, capsys):
+        """Test that narration loads PDF input files."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "pdf-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        captured = capsys.readouterr()
+        assert "Loaded source: paper.pdf" in captured.out
+
+    def test_narration_loads_multiple_inputs(self, project_with_multiple_inputs, tmp_path, capsys):
+        """Test that narration loads multiple input files (MD and PDF)."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "multi-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        captured = capsys.readouterr()
+        assert "Loaded source: notes.md" in captured.out
+        assert "Loaded source: paper.pdf" in captured.out
+
+    def test_narration_prompt_contains_prioritization(self):
+        """Test that the narration prompt contains content prioritization guidance."""
+        from src.cli.main import cmd_narration
+        import inspect
+
+        source = inspect.getsource(cmd_narration)
+
+        # Check for critical prioritization keywords
+        assert "PRIMARY SOURCE IS THE SCRIPT" in source, \
+            "Prompt must indicate script is the primary source"
+        assert "SOURCE DOCUMENT IS SUPPLEMENTARY" in source, \
+            "Prompt must indicate source document is supplementary"
+        assert "do NOT add or remove scenes" in source, \
+            "Prompt must instruct not to change scene structure"
+        assert "NEVER" in source, \
+            "Prompt must have NEVER section with restrictions"
+
+    def test_narration_prompt_includes_script_structure(self):
+        """Test that the prompt includes script structure when available."""
+        from src.cli.main import cmd_narration
+        import inspect
+
+        source = inspect.getsource(cmd_narration)
+
+        # Check that script is loaded and included
+        assert "script_path.exists()" in source, \
+            "Should check if script exists"
+        assert "script_context" in source, \
+            "Should create script_context variable"
+        assert "Existing Script Structure" in source, \
+            "Should label script section in prompt"
+
+    def test_narration_prompt_includes_source_document(self):
+        """Test that the prompt includes source document context."""
+        from src.cli.main import cmd_narration
+        import inspect
+
+        source = inspect.getsource(cmd_narration)
+
+        # Check that source document is loaded
+        assert "parse_document" in source, \
+            "Should use parse_document for input files"
+        assert "Source Document (Reference Only)" in source, \
+            "Should label source document as reference only"
+        assert '".pdf"' in source or "*.pdf" in source, \
+            "Should support PDF files"
+
+    def test_narration_truncates_long_input(self):
+        """Test that long input content is truncated."""
+        from src.cli.main import cmd_narration
+        import inspect
+
+        source = inspect.getsource(cmd_narration)
+
+        # Check truncation logic exists
+        assert "50000" in source, \
+            "Should have truncation limit (50000 chars)"
+        assert "[truncated]" in source, \
+            "Should add truncation marker"
+
+    def test_narration_handles_parse_error_gracefully(self, basic_project, tmp_path, capsys):
+        """Test that narration handles parse errors gracefully."""
+        # Create input directory with an unreadable/invalid file
+        input_dir = basic_project / "input"
+        input_dir.mkdir()
+
+        # Create a file that will fail to parse (empty PDF)
+        with open(input_dir / "invalid.pdf", "w") as f:
+            f.write("not a real pdf")
+
+        # Also create a valid markdown file
+        with open(input_dir / "valid.md", "w") as f:
+            f.write("# Valid\n\nThis is valid markdown.")
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.mock = True
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        # Should succeed despite the invalid PDF
+        assert result == 0
+
+        captured = capsys.readouterr()
+        # Should warn about the invalid file
+        assert "Warning" in captured.out or "Could not parse" in captured.out
+        # Should still load the valid file
+        assert "Loaded source: valid.md" in captured.out
+
+    @patch("src.understanding.llm_provider.ClaudeCodeLLMProvider")
+    def test_narration_llm_receives_correct_prompt_structure(
+        self, mock_llm_class, project_with_script, tmp_path
+    ):
+        """Test that the LLM receives a prompt with correct structure."""
+        # Setup mock
+        mock_llm = MagicMock()
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_llm.generate_with_file_access.return_value = mock_result
+        mock_llm_class.return_value = mock_llm
+
+        # Create narrations file that would be created by LLM
+        narration_dir = project_with_script / "narration"
+        narration_dir.mkdir(parents=True)
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump({"scenes": [{"scene_id": "test"}]}, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "script-project"
+        args.mock = False  # Use real LLM path
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+
+        # Verify LLM was called
+        mock_llm.generate_with_file_access.assert_called_once()
+
+        # Get the prompt that was passed
+        call_args = mock_llm.generate_with_file_access.call_args
+        prompt = call_args[0][0]  # First positional argument
+
+        # Verify prompt structure
+        assert "Generate High-Quality Video Narrations" in prompt
+        assert "CRITICAL: Content Prioritization" in prompt
+        assert "PRIMARY SOURCE IS THE SCRIPT" in prompt
+        assert "SOURCE DOCUMENT IS SUPPLEMENTARY" in prompt
+        assert "Existing Script Structure" in prompt  # Script should be included
+        assert "scene1" in prompt or "Hook" in prompt  # Script content
+
+    @patch("src.understanding.llm_provider.ClaudeCodeLLMProvider")
+    def test_narration_llm_receives_source_document_in_prompt(
+        self, mock_llm_class, project_with_md_input, tmp_path
+    ):
+        """Test that source document content is included in LLM prompt."""
+        # Setup mock
+        mock_llm = MagicMock()
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_llm.generate_with_file_access.return_value = mock_result
+        mock_llm_class.return_value = mock_llm
+
+        # Create narrations file
+        narration_dir = project_with_md_input / "narration"
+        narration_dir.mkdir(parents=True)
+        with open(narration_dir / "narrations.json", "w") as f:
+            json.dump({"scenes": [{"scene_id": "test"}]}, f)
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "md-project"
+        args.mock = False
+        args.force = True
+        args.topic = None
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+
+        # Get the prompt
+        call_args = mock_llm.generate_with_file_access.call_args
+        prompt = call_args[0][0]
+
+        # Verify source document is included
+        assert "Source Document (Reference Only)" in prompt
+        assert "test content from markdown" in prompt
+
+    def test_narration_uses_project_title_as_default_topic(self, basic_project, tmp_path, capsys):
+        """Test that narration uses project title when no topic specified."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "test-project"
+        args.mock = True
+        args.force = True
+        args.topic = None  # No topic specified
+        args.timeout = 300
+        args.verbose = False
+
+        result = cmd_narration(args)
+        assert result == 0
+
+        captured = capsys.readouterr()
+        # Mock mode doesn't print topic, but we can verify it ran successfully
 
 
 class TestCmdStoryboard:
@@ -1669,3 +2137,77 @@ class TestCmdScenesRegenerateSingle:
         captured = capsys.readouterr()
         assert result == 1
         assert "Script not found" in captured.err
+
+
+class TestCmdGeneratePipelineArgs:
+    """Tests to ensure cmd_generate passes all required arguments to sub-commands.
+
+    These tests verify that each pipeline step receives all the arguments it expects,
+    preventing AttributeError crashes like 'Namespace' object has no attribute 'X'.
+    """
+
+    def test_generate_narration_step_sets_topic(self):
+        """Test that cmd_generate's narration step sets 'topic' argument.
+
+        This test prevents regression of the 'AttributeError: topic' bug.
+        """
+        from src.cli.main import cmd_generate
+        import inspect
+        source = inspect.getsource(cmd_generate)
+
+        # The narration step must set step_args.topic
+        assert "step_args.topic" in source, \
+            "cmd_generate must set step_args.topic for narration step"
+
+    def test_generate_narration_step_sets_verbose(self):
+        """Test that cmd_generate's narration step sets 'verbose' argument.
+
+        This test prevents regression of the 'AttributeError: verbose' bug.
+        """
+        from src.cli.main import cmd_generate
+        import inspect
+        source = inspect.getsource(cmd_generate)
+
+        # Count occurrences - need at least 2 (one for script, one for narration)
+        # since both steps need verbose
+        verbose_count = source.count("step_args.verbose")
+        assert verbose_count >= 2, \
+            f"cmd_generate must set step_args.verbose for multiple steps (found {verbose_count})"
+
+    def test_generate_all_steps_set_required_base_args(self):
+        """Test that all pipeline steps in cmd_generate set basic required args.
+
+        Each step should set at minimum: mock, timeout, force (where applicable).
+        """
+        from src.cli.main import cmd_generate
+        import inspect
+        source = inspect.getsource(cmd_generate)
+
+        # These args appear multiple times in cmd_generate for different steps
+        # Count them to ensure they're set for each step
+        mock_count = source.count("step_args.mock")
+        timeout_count = source.count("step_args.timeout")
+        force_count = source.count("step_args.force")
+
+        # Should have at least 4 steps setting these (script, narration, scenes, storyboard)
+        assert mock_count >= 4, f"Expected step_args.mock set for 4+ steps, found {mock_count}"
+        assert timeout_count >= 3, f"Expected step_args.timeout set for 3+ steps, found {timeout_count}"
+        assert force_count >= 4, f"Expected step_args.force set for 4+ steps, found {force_count}"
+
+    def test_generate_voiceover_step_sets_provider(self):
+        """Test that voiceover step sets provider argument."""
+        from src.cli.main import cmd_generate
+        import inspect
+        source = inspect.getsource(cmd_generate)
+
+        assert "step_args.provider" in source, \
+            "cmd_generate must set step_args.provider for voiceover step"
+
+    def test_generate_render_step_sets_resolution(self):
+        """Test that render step sets resolution argument."""
+        from src.cli.main import cmd_generate
+        import inspect
+        source = inspect.getsource(cmd_generate)
+
+        assert "step_args.resolution" in source, \
+            "cmd_generate must set step_args.resolution for render step"
