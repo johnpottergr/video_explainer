@@ -13,9 +13,63 @@ from src.ingestion.pdf import (
     extract_images_from_pdf,
     extract_text_from_pdf,
     extract_title_from_pdf,
+    sanitize_text,
     split_pdf_into_sections,
 )
 from src.models import SourceType
+
+
+class TestSanitizeText:
+    """Tests for text sanitization to handle null bytes and control characters."""
+
+    def test_removes_null_bytes(self):
+        """Should remove null bytes from text."""
+        text_with_nulls = "Hello\x00World\x00Test"
+        result = sanitize_text(text_with_nulls)
+        assert result == "HelloWorldTest"
+        assert "\x00" not in result
+
+    def test_removes_control_characters(self):
+        """Should remove problematic control characters."""
+        # Control chars: \x01-\x08, \x0b, \x0c, \x0e-\x1f
+        text_with_controls = "Hello\x01\x02\x03World\x0b\x0cTest\x1f"
+        result = sanitize_text(text_with_controls)
+        assert result == "HelloWorldTest"
+
+    def test_preserves_newlines_and_tabs(self):
+        """Should preserve newlines, tabs, and carriage returns."""
+        text_with_whitespace = "Hello\nWorld\tTest\r\nLine"
+        result = sanitize_text(text_with_whitespace)
+        assert result == "Hello\nWorld\tTest\r\nLine"
+
+    def test_handles_empty_string(self):
+        """Should handle empty strings."""
+        assert sanitize_text("") == ""
+
+    def test_handles_none(self):
+        """Should handle None input."""
+        assert sanitize_text(None) is None
+
+    def test_handles_normal_text(self):
+        """Should not modify normal text."""
+        normal_text = "This is normal text with punctuation! And numbers: 123."
+        result = sanitize_text(normal_text)
+        assert result == normal_text
+
+    def test_handles_unicode(self):
+        """Should preserve unicode characters."""
+        unicode_text = "Hello 世界 🌍 café"
+        result = sanitize_text(unicode_text)
+        assert result == unicode_text
+
+    def test_handles_mixed_content(self):
+        """Should handle text with mixed valid and invalid characters."""
+        mixed = "Title\x00\n\nParagraph with\x00 null bytes\x01 and control\x02 chars."
+        result = sanitize_text(mixed)
+        assert result == "Title\n\nParagraph with null bytes and control chars."
+        assert "\x00" not in result
+        assert "\x01" not in result
+        assert "\x02" not in result
 
 
 class TestExtractTitleFromPdf:
@@ -465,6 +519,56 @@ These are the methods with $E = mc^2$ equation."""
 
         result = parse_pdf(pdf_path)
         assert "raw content extraction" in result.raw_content
+
+    def test_sanitizes_null_bytes_from_content(self, tmp_path):
+        """Should sanitize null bytes from PDF content.
+
+        This test verifies the fix for 'embedded null byte' errors that occur
+        when PDF content containing null bytes is used in downstream processing.
+        """
+        import fitz
+
+        pdf_path = tmp_path / "nullbytes.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((72, 72), "Content before and after")
+        doc.save(str(pdf_path))
+        doc.close()
+
+        # Parse the PDF
+        result = parse_pdf(pdf_path)
+
+        # Verify no null bytes in any text content
+        assert "\x00" not in result.raw_content, "raw_content should not contain null bytes"
+        assert "\x00" not in result.title, "title should not contain null bytes"
+        for section in result.sections:
+            assert "\x00" not in section.heading, f"section heading should not contain null bytes"
+            assert "\x00" not in section.content, f"section content should not contain null bytes"
+
+    def test_sanitizes_null_bytes_in_extracted_title(self):
+        """Should sanitize null bytes from title extraction."""
+        # Mock a document that returns text with null bytes
+        mock_doc = MagicMock()
+        mock_doc.metadata = {"title": "Title\x00With\x00Nulls"}
+        mock_doc.__len__ = lambda x: 1
+
+        title = extract_title_from_pdf(mock_doc)
+        assert "\x00" not in title
+        assert title == "TitleWithNulls"
+
+    def test_sanitizes_null_bytes_in_first_page_title(self):
+        """Should sanitize null bytes when title comes from first page."""
+        mock_doc = MagicMock()
+        mock_doc.metadata = {}
+        mock_doc.__len__ = lambda x: 1
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "First\x00Line\x00Title\n\nContent"
+        mock_doc.__getitem__ = lambda x, i: mock_page
+
+        title = extract_title_from_pdf(mock_doc)
+        assert "\x00" not in title
+        assert title == "FirstLineTitle"
 
 
 class TestParseDocumentPdf:

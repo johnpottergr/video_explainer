@@ -8,6 +8,31 @@ import fitz  # PyMuPDF
 from ..models import ParsedDocument, Section, SourceType
 
 
+def sanitize_text(text: str) -> str:
+    """Remove null bytes and other problematic characters from text.
+
+    PDF text extraction can produce null bytes and other control characters
+    that cause issues in downstream processing (e.g., "embedded null byte" errors).
+
+    Args:
+        text: Raw text that may contain problematic characters.
+
+    Returns:
+        Sanitized text with null bytes and problematic control characters removed.
+    """
+    if not text:
+        return text
+
+    # Remove null bytes
+    text = text.replace("\x00", "")
+
+    # Remove other problematic control characters (except newlines, tabs, carriage returns)
+    # Control characters are in ranges 0x00-0x08, 0x0B-0x0C, 0x0E-0x1F
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)
+
+    return text
+
+
 def extract_text_from_pdf(pdf_path: Path) -> str:
     """Extract all text content from a PDF file.
 
@@ -24,7 +49,7 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
         page = doc[page_num]
         text = page.get_text()
         if text.strip():
-            text_parts.append(text)
+            text_parts.append(sanitize_text(text))
 
     doc.close()
     return "\n\n".join(text_parts)
@@ -42,12 +67,12 @@ def extract_title_from_pdf(doc: fitz.Document) -> str:
     # Try metadata first
     metadata = doc.metadata
     if metadata and metadata.get("title"):
-        return metadata["title"].strip()
+        return sanitize_text(metadata["title"].strip())
 
     # Fallback: extract from first page
     if len(doc) > 0:
         first_page = doc[0]
-        text = first_page.get_text()
+        text = sanitize_text(first_page.get_text())
         lines = [line.strip() for line in text.split("\n") if line.strip()]
         if lines:
             # Return first non-empty line, truncated if too long
@@ -322,7 +347,7 @@ def parse_pdf(source: str | Path) -> ParsedDocument:
             page = doc[page_num]
             text = page.get_text()
             if text.strip():
-                text_parts.append(text)
+                text_parts.append(sanitize_text(text))
         raw_content = "\n\n".join(text_parts)
 
         # Extract images
