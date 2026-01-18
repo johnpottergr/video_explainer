@@ -88,6 +88,19 @@ class ShortsVisual(BaseModel):
     source_scene_id: str = ""  # Which scene this visual was extracted from
 
 
+class PhaseMarker(BaseModel):
+    """A marker that defines a phase boundary in a scene.
+
+    Phase markers link scene animation phases to specific words in the voiceover.
+    When the voiceover timing changes, the timing generator uses these markers
+    to recalculate frame numbers automatically.
+    """
+
+    id: str  # e.g., "phase1", "gptAppear", "claudeAppear"
+    end_word: str  # Word that marks the end of this phase (e.g., "GPT,", "Claude")
+    description: str = ""  # Optional human-readable description
+
+
 class ShortsBeat(BaseModel):
     """A single beat/moment in the shorts storyboard."""
 
@@ -103,6 +116,9 @@ class ShortsBeat(BaseModel):
     visual_elements: list[str] = Field(default_factory=list)  # From source scene's visual_cue.elements
     component_name: str = ""  # e.g., "Beat1Scene" - name of custom React component
     source_scene_file: str = ""  # e.g., "TokenizationScene.tsx" - source scene for inspiration
+
+    # Phase markers for timing synchronization
+    phase_markers: list[PhaseMarker] = Field(default_factory=list)  # For auto-syncing scene timing
 
 
 class ShortsStoryboard(BaseModel):

@@ -2335,6 +2335,66 @@ def cmd_short_storyboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_short_timing(args: argparse.Namespace) -> int:
+    """Generate timing.ts file from storyboard phase markers.
+
+    This regenerates the timing constants that scene components use
+    for animation synchronization. Run this after changing voiceover
+    timing to update all scene files automatically.
+    """
+    from ..project import load_project
+    from ..short.generator import ShortGenerator
+    from ..short.timing_generator import generate_timing_file
+
+    try:
+        project = load_project(Path(args.projects_dir) / args.project)
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    variant_dir = project.short_dir / args.variant
+    storyboard_path = variant_dir / "storyboard" / "shorts_storyboard.json"
+    scenes_dir = variant_dir / "scenes"
+
+    if not storyboard_path.exists():
+        print(f"Error: Storyboard not found at {storyboard_path}", file=sys.stderr)
+        print("Run 'short storyboard' first to generate the storyboard.", file=sys.stderr)
+        return 1
+
+    print(f"Generating timing.ts for: {project.id}")
+    print(f"  Variant: {args.variant}")
+    print()
+
+    # Load storyboard
+    storyboard = ShortGenerator.load_shorts_storyboard(storyboard_path)
+
+    # Check if any beats have phase markers
+    beats_with_markers = [b for b in storyboard.beats if b.phase_markers]
+    if not beats_with_markers:
+        print("Warning: No beats have phase markers defined.")
+        print("Add phase_markers to beats in the storyboard to enable automatic timing sync.")
+        print()
+        print("Example phase_markers in storyboard JSON:")
+        print('  "phase_markers": [')
+        print('    {"id": "phase1End", "end_word": "insight.", "description": "End of intro"}')
+        print('  ]')
+        return 1
+
+    # Generate timing file
+    timing_path = scenes_dir / "timing.ts"
+    timing_data = generate_timing_file(storyboard, timing_path, fps=args.fps)
+
+    print(f"  Generated timing for {len(timing_data)} beats")
+    print()
+    print("Timing file can be imported in scene components:")
+    print('  import { TIMING } from "./timing";')
+    print()
+    print("Usage in scenes:")
+    print("  const phase1End = TIMING.beat_1.phase1End;")
+
+    return 0
+
+
 def cmd_generate(args: argparse.Namespace) -> int:
     """Run the full video generation pipeline end-to-end.
 
@@ -3034,6 +3094,25 @@ For manual voiceover recording:
         help="Use mock LLM for testing",
     )
     short_storyboard_parser.set_defaults(func=cmd_short_storyboard)
+
+    # short timing
+    short_timing_parser = short_subparsers.add_parser(
+        "timing",
+        help="Generate timing.ts from storyboard phase markers",
+    )
+    short_timing_parser.add_argument("project", help="Project ID")
+    short_timing_parser.add_argument(
+        "--variant",
+        default="default",
+        help="Variant name",
+    )
+    short_timing_parser.add_argument(
+        "--fps",
+        type=int,
+        default=30,
+        help="Frames per second (default: 30)",
+    )
+    short_timing_parser.set_defaults(func=cmd_short_timing)
 
     # Keep legacy cmd_short for backward compatibility (runs full pipeline)
     short_parser.set_defaults(func=cmd_short)

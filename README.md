@@ -285,6 +285,48 @@ python -m src.cli short storyboard llm-inference
 python -m src.cli render llm-inference --short
 ```
 
+**Timing sync (when voiceover changes):**
+
+When you re-record or modify the voiceover, scene animations need to sync with the new timing. The timing sync system automates this:
+
+```bash
+# 1. Process new voiceover (generates word timestamps)
+python -m src.cli short voiceover llm-inference --audio new_recording.mp3
+
+# 2. Regenerate storyboard (updates beat timing)
+python -m src.cli short storyboard llm-inference --skip-custom-scenes
+
+# 3. Regenerate timing.ts (syncs scene animations to new word timestamps)
+python -m src.cli short timing llm-inference
+
+# 4. Preview - animations are now synced!
+cd remotion && npm run dev
+```
+
+**How it works:**
+
+1. **Phase markers** in storyboard link animation phases to spoken words:
+   ```json
+   "phase_markers": [
+     {"id": "gptAppear", "end_word": "GPT,", "description": "GPT logo appears"},
+     {"id": "phase1End", "end_word": "insight.", "description": "End of intro"}
+   ]
+   ```
+
+2. **Timing generator** finds word timestamps and calculates frame numbers:
+   ```bash
+   python -m src.cli short timing llm-inference
+   # Generates: projects/<project>/short/default/scenes/timing.ts
+   ```
+
+3. **Scene components** import timing constants instead of hardcoded values:
+   ```typescript
+   import { TIMING } from "./timing";
+   const gptSpring = spring({ frame: localFrame - TIMING.beat_1.gptAppear, ... });
+   ```
+
+This eliminates the need to manually update scene files when voiceover timing changes.
+
 **Script options:**
 
 | Option | Description |

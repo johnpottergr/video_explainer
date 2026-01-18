@@ -20,6 +20,7 @@ from .models import (
     ShortsBeat,
     ShortsStoryboard,
     SceneComponentConfig,
+    PhaseMarker,
 )
 
 
@@ -872,6 +873,17 @@ class ShortGenerator:
             if beat.source_scene_file:
                 result["source_scene_file"] = beat.source_scene_file
 
+            # Include phase markers for timing synchronization
+            if beat.phase_markers:
+                result["phase_markers"] = [
+                    {
+                        "id": marker.id,
+                        "end_word": marker.end_word,
+                        "description": marker.description,
+                    }
+                    for marker in beat.phase_markers
+                ]
+
             return result
 
         data = {
@@ -921,6 +933,16 @@ class ShortGenerator:
                 scene_config=scene_config,
                 source_scene_id=visual_data.get("source_scene_id", ""),
             )
+            # Parse phase markers if present
+            phase_markers = [
+                PhaseMarker(
+                    id=m.get("id", ""),
+                    end_word=m.get("end_word", ""),
+                    description=m.get("description", ""),
+                )
+                for m in beat_data.get("phase_markers", [])
+            ]
+
             beats.append(ShortsBeat(
                 id=beat_data.get("id", ""),
                 start_seconds=beat_data.get("start_seconds", 0),
@@ -933,6 +955,8 @@ class ShortGenerator:
                 visual_elements=beat_data.get("visual_elements", []),
                 component_name=beat_data.get("component_name", ""),
                 source_scene_file=beat_data.get("source_scene_file", ""),
+                # Phase markers for timing synchronization
+                phase_markers=phase_markers,
             ))
 
         return ShortsStoryboard(
