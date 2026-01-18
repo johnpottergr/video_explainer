@@ -2961,12 +2961,17 @@ Use --force to regenerate all steps.
         "short",
         help="YouTube Shorts generation pipeline",
         description="""
-YouTube Shorts generation pipeline. Use subcommands to run each step:
+YouTube Shorts generation pipeline.
 
+Full pipeline (recommended):
+  python -m src.cli short generate <project>    # Runs everything end-to-end
+
+Or run individual steps:
   python -m src.cli short script <project>      # 1. Generate short script
   python -m src.cli short scenes <project>      # 2. Generate scene components
   python -m src.cli short voiceover <project>   # 3. Generate voiceover
   python -m src.cli short storyboard <project>  # 4. Create storyboard
+  python -m src.cli short timing <project>      # 5. Generate timing.ts (optional)
 
 Then render with:
   python -m src.cli render <project> --short
@@ -2982,6 +2987,49 @@ For manual voiceover recording:
         dest="short_command",
         help="Short generation commands",
     )
+
+    # short generate (full pipeline)
+    short_generate_parser = short_subparsers.add_parser(
+        "generate",
+        help="Run full shorts pipeline (script → scenes → voiceover → storyboard)",
+    )
+    short_generate_parser.add_argument("project", help="Project ID")
+    short_generate_parser.add_argument(
+        "--duration", "-d",
+        type=int,
+        default=45,
+        help="Target duration in seconds (default: 45, range: 30-60)",
+    )
+    short_generate_parser.add_argument(
+        "--variant",
+        default="default",
+        help="Variant name for multiple shorts from same project",
+    )
+    short_generate_parser.add_argument(
+        "--scenes",
+        help="Override scene selection (comma-separated scene IDs)",
+    )
+    short_generate_parser.add_argument(
+        "--force", "-f",
+        action="store_true",
+        help="Force regenerate even if files exist",
+    )
+    short_generate_parser.add_argument(
+        "--skip-voiceover",
+        action="store_true",
+        help="Skip voiceover generation",
+    )
+    short_generate_parser.add_argument(
+        "--skip-custom-scenes",
+        action="store_true",
+        help="Skip custom scene generation (use generic components)",
+    )
+    short_generate_parser.add_argument(
+        "--mock",
+        action="store_true",
+        help="Use mock LLM for testing (no API calls)",
+    )
+    short_generate_parser.set_defaults(func=cmd_short)
 
     # short script
     short_script_parser = short_subparsers.add_parser(

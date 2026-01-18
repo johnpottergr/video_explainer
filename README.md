@@ -249,7 +249,17 @@ Generate vertical shorts (1080x1920) optimized for YouTube Shorts, Instagram Ree
 
 **Prerequisites:** Run `script` and `narration` commands first.
 
-**Step-by-step pipeline:**
+**Full pipeline (recommended):**
+
+```bash
+# Generate everything end-to-end
+python -m src.cli short generate llm-inference
+
+# Then render
+python -m src.cli render llm-inference --short
+```
+
+**Or run individual steps:**
 
 ```bash
 # 1. Generate short script (hook analysis + condensed narration)
