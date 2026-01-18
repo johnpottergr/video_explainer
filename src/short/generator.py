@@ -1039,19 +1039,27 @@ class ShortGenerator:
         last_word_end = timestamps[-1]["end_seconds"] if timestamps else voiceover_duration
         cta_start = last_word_end + 0.5  # Small gap before CTA
 
-        cta_beat = ShortsBeat(
-            id="cta",
-            start_seconds=cta_start,
-            end_seconds=voiceover_duration,
-            visual=ShortsVisual(
-                type=VisualType.QUESTION,
-                primary_text=short_script.hook_question,
-                color="accent",
-            ),
-            caption_text=short_script.cta_narration,
-            word_timestamps=[],  # CTA has no word timestamps (just displayed text)
-        )
-        beats.append(cta_beat)
+        # Ensure CTA timing is valid (start < end, with minimum 1s duration)
+        min_cta_duration = 1.0
+        if cta_start + min_cta_duration > voiceover_duration:
+            # Not enough time for CTA gap, start CTA right after last word
+            cta_start = last_word_end
+
+        # Only add CTA if there's still valid timing
+        if cta_start < voiceover_duration:
+            cta_beat = ShortsBeat(
+                id="cta",
+                start_seconds=cta_start,
+                end_seconds=voiceover_duration,
+                visual=ShortsVisual(
+                    type=VisualType.QUESTION,
+                    primary_text=short_script.hook_question,
+                    color="accent",
+                ),
+                caption_text=short_script.cta_narration,
+                word_timestamps=[],  # CTA has no word timestamps (just displayed text)
+            )
+            beats.append(cta_beat)
 
         return ShortsStoryboard(
             id=f"{short_script.source_project}_short",

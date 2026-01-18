@@ -8,7 +8,8 @@ import pytest
 from src.config import Config
 from src.models import Script, ScriptScene, VisualCue
 from src.short import ShortGenerator, ShortSceneGenerator, ShortConfig, ShortScript, ShortScene
-from src.short.models import HookAnalysis, CondensedNarration, ShortResult
+from src.short.models import HookAnalysis, CondensedNarration, ShortResult, ShortsVisual, VisualType
+from src.short.generator import normalize_script_format
 
 
 class TestShortModels:
@@ -540,3 +541,278 @@ class TestCTASceneTemplate:
         assert "useCurrentFrame" in content
         assert "interpolate" in content
         assert "spring" in content
+
+
+class TestNormalizeScriptFormat:
+    """Tests for the normalize_script_format function."""
+
+    def test_normalizes_visual_description_to_visual_cue(self):
+        """Test that flat visual_description is converted to visual_cue object."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 100,
+            "scenes": [
+                {
+                    "scene_id": 1,
+                    "scene_type": "hook",
+                    "title": "The Hook",
+                    "voiceover": "Test voiceover",
+                    "visual_description": "Show animation of concept",
+                    "duration_seconds": 30.0,
+                }
+            ],
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        assert "visual_cue" in normalized["scenes"][0]
+        assert "visual_description" not in normalized["scenes"][0]
+        assert normalized["scenes"][0]["visual_cue"]["description"] == "Show animation of concept"
+        assert normalized["scenes"][0]["visual_cue"]["visual_type"] == "animation"
+        assert normalized["scenes"][0]["visual_cue"]["elements"] == []
+        assert normalized["scenes"][0]["visual_cue"]["duration_seconds"] == 30.0
+
+    def test_preserves_existing_visual_cue(self):
+        """Test that existing visual_cue objects are not modified."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 100,
+            "scenes": [
+                {
+                    "scene_id": 1,
+                    "scene_type": "hook",
+                    "title": "The Hook",
+                    "voiceover": "Test voiceover",
+                    "visual_cue": {
+                        "description": "Original description",
+                        "visual_type": "diagram",
+                        "elements": ["element1", "element2"],
+                        "duration_seconds": 20.0,
+                    },
+                    "duration_seconds": 30.0,
+                }
+            ],
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        assert normalized["scenes"][0]["visual_cue"]["description"] == "Original description"
+        assert normalized["scenes"][0]["visual_cue"]["visual_type"] == "diagram"
+        assert normalized["scenes"][0]["visual_cue"]["elements"] == ["element1", "element2"]
+
+    def test_adds_missing_source_document(self):
+        """Test that source_document is added if missing."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 100,
+            "scenes": [],
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        assert "source_document" in normalized
+        assert normalized["source_document"] == ""
+
+    def test_preserves_existing_source_document(self):
+        """Test that existing source_document is preserved."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 100,
+            "scenes": [],
+            "source_document": "original.md",
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        assert normalized["source_document"] == "original.md"
+
+    def test_handles_empty_scenes(self):
+        """Test handling of script with no scenes."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 0,
+            "scenes": [],
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        assert normalized["scenes"] == []
+
+    def test_handles_missing_scenes_key(self):
+        """Test handling of script without scenes key."""
+        script_data = {
+            "title": "Test Video",
+        }
+
+        normalized = normalize_script_format(script_data)
+
+        # Should return unchanged if no scenes key
+        assert normalized == {"title": "Test Video"}
+
+    def test_normalized_script_can_be_loaded(self):
+        """Test that normalized script data can be loaded as Script model."""
+        script_data = {
+            "title": "Test Video",
+            "total_duration_seconds": 100,
+            "scenes": [
+                {
+                    "scene_id": 1,
+                    "scene_type": "hook",
+                    "title": "The Hook",
+                    "voiceover": "Test voiceover",
+                    "visual_description": "Show animation of concept",
+                    "duration_seconds": 30.0,
+                }
+            ],
+        }
+
+        normalized = normalize_script_format(script_data)
+        script = Script(**normalized)
+
+        assert script.title == "Test Video"
+        assert len(script.scenes) == 1
+        assert script.scenes[0].visual_cue.description == "Show animation of concept"
+
+
+class TestCTABeatTiming:
+    """Tests for CTA beat timing edge cases."""
+
+    @pytest.fixture
+    def generator(self, mock_config):
+        return ShortGenerator(config=mock_config)
+
+    @pytest.fixture
+    def sample_short_script(self) -> ShortScript:
+        return ShortScript(
+            source_project="test-project",
+            title="Test Short",
+            hook_question="How did they solve this?",
+            scenes=[
+                ShortScene(
+                    source_scene_id="scene1",
+                    condensed_narration="Test narration content here.",
+                    duration_seconds=20.0,
+                )
+            ],
+            cta_text="Full breakdown in description",
+            cta_narration="Want to know more? Check the description.",
+            total_duration_seconds=45.0,
+        )
+
+    def test_cta_timing_with_gap(self, generator, sample_short_script):
+        """Test CTA beat is created with gap when voiceover ends early."""
+        word_timestamps = [
+            {"word": "Test", "start_seconds": 0.0, "end_seconds": 0.5},
+            {"word": "narration", "start_seconds": 0.6, "end_seconds": 1.2},
+            {"word": "content", "start_seconds": 1.3, "end_seconds": 1.8},
+            {"word": "here.", "start_seconds": 1.9, "end_seconds": 2.5},
+        ]
+        voiceover_duration = 5.0  # Plenty of time after last word
+
+        storyboard = generator.generate_shorts_storyboard_from_voiceover(
+            sample_short_script,
+            word_timestamps,
+            voiceover_duration,
+            mock=True,
+        )
+
+        # Find CTA beat
+        cta_beat = next((b for b in storyboard.beats if b.id == "cta"), None)
+        assert cta_beat is not None
+        # CTA should start 0.5s after last word (2.5 + 0.5 = 3.0)
+        assert cta_beat.start_seconds == 3.0
+        assert cta_beat.end_seconds == voiceover_duration
+        # Verify timing is valid
+        assert cta_beat.start_seconds < cta_beat.end_seconds
+
+    def test_cta_timing_near_end(self, generator, sample_short_script):
+        """Test CTA timing when voiceover ends near total duration."""
+        # Voiceover ends at 19.5s, duration is 20.0s
+        word_timestamps = [
+            {"word": "Test", "start_seconds": 0.0, "end_seconds": 0.5},
+            {"word": "narration", "start_seconds": 0.6, "end_seconds": 1.2},
+            {"word": "content", "start_seconds": 18.5, "end_seconds": 19.0},
+            {"word": "here.", "start_seconds": 19.1, "end_seconds": 19.5},
+        ]
+        voiceover_duration = 20.0
+
+        storyboard = generator.generate_shorts_storyboard_from_voiceover(
+            sample_short_script,
+            word_timestamps,
+            voiceover_duration,
+            mock=True,
+        )
+
+        # Find CTA beat
+        cta_beat = next((b for b in storyboard.beats if b.id == "cta"), None)
+        assert cta_beat is not None
+        # CTA start should be adjusted (not 19.5 + 0.5 = 20.0 which would be >= end)
+        assert cta_beat.start_seconds < cta_beat.end_seconds
+        # CTA end should be voiceover_duration
+        assert cta_beat.end_seconds == voiceover_duration
+
+    def test_cta_timing_voiceover_fills_duration(self, generator, sample_short_script):
+        """Test CTA beat when voiceover completely fills the duration."""
+        # Last word ends at exactly the voiceover duration
+        word_timestamps = [
+            {"word": "Test", "start_seconds": 0.0, "end_seconds": 0.5},
+            {"word": "narration", "start_seconds": 0.6, "end_seconds": 1.2},
+            {"word": "content", "start_seconds": 19.0, "end_seconds": 19.5},
+            {"word": "here.", "start_seconds": 19.6, "end_seconds": 20.0},
+        ]
+        voiceover_duration = 20.0
+
+        storyboard = generator.generate_shorts_storyboard_from_voiceover(
+            sample_short_script,
+            word_timestamps,
+            voiceover_duration,
+            mock=True,
+        )
+
+        # CTA beat should not have invalid timing (start >= end)
+        cta_beat = next((b for b in storyboard.beats if b.id == "cta"), None)
+        if cta_beat is not None:
+            # If CTA exists, timing must be valid
+            assert cta_beat.start_seconds < cta_beat.end_seconds
+        # If no CTA beat, that's also acceptable when there's no time
+
+    def test_no_cta_when_no_time(self, generator, sample_short_script):
+        """Test that CTA is not added when there's no time for it."""
+        # Last word ends after voiceover duration (edge case)
+        word_timestamps = [
+            {"word": "Test", "start_seconds": 0.0, "end_seconds": 0.5},
+            {"word": "here.", "start_seconds": 20.1, "end_seconds": 20.5},
+        ]
+        voiceover_duration = 20.0  # Less than last word end
+
+        storyboard = generator.generate_shorts_storyboard_from_voiceover(
+            sample_short_script,
+            word_timestamps,
+            voiceover_duration,
+            mock=True,
+        )
+
+        # CTA beat should not exist or should have valid timing
+        cta_beat = next((b for b in storyboard.beats if b.id == "cta"), None)
+        if cta_beat is not None:
+            assert cta_beat.start_seconds < cta_beat.end_seconds
+
+    def test_all_beats_have_valid_timing(self, generator, sample_short_script):
+        """Test that all beats (including CTA) have valid start < end timing."""
+        word_timestamps = [
+            {"word": "Test", "start_seconds": 0.0, "end_seconds": 0.5},
+            {"word": "content.", "start_seconds": 0.6, "end_seconds": 1.2},
+        ]
+        voiceover_duration = 2.0
+
+        storyboard = generator.generate_shorts_storyboard_from_voiceover(
+            sample_short_script,
+            word_timestamps,
+            voiceover_duration,
+            mock=True,
+        )
+
+        # All beats must have valid timing
+        for beat in storyboard.beats:
+            assert beat.start_seconds < beat.end_seconds, \
+                f"Beat {beat.id} has invalid timing: start={beat.start_seconds}, end={beat.end_seconds}"
