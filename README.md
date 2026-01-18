@@ -5,6 +5,7 @@ A system for generating high-quality explainer videos from technical documents. 
 ## Example Videos Generated Using This System
 - [How LLMs Actually Understand Images](https://youtu.be/PuodF4pq79g?si=4T0CV555qr89DSvY)
 - [What Actually Happens When You Prompt AI?](https://youtu.be/nmBqcRl2tmM?si=FhCf4G5lKY3_rZ5I)
+- [The Trick That Let AI See (Short)](https://www.youtube.com/shorts/vwI_gD4OG4I)
 
 ## Features
 
