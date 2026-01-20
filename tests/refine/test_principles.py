@@ -245,6 +245,7 @@ class TestPrinciplesInInspectorPrompt:
             narration_text="Test narration",
             beats_info="Beat 1 info",
             beat_frames_list="0, 450",
+            first_beat_frame="0",
             principles=format_principles_for_prompt(),
         )
 
@@ -270,6 +271,7 @@ class TestPrinciplesInInspectorPrompt:
             narration_text="Test narration",
             beats_info="Beat 1 info",
             beat_frames_list="0, 450",
+            first_beat_frame="0",
             principles=format_principles_for_prompt(),
         )
 
@@ -371,3 +373,43 @@ class TestPrinciplesInInspectorPrompt:
         assert "beats_inspected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
         assert "total_beats_expected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
         assert "total_beats_inspected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+    def test_inspector_prompt_has_navigation_tips(self):
+        """Test that prompt includes Remotion Studio navigation tips."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for navigation section
+        assert "Navigation Tips" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        # Check for specific navigation instructions
+        assert "frame counter" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.lower()
+        assert "arrow keys" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.lower()
+
+    def test_inspector_prompt_has_principle_checklist(self):
+        """Test that prompt includes explicit principle checklist for each beat."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for checklist format
+        assert "Principle Checklist" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "PASS/ISSUE" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        # Check all 11 principles are in checklist
+        assert "Show don't tell" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "Screen space utilization" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+    def test_inspector_prompt_requires_verification_with_evidence(self):
+        """Test that prompt requires verification to show which principles were fixed."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for verification results structure
+        assert "verification_results" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "principles_fixed" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "Was ISSUE" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "Now PASS" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "evidence" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+    def test_inspector_prompt_requires_principle_checklist_in_json(self):
+        """Test that JSON output includes principle_checklist for each beat."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for principle_checklist in JSON structure
+        assert "principle_checklist" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "issues_summary" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT

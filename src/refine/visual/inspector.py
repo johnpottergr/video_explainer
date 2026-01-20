@@ -186,9 +186,16 @@ CLAUDE_CODE_VISUAL_INSPECTION_PROMPT = """Inspect and fix visuals for Scene {sce
 - Total beats to inspect: {num_beats}
 - Frames to check: {beat_frames_list}
 
+## Remotion Studio Navigation Tips
+- **Go to specific frame**: Click the frame counter (shows "00:00.00 / Frame 0"), type the frame number, press Enter
+- **Step frame-by-frame**: Use Left/Right arrow keys
+- **Go to start**: Click the "Skip to start" button (|◀) or press Home
+- **Playback**: Press Space to play/pause, or use J/K/L keys
+- The frame counter shows both timecode AND frame number - use the frame number for precision
+
 ## CRITICAL: Complete Coverage Required
 - You MUST take a screenshot at EVERY frame listed: {beat_frames_list}
-- You MUST evaluate EVERY screenshot against ALL 11 principles
+- You MUST evaluate EVERY screenshot against ALL 11 principles (see checklist below)
 - Stopping early or skipping frames is NOT acceptable
 - The scene is {duration_seconds:.1f}s long - ensure you inspect content THROUGHOUT the entire duration
 - Partial inspection = failure. Inspect ALL {num_beats} beats.
@@ -210,13 +217,28 @@ Principle codes for JSON: show_dont_tell, animation_reveals, progressive_disclos
 
 ### Phase 1: COMPLETE INSPECTION (no fixes yet)
 For EACH frame in [{beat_frames_list}]:
-1. Navigate to that exact frame number
+1. Navigate to that exact frame number (use tips above)
 2. Take a screenshot
-3. Evaluate what you see against ALL 11 principles - be critical!
-4. Document any issues found for that beat
+3. **Evaluate against ALL 11 principles using this checklist:**
+   ```
+   Beat X @ Frame Y - Principle Checklist:
+   [ ] 1. Show don't tell: PASS/ISSUE - [reason]
+   [ ] 2. Animation reveals: PASS/ISSUE - [reason]
+   [ ] 3. Progressive disclosure: PASS/ISSUE - [reason]
+   [ ] 4. Text complements: PASS/ISSUE - [reason]
+   [ ] 5. Visual hierarchy: PASS/ISSUE - [reason]
+   [ ] 6. Breathing room: PASS/ISSUE - [reason]
+   [ ] 7. Purposeful motion: PASS/ISSUE - [reason]
+   [ ] 8. Emotional resonance: PASS/ISSUE - [reason]
+   [ ] 9. Professional polish: PASS/ISSUE - [reason]
+   [ ] 10. Sync with narration: PASS/ISSUE - [reason]
+   [ ] 11. Screen space utilization: PASS/ISSUE - [reason]
+   ```
+4. Document the issues found (principles marked ISSUE)
 
 ⚠️ DO NOT proceed to Phase 2 until you have inspected ALL {num_beats} beats.
 ⚠️ DO NOT fix anything during Phase 1 - just document issues.
+⚠️ You MUST explicitly evaluate ALL 11 principles for EACH beat - no shortcuts!
 
 ### Phase 2: FIX ISSUES
 After completing Phase 1 for ALL beats:
@@ -225,11 +247,21 @@ After completing Phase 1 for ALL beats:
 3. Common patterns:
    - `interpolate(frame, [start, end], [0, 1])` for fade/move
    - `spring({{frame, fps, config: {{damping: 15}}}})` for bounce
-   - Increase font sizes for screen_space_utilization issues
-   - Scale up diagrams to use more of the frame
+   - Increase font sizes for screen_space_utilization issues (aim for 24px+ body, 48px+ headlines)
+   - Scale up diagrams to use 60-80% of frame width
+   - Add padding/margins for breathing_room issues
 
 ### Phase 3: VERIFY
-After fixing, re-check at least 2-3 key frames to confirm improvement.
+After fixing, re-check at least 2-3 key frames where you found issues:
+1. Navigate to a frame that had issues
+2. Take a screenshot
+3. **Confirm which principles now pass:**
+   ```
+   Verification @ Frame Y:
+   - screen_space_utilization: Was ISSUE → Now PASS (elements now use 70% of frame)
+   - visual_hierarchy: Was ISSUE → Now PASS (74% is 3x larger than 4%)
+   ```
+4. If any principle still fails, go back to Phase 2
 
 ---
 
@@ -238,9 +270,24 @@ After completing ALL phases, output:
 ```json
 {{
   "beats_inspected": [
-    {{"beat_index": 0, "frame": 0, "issues": ["description of issue 1", "description of issue 2"]}},
-    {{"beat_index": 1, "frame": 150, "issues": []}},
-    ...
+    {{
+      "beat_index": 0,
+      "frame": 0,
+      "principle_checklist": {{
+        "show_dont_tell": "PASS",
+        "animation_reveals": "PASS",
+        "progressive_disclosure": "PASS",
+        "text_complements": "ISSUE - text repeats narration",
+        "visual_hierarchy": "PASS",
+        "breathing_room": "PASS",
+        "purposeful_motion": "PASS",
+        "emotional_resonance": "ISSUE - no wow moment",
+        "professional_polish": "PASS",
+        "sync_with_narration": "PASS",
+        "screen_space_utilization": "ISSUE - elements only use 20% of frame"
+      }},
+      "issues_summary": ["text repeats narration", "no wow moment", "elements too small"]
+    }}
   ],
   "total_beats_expected": {num_beats},
   "total_beats_inspected": <number>,
@@ -249,6 +296,15 @@ After completing ALL phases, output:
   ],
   "fixes_applied": [
     {{"description": "...", "file": "{scene_file}", "lines_changed": "10-25"}}
+  ],
+  "verification_results": [
+    {{
+      "frame": 0,
+      "principles_fixed": [
+        {{"principle": "screen_space_utilization", "was": "ISSUE", "now": "PASS", "evidence": "elements now use 70% of frame"}}
+      ],
+      "principles_still_failing": []
+    }}
   ],
   "verification_passed": true
 }}
@@ -260,7 +316,7 @@ After completing ALL phases, output:
 1. Navigate to: {remotion_url}
 2. The scene starts at frame 0 - no navigation math needed
 3. You MUST inspect ALL {num_beats} beats at frames: {beat_frames_list}
-4. Begin Phase 1: Take screenshot at frame 0, evaluate against all 11 principles, then continue to the next frame.
+4. Begin Phase 1: Navigate to frame {first_beat_frame}, take screenshot, evaluate ALL 11 principles using the checklist.
 """
 
 
@@ -545,6 +601,7 @@ class ClaudeCodeVisualInspector:
         beat_frames_list = ", ".join(frame_numbers) if frame_numbers else "0"
 
         # Build the prompt
+        first_beat_frame = frame_numbers[0] if frame_numbers else "0"
         prompt = CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.format(
             remotion_url=remotion_url,
             scene_number=scene_index + 1,
@@ -556,6 +613,7 @@ class ClaudeCodeVisualInspector:
             narration_text=scene_info.get("narration", "")[:500],
             beats_info=beats_info,
             beat_frames_list=beat_frames_list,
+            first_beat_frame=first_beat_frame,
             principles=format_principles_for_prompt(),
         )
 

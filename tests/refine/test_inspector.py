@@ -509,6 +509,7 @@ class TestClaudeCodePromptTemplate:
             "{narration_text}",
             "{beats_info}",
             "{beat_frames_list}",
+            "{first_beat_frame}",
             "{scene_number}",
             "{total_frames}",
             "{num_beats}",
