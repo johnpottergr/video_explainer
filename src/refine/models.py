@@ -21,6 +21,7 @@ class IssueType(str, Enum):
     EMOTIONAL_RESONANCE = "emotional_resonance"
     PROFESSIONAL_POLISH = "professional_polish"
     SYNC_WITH_NARRATION = "sync_with_narration"
+    SCREEN_SPACE_UTILIZATION = "screen_space_utilization"
     OTHER = "other"
 
 

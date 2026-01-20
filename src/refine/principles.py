@@ -1,8 +1,8 @@
 """
-The 10 Guiding Principles for Video Refinement
+The 11 Guiding Principles for Video Refinement
 
 These principles define the quality bar for 3Blue1Brown / Veritasium level
-educational videos. Each scene should be evaluated against all 10 principles.
+educational videos. Each scene should be evaluated against all 11 principles.
 """
 
 from dataclasses import dataclass
@@ -156,6 +156,20 @@ GUIDING_PRINCIPLES: List[Principle] = [
         bad_example="Visual reveals happening seconds before or after the related narration",
         checklist_question="Do visual beats align with audio beats? Do 'punches' land together?",
     ),
+    Principle(
+        id=11,
+        name="Screen space utilization",
+        issue_type=IssueType.SCREEN_SPACE_UTILIZATION,
+        description=(
+            "Fill the frame purposefully. Video is not PowerPoint — content should be "
+            "sized for visual impact and mobile legibility. Avoid tiny elements clustered "
+            "in the center with excessive empty space. Key numbers and reveals should "
+            "command the frame."
+        ),
+        good_example="Key statistic '83.3%' displayed at 120px font dominating the center; diagrams span 60%+ of frame width",
+        bad_example="Small content clustered in center leaving 40%+ of frame empty; tiny 14px expressions hard to read on mobile",
+        checklist_question="Is content sized for impact? Would text be readable on a phone screen?",
+    ),
 ]
 
 
@@ -177,7 +191,7 @@ def get_principle_by_issue_type(issue_type: IssueType) -> Principle | None:
 
 def format_principles_for_prompt() -> str:
     """Format all principles as a string suitable for LLM prompts."""
-    lines = ["The 10 Guiding Principles for Video Quality:\n"]
+    lines = ["The 11 Guiding Principles for Video Quality:\n"]
 
     for p in GUIDING_PRINCIPLES:
         lines.append(f"{p.id}. **{p.name}**")

@@ -196,39 +196,32 @@ CLAUDE_CODE_VISUAL_INSPECTION_PROMPT = """Inspect and fix visuals for Scene {sce
 ## Narration
 "{narration_text}"
 
-## What to Look For
-- Visual doesn't match what narration says at that moment
-- Elements appear suddenly instead of animating in
-- Too cluttered (needs breathing room)
-- Text replacing visuals instead of complementing
+## CRITICAL: Evaluate Against ALL 11 Principles
+For EACH screenshot, systematically evaluate against EVERY principle below.
+Think critically - don't just check off boxes. Ask yourself: "Does this REALLY meet the bar?"
+
+{principles}
 
 ## Fixing Issues in {scene_file}
 - `interpolate(frame, [start, end], [0, 1])` for fade/move
 - `spring({{frame, fps, config: {{damping: 15}}}})` for bounce
 - Elements appear WHEN narration mentions them
+- For screen space: increase font sizes, scale up diagrams, use more of the frame
 
 ## Output Required (JSON)
 ```json
 {{
-  "issues_found": [{{"beat_index": 0, "frame": 0, "description": "...", "severity": "high"}}],
+  "issues_found": [{{"beat_index": 0, "frame": 0, "principle_violated": "screen_space_utilization", "description": "...", "severity": "high"}}],
   "fixes_applied": [{{"description": "...", "lines_changed": "10-25"}}],
   "verification_passed": true
 }}
 ```
 
+Principle codes: show_dont_tell, animation_reveals, progressive_disclosure, text_complements, visual_hierarchy, breathing_room, purposeful_motion, emotional_resonance, professional_polish, sync_with_narration, screen_space_utilization
+
 ## START: Go to {remotion_url}, take screenshot at frame 0, begin inspection.
 """
 
-PRINCIPLES_SHORT = """1. Show Don't Tell - Use visuals, not just text
-2. Animation Reveals - Animate elements in sync with narration
-3. Progressive Disclosure - Show info as it's mentioned
-4. Text Complements - Text supports visuals, doesn't replace
-5. Visual Hierarchy - Guide viewer's eye
-6. Breathing Room - Don't clutter
-7. Purposeful Motion - Every animation has meaning
-8. Emotional Resonance - Connect with viewer
-9. Professional Polish - Clean, consistent
-10. Sync with Narration - Timing matches speech"""
 
 
 class ClaudeCodeVisualInspector:
@@ -523,6 +516,7 @@ class ClaudeCodeVisualInspector:
             narration_text=scene_info.get("narration", "")[:500],
             beats_info=beats_info,
             beat_frames_list=beat_frames_list,
+            principles=format_principles_for_prompt(),
         )
 
         # Write prompt to temp file for claude code

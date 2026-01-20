@@ -54,9 +54,9 @@ class TestPrinciple:
 class TestGuidingPrinciples:
     """Tests for GUIDING_PRINCIPLES list."""
 
-    def test_has_10_principles(self):
-        """Test that there are exactly 10 guiding principles."""
-        assert len(GUIDING_PRINCIPLES) == 10
+    def test_has_11_principles(self):
+        """Test that there are exactly 11 guiding principles."""
+        assert len(GUIDING_PRINCIPLES) == 11
 
     def test_principles_have_unique_ids(self):
         """Test that all principles have unique IDs."""
@@ -82,6 +82,7 @@ class TestGuidingPrinciples:
             IssueType.EMOTIONAL_RESONANCE,
             IssueType.PROFESSIONAL_POLISH,
             IssueType.SYNC_WITH_NARRATION,
+            IssueType.SCREEN_SPACE_UTILIZATION,
         }
         assert covered_types == expected_types
 
@@ -97,9 +98,9 @@ class TestGuidingPrinciples:
             assert principle.bad_example, f"Principle {principle.name} has no bad example"
 
     def test_principles_sequential_ids(self):
-        """Test that principle IDs are sequential 1-10."""
+        """Test that principle IDs are sequential 1-11."""
         ids = sorted([p.id for p in GUIDING_PRINCIPLES])
-        assert ids == list(range(1, 11))
+        assert ids == list(range(1, 12))
 
 
 class TestGetPrincipleById:
@@ -119,7 +120,7 @@ class TestGetPrincipleById:
 
     def test_get_all_principles_by_id(self):
         """Test that all principles can be retrieved by their IDs."""
-        for i in range(1, 11):
+        for i in range(1, 12):
             principle = get_principle_by_id(i)
             assert principle is not None
             assert principle.id == i
@@ -147,6 +148,7 @@ class TestGetPrincipleByIssueType:
             IssueType.EMOTIONAL_RESONANCE,
             IssueType.PROFESSIONAL_POLISH,
             IssueType.SYNC_WITH_NARRATION,
+            IssueType.SCREEN_SPACE_UTILIZATION,
         ]
         for issue_type in issue_types:
             principle = get_principle_by_issue_type(issue_type)
@@ -203,9 +205,121 @@ class TestFormatChecklistForPrompt:
         # Should include checklist questions
         assert "?" in checklist
 
-    def test_format_checklist_has_10_items(self):
-        """Test checklist has 10 items."""
+    def test_format_checklist_has_11_items(self):
+        """Test checklist has 11 items."""
         checklist = format_checklist_for_prompt()
         # Count checkbox occurrences
         checkbox_count = checklist.count("[ ]")
-        assert checkbox_count == 10
+        assert checkbox_count == 11
+
+
+class TestPrinciplesInInspectorPrompt:
+    """Tests to ensure principles are passed to Claude Code inspector.
+
+    These tests prevent regression where principles could be duplicated
+    or not passed to the agent prompt.
+    """
+
+    def test_inspector_prompt_has_principles_placeholder(self):
+        """Test that the inspector prompt template includes {principles} placeholder."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        assert "{principles}" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT, (
+            "CLAUDE_CODE_VISUAL_INSPECTION_PROMPT must include {principles} placeholder. "
+            "Without this, principles won't be passed to the Claude Code agent."
+        )
+
+    def test_inspector_prompt_mentions_all_11_principles(self):
+        """Test that formatted prompt includes all 11 principles."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Format the prompt with actual principles
+        formatted = CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.format(
+            remotion_url="http://test",
+            scene_number=1,
+            scene_title="Test",
+            scene_file="/test/file.tsx",
+            duration_seconds=30.0,
+            total_frames=900,
+            narration_text="Test narration",
+            beats_info="Beat 1 info",
+            beat_frames_list="0, 450",
+            principles=format_principles_for_prompt(),
+        )
+
+        # Check all principle names appear
+        for principle in GUIDING_PRINCIPLES:
+            assert principle.name in formatted, (
+                f"Principle '{principle.name}' not found in formatted prompt. "
+                "All principles must be included in the Claude Code agent prompt."
+            )
+
+    def test_inspector_prompt_includes_screen_space_principle(self):
+        """Test that the new screen space utilization principle is included."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        formatted = CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.format(
+            remotion_url="http://test",
+            scene_number=1,
+            scene_title="Test",
+            scene_file="/test/file.tsx",
+            duration_seconds=30.0,
+            total_frames=900,
+            narration_text="Test narration",
+            beats_info="Beat 1 info",
+            beat_frames_list="0, 450",
+            principles=format_principles_for_prompt(),
+        )
+
+        # Specifically check for screen space utilization
+        assert "Screen space utilization" in formatted
+        assert "screen_space_utilization" in formatted, (
+            "screen_space_utilization principle code must be in the prompt "
+            "so Claude Code can identify issues of this type."
+        )
+
+    def test_inspector_prompt_lists_all_principle_codes(self):
+        """Test that all principle codes are listed in the prompt."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # These codes should be in the prompt for JSON output
+        expected_codes = [
+            "show_dont_tell",
+            "animation_reveals",
+            "progressive_disclosure",
+            "text_complements",
+            "visual_hierarchy",
+            "breathing_room",
+            "purposeful_motion",
+            "emotional_resonance",
+            "professional_polish",
+            "sync_with_narration",
+            "screen_space_utilization",
+        ]
+
+        for code in expected_codes:
+            assert code in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT, (
+                f"Principle code '{code}' not found in prompt. "
+                "All principle codes must be listed for the JSON output format."
+            )
+
+    def test_no_duplicate_principles_definition(self):
+        """Test that principles are not duplicated in inspector.py."""
+        import inspect
+        from src.refine.visual import inspector
+
+        source = inspect.getsource(inspector)
+
+        # Check there's no hardcoded PRINCIPLES_SHORT or similar
+        assert "PRINCIPLES_SHORT" not in source, (
+            "Found PRINCIPLES_SHORT in inspector.py. "
+            "Principles should only be defined in principles.py to prevent duplication."
+        )
+
+        # Check there's no hardcoded list of principle descriptions
+        # (looking for patterns like "1. Show Don't Tell" which would indicate duplication)
+        hardcoded_pattern_count = source.count("1. Show Don't Tell")
+        assert hardcoded_pattern_count == 0, (
+            "Found hardcoded principle list in inspector.py. "
+            "Use format_principles_for_prompt() instead."
+        )
