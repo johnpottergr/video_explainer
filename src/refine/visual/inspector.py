@@ -183,12 +183,15 @@ CLAUDE_CODE_VISUAL_INSPECTION_PROMPT = """Inspect and fix visuals for Scene {sce
 ## Quick Reference
 - Scene file to edit: {scene_file}
 - Scene duration: {duration_seconds:.1f}s ({total_frames} frames)
+- Total beats to inspect: {num_beats}
 - Frames to check: {beat_frames_list}
 
-## Setup (scene is already loaded at frame 0)
-1. Navigate to: {remotion_url}
-2. Scene starts at frame 0 - NO navigation math needed
-3. Take screenshots at frames: {beat_frames_list}
+## CRITICAL: Complete Coverage Required
+- You MUST take a screenshot at EVERY frame listed: {beat_frames_list}
+- You MUST evaluate EVERY screenshot against ALL 11 principles
+- Stopping early or skipping frames is NOT acceptable
+- The scene is {duration_seconds:.1f}s long - ensure you inspect content THROUGHOUT the entire duration
+- Partial inspection = failure. Inspect ALL {num_beats} beats.
 
 ## Beats to Inspect
 {beats_info}
@@ -196,30 +199,68 @@ CLAUDE_CODE_VISUAL_INSPECTION_PROMPT = """Inspect and fix visuals for Scene {sce
 ## Narration
 "{narration_text}"
 
-## CRITICAL: Evaluate Against ALL 11 Principles
-For EACH screenshot, systematically evaluate against EVERY principle below.
-Think critically - don't just check off boxes. Ask yourself: "Does this REALLY meet the bar?"
-
+## The 11 Guiding Principles
 {principles}
 
-## Fixing Issues in {scene_file}
-- `interpolate(frame, [start, end], [0, 1])` for fade/move
-- `spring({{frame, fps, config: {{damping: 15}}}})` for bounce
-- Elements appear WHEN narration mentions them
-- For screen space: increase font sizes, scale up diagrams, use more of the frame
+Principle codes for JSON: show_dont_tell, animation_reveals, progressive_disclosure, text_complements, visual_hierarchy, breathing_room, purposeful_motion, emotional_resonance, professional_polish, sync_with_narration, screen_space_utilization
+
+---
+
+## WORKFLOW (Follow in order - do NOT skip steps)
+
+### Phase 1: COMPLETE INSPECTION (no fixes yet)
+For EACH frame in [{beat_frames_list}]:
+1. Navigate to that exact frame number
+2. Take a screenshot
+3. Evaluate what you see against ALL 11 principles - be critical!
+4. Document any issues found for that beat
+
+⚠️ DO NOT proceed to Phase 2 until you have inspected ALL {num_beats} beats.
+⚠️ DO NOT fix anything during Phase 1 - just document issues.
+
+### Phase 2: FIX ISSUES
+After completing Phase 1 for ALL beats:
+1. Read the scene file: {scene_file}
+2. Apply fixes for the issues you documented
+3. Common patterns:
+   - `interpolate(frame, [start, end], [0, 1])` for fade/move
+   - `spring({{frame, fps, config: {{damping: 15}}}})` for bounce
+   - Increase font sizes for screen_space_utilization issues
+   - Scale up diagrams to use more of the frame
+
+### Phase 3: VERIFY
+After fixing, re-check at least 2-3 key frames to confirm improvement.
+
+---
 
 ## Output Required (JSON)
+After completing ALL phases, output:
 ```json
 {{
-  "issues_found": [{{"beat_index": 0, "frame": 0, "principle_violated": "screen_space_utilization", "description": "...", "severity": "high"}}],
-  "fixes_applied": [{{"description": "...", "lines_changed": "10-25"}}],
+  "beats_inspected": [
+    {{"beat_index": 0, "frame": 0, "issues": ["description of issue 1", "description of issue 2"]}},
+    {{"beat_index": 1, "frame": 150, "issues": []}},
+    ...
+  ],
+  "total_beats_expected": {num_beats},
+  "total_beats_inspected": <number>,
+  "issues_found": [
+    {{"beat_index": 0, "frame": 0, "principle_violated": "screen_space_utilization", "description": "...", "severity": "high"}}
+  ],
+  "fixes_applied": [
+    {{"description": "...", "file": "{scene_file}", "lines_changed": "10-25"}}
+  ],
   "verification_passed": true
 }}
 ```
 
-Principle codes: show_dont_tell, animation_reveals, progressive_disclosure, text_complements, visual_hierarchy, breathing_room, purposeful_motion, emotional_resonance, professional_polish, sync_with_narration, screen_space_utilization
+---
 
-## START: Go to {remotion_url}, take screenshot at frame 0, begin inspection.
+## START NOW
+1. Navigate to: {remotion_url}
+2. The scene starts at frame 0 - no navigation math needed
+3. You MUST inspect ALL {num_beats} beats at frames: {beat_frames_list}
+4. Begin Phase 1: Take screenshot at frame 0, evaluate against all 11 principles, then continue to the next frame.
 """
 
 
@@ -513,6 +554,7 @@ class ClaudeCodeVisualInspector:
             scene_file=scene_file,
             duration_seconds=duration_seconds,
             total_frames=total_frames,
+            num_beats=len(beats),
             narration_text=scene_info.get("narration", "")[:500],
             beats_info=beats_info,
             beat_frames_list=beat_frames_list,

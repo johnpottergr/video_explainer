@@ -241,6 +241,7 @@ class TestPrinciplesInInspectorPrompt:
             scene_file="/test/file.tsx",
             duration_seconds=30.0,
             total_frames=900,
+            num_beats=5,
             narration_text="Test narration",
             beats_info="Beat 1 info",
             beat_frames_list="0, 450",
@@ -265,6 +266,7 @@ class TestPrinciplesInInspectorPrompt:
             scene_file="/test/file.tsx",
             duration_seconds=30.0,
             total_frames=900,
+            num_beats=5,
             narration_text="Test narration",
             beats_info="Beat 1 info",
             beat_frames_list="0, 450",
@@ -323,3 +325,49 @@ class TestPrinciplesInInspectorPrompt:
             "Found hardcoded principle list in inspector.py. "
             "Use format_principles_for_prompt() instead."
         )
+
+    def test_inspector_prompt_has_three_phase_workflow(self):
+        """Test that prompt enforces a 3-phase workflow for thoroughness."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for Phase 1: Complete Inspection
+        assert "Phase 1" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "COMPLETE INSPECTION" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT or \
+               "complete inspection" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.lower()
+
+        # Check for Phase 2: Fix Issues
+        assert "Phase 2" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "FIX" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for Phase 3: Verify
+        assert "Phase 3" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "VERIFY" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT or \
+               "verify" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT.lower()
+
+    def test_inspector_prompt_requires_complete_coverage(self):
+        """Test that prompt emphasizes complete coverage of all beats."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for emphasis on complete coverage
+        assert "MUST" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "ALL" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "{num_beats}" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for warnings against partial inspection
+        partial_warning_present = (
+            "Partial inspection" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT or
+            "Stopping early" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT or
+            "skipping frames" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        )
+        assert partial_warning_present, (
+            "Prompt should warn against partial inspection or skipping frames"
+        )
+
+    def test_inspector_prompt_requires_per_beat_reporting(self):
+        """Test that prompt requires reporting on each beat inspected."""
+        from src.refine.visual.inspector import CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+
+        # Check for beats_inspected in JSON output
+        assert "beats_inspected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "total_beats_expected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "total_beats_inspected" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT

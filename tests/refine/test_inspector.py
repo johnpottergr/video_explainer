@@ -511,6 +511,8 @@ class TestClaudeCodePromptTemplate:
             "{beat_frames_list}",
             "{scene_number}",
             "{total_frames}",
+            "{num_beats}",
+            "{principles}",
         ]
 
         for placeholder in required_placeholders:
@@ -529,7 +531,7 @@ class TestClaudeCodePromptTemplate:
     def test_prompt_template_indicates_scene_starts_at_frame_zero(self):
         """Test that prompt indicates scene starts at frame 0 (SingleScenePlayer)."""
         assert "frame 0" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
-        assert "NO navigation" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
+        assert "no navigation math needed" in CLAUDE_CODE_VISUAL_INSPECTION_PROMPT
 
     def test_prompt_template_includes_json_output_format(self):
         """Test that prompt includes expected JSON output format."""
