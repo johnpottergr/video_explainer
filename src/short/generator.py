@@ -31,16 +31,35 @@ def normalize_script_format(script_data: dict[str, Any]) -> dict[str, Any]:
     while the Script model expects a nested 'visual_cue' object.
     This function normalizes both formats to the expected structure.
 
+    Also converts old numeric scene_ids to string format.
+
     Args:
         script_data: Raw script data from JSON.
 
     Returns:
         Script data with visual_cue format.
     """
+    import re
+
     if "scenes" not in script_data:
         return script_data
 
-    for scene in script_data["scenes"]:
+    for idx, scene in enumerate(script_data["scenes"]):
+        # Convert old numeric scene_ids to string format
+        scene_id = scene.get("scene_id")
+        if scene_id is None or isinstance(scene_id, int):
+            # Convert int to slug based on title
+            title = scene.get("title", f"scene_{idx + 1}")
+            slug = title.lower()
+            slug = re.sub(r'[\s\-]+', '_', slug)
+            slug = re.sub(r'[^a-z0-9_]', '', slug)
+            slug = re.sub(r'_+', '_', slug)
+            slug = slug.strip('_')
+            scene["scene_id"] = slug
+        elif isinstance(scene_id, str) and re.match(r'^scene\d+_', scene_id):
+            # Strip "sceneN_" prefix from old format
+            scene["scene_id"] = re.sub(r'^scene\d+_', '', scene_id)
+
         # Already has visual_cue - no conversion needed
         if "visual_cue" in scene:
             continue

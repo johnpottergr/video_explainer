@@ -212,8 +212,8 @@ class VisualCueRefiner:
 
         for scene_idx in scene_indices:
             scene = scenes[scene_idx]
-            scene_id = scene.get("scene_id", f"scene{scene_idx + 1}")
             scene_title = scene.get("title", "Untitled")
+            scene_id = scene.get("scene_id", f"scene_{scene_idx + 1}")
 
             self._log(f"\nScene {scene_idx + 1}: {scene_title}")
 
@@ -290,8 +290,8 @@ class VisualCueRefiner:
         Returns:
             UpdateVisualCuePatch if the visual_cue needs improvement, None otherwise
         """
-        scene_id = scene.get("scene_id", f"scene{scene_idx + 1}")
         scene_title = scene.get("title", "Untitled")
+        scene_id = scene.get("scene_id", f"scene_{scene_idx + 1}")
         scene_type = scene.get("scene_type", "unknown")
         narration = scene.get("voiceover", "")
         current_visual_cue = scene.get("visual_cue")

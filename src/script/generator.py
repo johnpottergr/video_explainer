@@ -231,6 +231,27 @@ class ScriptGenerator:
         self.config = config or load_config()
         self.llm = llm or get_llm_provider(self.config)
 
+    def _slugify(self, text: str) -> str:
+        """Convert text to a URL-friendly slug.
+
+        Args:
+            text: Text to slugify
+
+        Returns:
+            Lowercase slug with underscores
+        """
+        # Convert to lowercase
+        slug = text.lower()
+        # Replace spaces and hyphens with underscores
+        slug = re.sub(r'[\s\-]+', '_', slug)
+        # Remove non-alphanumeric characters (except underscores)
+        slug = re.sub(r'[^a-z0-9_]', '', slug)
+        # Remove multiple consecutive underscores
+        slug = re.sub(r'_+', '_', slug)
+        # Remove leading/trailing underscores
+        slug = slug.strip('_')
+        return slug
+
     def generate(
         self,
         document: ParsedDocument,
@@ -304,13 +325,20 @@ class ScriptGenerator:
                     duration_seconds=s.get("duration_seconds", 10.0),
                 )
 
-            # Handle scene_id as string or int
-            scene_id = s.get("scene_id", idx + 1)
-            if isinstance(scene_id, str):
-                match = re.search(r'\d+', scene_id)
-                scene_id_num = int(match.group()) if match else idx + 1
+            # Handle scene_id - use slug-based ID
+            scene_id = s.get("scene_id")
+            if scene_id is None or isinstance(scene_id, int):
+                # Generate slug from title
+                title = s.get("title", f"scene_{idx + 1}")
+                scene_id_str = self._slugify(title)
+            elif isinstance(scene_id, str):
+                # If it has a numeric prefix like "scene1_title", strip it
+                if re.match(r'^scene\d+_', scene_id):
+                    scene_id_str = re.sub(r'^scene\d+_', '', scene_id)
+                else:
+                    scene_id_str = scene_id
             else:
-                scene_id_num = scene_id
+                scene_id_str = self._slugify(s.get("title", f"scene_{idx + 1}"))
 
             # Build notes from various fields
             notes_parts = []
@@ -327,7 +355,7 @@ class ScriptGenerator:
             notes = " | ".join(notes_parts)
 
             scene = ScriptScene(
-                scene_id=scene_id_num,
+                scene_id=scene_id_str,
                 scene_type=s.get("scene_type", "explanation"),
                 title=s.get("title", ""),
                 voiceover=s.get("voiceover", ""),
@@ -372,12 +400,9 @@ class ScriptGenerator:
             "",
         ]
 
-        for scene in script.scenes:
-            timestamp = sum(
-                s.duration_seconds
-                for s in script.scenes
-                if s.scene_id < scene.scene_id
-            )
+        cumulative_time = 0.0
+        for idx, scene in enumerate(script.scenes):
+            timestamp = cumulative_time
             minutes = int(timestamp // 60)
             seconds = int(timestamp % 60)
 
@@ -385,7 +410,7 @@ class ScriptGenerator:
             word_count = len(scene.voiceover.split())
 
             lines.extend([
-                f"## Scene {scene.scene_id}: {scene.title}",
+                f"## Scene {idx + 1} ({scene.scene_id}): {scene.title}",
                 f"**Type**: {scene.scene_type} | **Duration**: {scene.duration_seconds:.0f}s | "
                 f"**Words**: {word_count} | **Timestamp**: {minutes:02d}:{seconds:02d}",
                 "",
@@ -417,6 +442,7 @@ class ScriptGenerator:
 
             lines.append("---")
             lines.append("")
+            cumulative_time += scene.duration_seconds
 
         return "\n".join(lines)
 
@@ -453,9 +479,26 @@ class ScriptGenerator:
             Loaded Script object
         """
         import json
+        import re
         from pathlib import Path
 
         with open(Path(path)) as f:
             data = json.load(f)
+
+        # Convert old numeric scene_ids to string format
+        for scene in data.get("scenes", []):
+            scene_id = scene.get("scene_id")
+            if isinstance(scene_id, int):
+                # Convert int to slug based on title
+                title = scene.get("title", f"scene_{scene_id}")
+                slug = title.lower()
+                slug = re.sub(r'[\s\-]+', '_', slug)
+                slug = re.sub(r'[^a-z0-9_]', '', slug)
+                slug = re.sub(r'_+', '_', slug)
+                slug = slug.strip('_')
+                scene["scene_id"] = slug
+            elif isinstance(scene_id, str) and re.match(r'^scene\d+_', scene_id):
+                # Strip "sceneN_" prefix from old format
+                scene["scene_id"] = re.sub(r'^scene\d+_', '', scene_id)
 
         return Script(**data)

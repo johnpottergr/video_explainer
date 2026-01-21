@@ -22,7 +22,7 @@ export const VisualCueSchema = z.object({
  * A single scene in the video
  */
 export const SceneSchema = z.object({
-  sceneId: z.number(),
+  sceneId: z.string(),
   sceneType: z.enum(["hook", "context", "explanation", "insight", "conclusion"]),
   title: z.string(),
   voiceover: z.string(),
@@ -59,7 +59,7 @@ export const defaultScriptProps: ScriptProps = {
   title: "LLM Inference Explained",
   scenes: [
     {
-      sceneId: 1,
+      sceneId: "the_speed_problem",
       sceneType: "hook",
       title: "The Speed Problem",
       voiceover: "Every time you send a message to ChatGPT, something remarkable happens.",
@@ -72,7 +72,7 @@ export const defaultScriptProps: ScriptProps = {
       durationInSeconds: 15,
     },
     {
-      sceneId: 2,
+      sceneId: "the_two_phases",
       sceneType: "explanation",
       title: "The Two Phases",
       voiceover: "LLM inference has two distinct phases: prefill and decode.",

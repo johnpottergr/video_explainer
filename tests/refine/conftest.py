@@ -124,7 +124,7 @@ def sample_script():
         "total_duration_seconds": 49.0,
         "scenes": [
             {
-                "scene_id": 1,
+                "scene_id": "the_impossible_leap",
                 "scene_type": "hook",
                 "title": "The Impossible Leap",
                 "voiceover": "83.3% versus 13.4%. That's OpenAI's o1 against GPT-4.",
@@ -140,7 +140,7 @@ def sample_script():
                 },
             },
             {
-                "scene_id": 2,
+                "scene_id": "the_discovery",
                 "scene_type": "context",
                 "title": "The Discovery",
                 "voiceover": "The story begins in January 2022.",

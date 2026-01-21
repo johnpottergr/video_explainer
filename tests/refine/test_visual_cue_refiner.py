@@ -165,7 +165,7 @@ class TestVisualCueRefiner:
         # Create a patch
         patch = UpdateVisualCuePatch(
             reason="Test update",
-            scene_id=1,  # First scene's scene_id
+            scene_id="the_impossible_leap",  # First scene's scene_id
             scene_title="The Impossible Leap",
             new_visual_cue={
                 "description": "Updated description",

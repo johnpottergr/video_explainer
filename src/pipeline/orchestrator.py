@@ -165,7 +165,7 @@ class VideoPipeline:
 
             audio_files = []
             for i, scene in enumerate(script.scenes):
-                audio_path = audio_dir / f"scene_{scene.scene_id:02d}.mp3"
+                audio_path = audio_dir / f"{scene.scene_id}.mp3"
                 self.tts.generate(scene.voiceover, audio_path)
                 audio_files.append(audio_path)
                 progress = (i + 1) / len(script.scenes) * 100
@@ -266,7 +266,7 @@ class VideoPipeline:
 
             audio_files = []
             for i, scene in enumerate(script.scenes):
-                audio_path = audio_dir / f"scene_{scene.scene_id:02d}.mp3"
+                audio_path = audio_dir / f"{scene.scene_id}.mp3"
                 self.tts.generate(scene.voiceover, audio_path)
                 audio_files.append(audio_path)
                 progress = (i + 1) / len(script.scenes) * 100

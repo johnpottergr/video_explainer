@@ -48,21 +48,21 @@ class TestVideoSegment:
         audio_path = tmp_path / "audio.mp3"
 
         segment = VideoSegment(
-            scene_id=1,
+            scene_id="test_scene",
             video_path=video_path,
             audio_path=audio_path,
             duration_seconds=10.5,
             start_time=0.0,
         )
 
-        assert segment.scene_id == 1
+        assert segment.scene_id == "test_scene"
         assert segment.duration_seconds == 10.5
 
     def test_segment_without_audio(self, tmp_path):
         video_path = tmp_path / "video.mp4"
 
         segment = VideoSegment(
-            scene_id=1,
+            scene_id="test_scene",
             video_path=video_path,
             audio_path=None,
             duration_seconds=5.0,
@@ -114,13 +114,13 @@ class TestCompose:
 
         segments = [
             VideoSegment(
-                scene_id=1,
+                scene_id="scene_1",
                 video_path=video1,
                 audio_path=None,
                 duration_seconds=10.0,
             ),
             VideoSegment(
-                scene_id=2,
+                scene_id="scene_2",
                 video_path=video2,
                 audio_path=None,
                 duration_seconds=15.0,
@@ -149,7 +149,7 @@ class TestCompose:
         output.write_bytes(b"fake")
 
         segments = [
-            VideoSegment(scene_id=1, video_path=video, audio_path=None, duration_seconds=30.0)
+            VideoSegment(scene_id="scene_1", video_path=video, audio_path=None, duration_seconds=30.0)
         ]
 
         result = composer.compose(

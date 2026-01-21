@@ -24,7 +24,7 @@ class TestNarrationGenerator:
             total_duration_seconds=110,
             scenes=[
                 ScriptScene(
-                    scene_id=1,
+                    scene_id="scene_1",
                     scene_type="hook",
                     title="The Hook",
                     voiceover="Every day, we encounter this challenge.",
@@ -38,7 +38,7 @@ class TestNarrationGenerator:
                     notes="Build intrigue",
                 ),
                 ScriptScene(
-                    scene_id=2,
+                    scene_id="scene_2",
                     scene_type="context",
                     title="Background",
                     voiceover="To understand the solution, we first need context.",
@@ -52,7 +52,7 @@ class TestNarrationGenerator:
                     notes="Set the stage",
                 ),
                 ScriptScene(
-                    scene_id=3,
+                    scene_id="scene_3",
                     scene_type="explanation",
                     title="The Core Concept",
                     voiceover="Here's how it works.",
@@ -66,7 +66,7 @@ class TestNarrationGenerator:
                     notes="Main explanation",
                 ),
                 ScriptScene(
-                    scene_id=4,
+                    scene_id="scene_4",
                     scene_type="conclusion",
                     title="Conclusion",
                     voiceover="Now you understand the concept.",

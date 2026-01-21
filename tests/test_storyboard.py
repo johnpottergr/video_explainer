@@ -649,7 +649,7 @@ class TestStoryboardGenerator:
             source_document="test.md",
             scenes=[
                 ScriptScene(
-                    scene_id=1,
+                    scene_id="scene_1",
                     scene_type="hook",
                     title="Introduction",
                     voiceover="This is the first scene with some content.",
@@ -662,7 +662,7 @@ class TestStoryboardGenerator:
                     duration_seconds=10,
                 ),
                 ScriptScene(
-                    scene_id=2,
+                    scene_id="scene_2",
                     scene_type="explanation",
                     title="Main Content",
                     voiceover="This is the second scene with more content.",

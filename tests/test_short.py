@@ -121,7 +121,7 @@ class TestShortGenerator:
             total_duration_seconds=180,
             scenes=[
                 ScriptScene(
-                    scene_id=1,
+                    scene_id="scene_1",
                     scene_type="hook",
                     title="The Surprising Discovery",
                     voiceover="What if AI could do something nobody expected?",
@@ -134,7 +134,7 @@ class TestShortGenerator:
                     duration_seconds=15.0,
                 ),
                 ScriptScene(
-                    scene_id=2,
+                    scene_id="scene_2",
                     scene_type="context",
                     title="The Challenge",
                     voiceover="For years, researchers struggled with this problem.",
@@ -147,7 +147,7 @@ class TestShortGenerator:
                     duration_seconds=30.0,
                 ),
                 ScriptScene(
-                    scene_id=3,
+                    scene_id="scene_3",
                     scene_type="explanation",
                     title="The Breakthrough",
                     voiceover="Then, in 2023, everything changed.",

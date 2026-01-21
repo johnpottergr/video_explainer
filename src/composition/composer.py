@@ -14,7 +14,7 @@ from ..models import Script, Storyboard
 class VideoSegment:
     """A segment of video with associated audio."""
 
-    scene_id: int
+    scene_id: str  # Slug-based ID like "the_impossible_leap"
     video_path: Path
     audio_path: Path | None
     duration_seconds: float

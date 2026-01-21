@@ -110,9 +110,9 @@ class TestEndToEndPipeline:
         assert "Voiceover" in review_text
         assert "Visual" in review_text
 
-        # Each scene should be represented
+        # Each scene should be represented (format is now "Scene N (scene_id): Title")
         for scene in script.scenes:
-            assert f"Scene {scene.scene_id}" in review_text
+            assert f"({scene.scene_id})" in review_text
 
     def test_pipeline_respects_section_limits(self, config, inference_doc_path):
         """Test that we can analyze specific sections of the document."""

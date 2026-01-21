@@ -15,7 +15,7 @@ def sample_script() -> Script:
         total_duration_seconds=60.0,
         scenes=[
             ScriptScene(
-                scene_id=1,
+                scene_id="scene_1",
                 scene_type="hook",
                 title="The Hook",
                 voiceover="This is the hook that grabs attention.",
@@ -29,7 +29,7 @@ def sample_script() -> Script:
                 notes="Make it punchy",
             ),
             ScriptScene(
-                scene_id=2,
+                scene_id="scene_2",
                 scene_type="explanation",
                 title="The Main Point",
                 voiceover="Here is the main content of the video.",
@@ -42,7 +42,7 @@ def sample_script() -> Script:
                 duration_seconds=40.0,
             ),
             ScriptScene(
-                scene_id=3,
+                scene_id="scene_3",
                 scene_type="conclusion",
                 title="Wrap Up",
                 voiceover="In conclusion, remember this key point.",

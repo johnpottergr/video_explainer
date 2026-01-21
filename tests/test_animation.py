@@ -25,7 +25,7 @@ def sample_script():
         total_duration_seconds=35.0,
         scenes=[
             ScriptScene(
-                scene_id=1,
+                scene_id="scene_1",
                 scene_type="hook",
                 title="Introduction",
                 voiceover="Welcome to this test video.",
@@ -38,7 +38,7 @@ def sample_script():
                 duration_seconds=15.0,
             ),
             ScriptScene(
-                scene_id=2,
+                scene_id="scene_2",
                 scene_type="explanation",
                 title="Main Content",
                 voiceover="This is the main explanation.",

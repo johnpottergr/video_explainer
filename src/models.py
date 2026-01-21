@@ -70,7 +70,7 @@ class VisualCue(BaseModel):
 class ScriptScene(BaseModel):
     """A scene in the video script."""
 
-    scene_id: int
+    scene_id: str  # Slug-based ID like "the_impossible_leap"
     scene_type: str  # hook, context, explanation, insight, conclusion
     title: str
     voiceover: str
@@ -101,7 +101,7 @@ class AnimationElement(BaseModel):
 class StoryboardScene(BaseModel):
     """A scene in the storyboard with detailed visual specs."""
 
-    scene_id: int
+    scene_id: str  # Slug-based ID like "the_impossible_leap"
     timestamp_start: float
     timestamp_end: float
     voiceover_text: str
@@ -124,9 +124,9 @@ class Storyboard(BaseModel):
 class GeneratedAssets(BaseModel):
     """Generated assets for a video."""
 
-    audio_paths: dict[int, str] = Field(default_factory=dict)  # scene_id -> path
-    animation_paths: dict[int, str] = Field(default_factory=dict)
-    image_paths: dict[int, str] = Field(default_factory=dict)
+    audio_paths: dict[str, str] = Field(default_factory=dict)  # scene_id -> path
+    animation_paths: dict[str, str] = Field(default_factory=dict)
+    image_paths: dict[str, str] = Field(default_factory=dict)
 
 
 class VideoProject(BaseModel):

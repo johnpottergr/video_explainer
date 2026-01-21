@@ -68,7 +68,7 @@ class TestScriptGenerator:
     def test_scenes_have_required_fields(self, generator, sample_document, sample_analysis):
         script = generator.generate(sample_document, sample_analysis)
         for scene in script.scenes:
-            assert scene.scene_id > 0
+            assert isinstance(scene.scene_id, str) and scene.scene_id  # Non-empty string
             assert scene.scene_type in ["hook", "context", "explanation", "insight", "conclusion"]
             assert scene.voiceover
             assert scene.visual_cue
@@ -223,7 +223,7 @@ class TestScriptParserNewFormat:
 
         assert script.title == "Old Format Video"
         scene = script.scenes[0]
-        assert scene.scene_id == 1  # Extracted from "scene1_hook"
+        assert scene.scene_id == "hook"  # Extracted from "scene1_hook" (prefix stripped)
         assert scene.visual_cue.description == "Old style visual description"
         assert scene.visual_cue.elements == ["element1", "element2"]
         assert "Builds to" in scene.notes
@@ -261,7 +261,7 @@ class TestScriptParserNewFormat:
             total_duration_seconds=30,
             scenes=[
                 ScriptScene(
-                    scene_id=1,
+                    scene_id="scene_1",
                     scene_type="hook",
                     title="Test Scene",
                     voiceover="One two three four five six seven eight nine ten.",
@@ -291,7 +291,7 @@ class TestScriptParserNewFormat:
             total_duration_seconds=30,
             scenes=[
                 ScriptScene(
-                    scene_id=1,
+                    scene_id="scene_1",
                     scene_type="context",
                     title="Tension Scene",
                     voiceover="Building tension here.",

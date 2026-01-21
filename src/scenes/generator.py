@@ -1723,12 +1723,13 @@ class SceneGenerator:
             matching_scene_id = None
             matching_scene = None
             for idx, scene in enumerate(script.get("scenes", [])):
-                scene_id = scene.get("scene_id", f"scene{idx + 1}")
-                # scene_id format is "scene1_hook" -> extract "hook" part
-                if "_" in scene_id:
-                    key_part = scene_id.split("_", 1)[1]
+                scene_id = scene.get("scene_id", f"scene_{idx + 1}")
+                # scene_id is a slug like "the_impossible_leap"
+                # For backwards compat, strip "scene{N}_" prefix if present
+                if re.match(r'^scene\d+_', str(scene_id)):
+                    key_part = re.sub(r'^scene\d+_', '', str(scene_id))
                 else:
-                    key_part = scene_id
+                    key_part = str(scene_id)
 
                 # Check if this scene matches
                 title_key = self._title_to_scene_key(scene.get("title", ""))
