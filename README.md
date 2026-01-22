@@ -2,24 +2,84 @@
 
 A system for generating high-quality explainer videos from technical documents. Transform research papers, articles, and documentation into engaging video content with automated narration and programmatic animations.
 
-## Example Videos Generated Using This System
+## Example Videos
+
 - [How LLMs Actually Understand Images](https://youtu.be/PuodF4pq79g?si=4T0CV555qr89DSvY)
 - [What Actually Happens When You Prompt AI?](https://youtu.be/nmBqcRl2tmM?si=FhCf4G5lKY3_rZ5I)
 - [The Trick That Let AI See (Short)](https://www.youtube.com/shorts/vwI_gD4OG4I)
 
 ## Features
 
-- **Project-Based Organization**: Self-contained projects with all files in one place
-- **Multi-Format Input**: Parse Markdown, PDF documents, and web URLs with code blocks, equations, and images
-- **Content Analysis**: Automatically extract key concepts and structure content for video
-- **Script Generation**: Generate video scripts with visual cues and voiceover text
-- **Text-to-Speech**: Integration with ElevenLabs and Edge TTS (with mock mode for development)
-- **Manual Voiceover Support**: Import your own recordings with Whisper transcription
-- **Sound Design**: Automated SFX planning, music layering, and audio mixing
-- **AI Background Music**: Generate ambient background music using Meta's MusicGen model (MPS/CUDA/CPU)
-- **Remotion Animations**: React-based programmatic video generation
-- **Shorts Generation**: Create vertical shorts with TikTok-style captions and dark theme
-- **CLI Pipeline**: Run each stage independently for easy iteration
+### Content Pipeline
+- **Multi-Format Input** - Parse Markdown, PDF documents, and web URLs
+- **Script Generation** - Generate video scripts with visual cues and voiceover text
+- **Text-to-Speech** - Integration with ElevenLabs and Edge TTS
+- **Manual Voiceover** - Import your own recordings with Whisper transcription
+
+### Visual Generation
+- **Remotion Animations** - React-based programmatic video generation
+- **AI Scene Generation** - Claude-powered scene component creation
+- **Visual Refinement** - 4-phase quality improvement system
+
+### Sound Design
+- **Automated SFX** - Intelligent sound effect planning and generation
+- **AI Background Music** - Generate ambient music using MusicGen
+- **Audio Mixing** - Combine voiceover, SFX, and music
+
+### Shorts & Distribution
+- **Vertical Shorts** - 1080x1920 for YouTube Shorts, Reels, TikTok
+- **TikTok-Style Captions** - Single-word captions with glow effects
+- **Multiple Variants** - Generate different versions from same project
+
+### Quality Assurance
+- **Fact Checking** - Verify accuracy against source material
+- **Feedback Processing** - Natural language feedback to file updates
+
+## Architecture
+
+```
+Document → Parse → Analyze → Script → TTS → Storyboard → Animation → Video
+                                       │         ↑
+                                       │    (JSON schema)
+                                       └─────────┘
+                                    (word timestamps)
+```
+
+**Key Insight:** TTS generation happens BEFORE storyboard creation because we need audio timing (word-level timestamps) to sync visuals precisely to narration.
+
+### Project Structure
+
+```
+video_explainer/
+├── projects/                    # Self-contained video projects
+│   └── <project>/               # Each project contains:
+│       ├── config.json          # Project configuration
+│       ├── input/               # Source documents (MD, PDF)
+│       ├── script/              # Generated scripts
+│       ├── narration/           # Scene narrations
+│       ├── scenes/              # Remotion components (*.tsx)
+│       ├── voiceover/           # Audio files (*.mp3)
+│       ├── storyboard/          # Storyboard JSON
+│       ├── music/               # Background music
+│       ├── short/               # Shorts variants
+│       └── output/              # Final videos
+│
+├── src/                         # Core pipeline code
+│   ├── cli/                     # CLI commands
+│   ├── ingestion/               # Document parsing
+│   ├── script/                  # Script generation
+│   ├── scenes/                  # Scene component generation
+│   ├── audio/                   # TTS providers
+│   ├── sound/                   # SFX system
+│   ├── music/                   # MusicGen integration
+│   ├── refine/                  # Refinement system
+│   └── short/                   # Shorts generation
+│
+└── remotion/                    # Remotion project (React)
+    ├── src/components/          # Reusable components
+    ├── src/scenes/              # Scene compositions
+    └── scripts/render.mjs       # Headless rendering
+```
 
 ## Quick Start
 
@@ -32,778 +92,137 @@ A system for generating high-quality explainer videos from technical documents. 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone and setup
 git clone <repository-url>
 cd video_explainer
 
-# Create and activate virtual environment
+# Python environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install Python dependencies
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e .
 
-# Install Node.js dependencies for Remotion
-cd remotion
-npm install
-cd ..
+# Remotion dependencies
+cd remotion && npm install && cd ..
 ```
 
-### CLI Usage
-
-The CLI provides a complete pipeline for generating explainer videos:
+### Basic Workflow
 
 ```bash
-# Project Management
-python -m src.cli list                    # List all projects
-python -m src.cli info <project>          # Show project info
-python -m src.cli create <project_id>     # Create new project
+# 1. Create a new project
+python -m src.cli create my-video
 
-# Content Generation Pipeline (run in order)
-python -m src.cli script <project>        # 1. Generate script from input docs
-python -m src.cli narration <project>     # 2. Generate narrations for scenes
-python -m src.cli scenes <project>        # 3. Generate Remotion scene components
-python -m src.cli voiceover <project>     # 4. Generate audio from narrations
-python -m src.cli storyboard <project>    # 5. Create storyboard linking scenes + audio
-python -m src.cli refine <project>        # 6. (Optional) AI-powered visual refinement
-python -m src.cli render <project>        # 7. Render final video
+# 2. Add source documents to projects/my-video/input/
 
-# Or run the entire pipeline with a single command
-python -m src.cli generate <project>      # Run all steps end-to-end
+# 3. Run the full pipeline
+python -m src.cli generate my-video
 
-# Optional: Sound Design
-python -m src.cli sound <project> plan    # Plan SFX for scenes
-python -m src.cli sound <project> mix     # Mix voiceover + SFX + music
-python -m src.cli music <project> generate  # Generate AI background music
-
-# Iteration
-python -m src.cli feedback <project> add "Make text larger in scene 1"
-```
-
-#### End-to-End Generation
-
-Run the entire video generation pipeline with a single command:
-
-```bash
-python -m src.cli generate llm-inference           # Run all steps end-to-end
-python -m src.cli generate llm-inference --force   # Regenerate everything
-python -m src.cli generate llm-inference --mock    # Use mock LLM/TTS for testing
-```
-
-**Partial Pipeline Runs:**
-
-```bash
-# Resume from a specific step (skips earlier completed steps)
-python -m src.cli generate llm-inference --from scenes
-
-# Run only up to a specific step
-python -m src.cli generate llm-inference --to voiceover
-
-# Run a specific range of steps
-python -m src.cli generate llm-inference --from narration --to storyboard
-```
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--force` | Regenerate all steps, even if outputs exist |
-| `--from STEP` | Start from this step (script, narration, scenes, voiceover, storyboard, render) |
-| `--to STEP` | Stop after this step |
-| `--resolution` | Output resolution: 4k, 1440p, 1080p (default), 720p, 480p |
-| `--voice-provider` | TTS provider: elevenlabs, edge, mock |
-| `--mock` | Use mock LLM and TTS (for testing without API calls) |
-| `--timeout` | Timeout per scene generation in seconds (default: 300) |
-
-The pipeline automatically:
-- Skips steps that already have output files (use `--force` to override)
-- Shows progress with step numbers and descriptions
-- Stops gracefully if any step fails
-
-#### Script Generation
-
-Generate a video script from input documents. Supports multiple input formats:
-
-**Supported Formats:**
-- Markdown files (`.md`, `.markdown`)
-- PDF documents (`.pdf`)
-- Web URLs (`https://...`)
-
-```bash
-# From files in input/ directory (auto-detects .md and .pdf)
-python -m src.cli script llm-inference           # Uses Claude Code LLM
-python -m src.cli script llm-inference --mock    # Use mock for testing
-
-# From a specific file (PDF or Markdown)
-python -m src.cli script llm-inference --input /path/to/paper.pdf
-python -m src.cli script llm-inference -i ~/docs/article.md
-
-# From a web URL
-python -m src.cli script llm-inference --url https://example.com/blog-post
-
-# Additional options
-python -m src.cli script llm-inference --duration 300  # Target 5 min video
-python -m src.cli script llm-inference --continue-on-error  # Skip failed files
-python -m src.cli script llm-inference -v        # Verbose output
-```
-
-Output: `projects/<project>/script/script.json`
-
-#### Narration Generation
-
-Generate scene narrations from the script:
-
-```bash
-python -m src.cli narration llm-inference        # Uses Claude Code LLM
-python -m src.cli narration llm-inference --mock # Use mock for testing
-python -m src.cli narration llm-inference --force  # Overwrite existing
-python -m src.cli narration llm-inference --topic "Custom Topic"
-```
-
-Output: `projects/<project>/narration/narrations.json`
-
-#### Scene Generation
-
-Generate Remotion scene components (React/TypeScript) from the script:
-
-```bash
-python -m src.cli scenes llm-inference           # Generate all scenes
-python -m src.cli scenes llm-inference --force   # Overwrite existing scenes
-python -m src.cli scenes llm-inference --scene 6 # Regenerate just scene 6
-python -m src.cli scenes llm-inference --scene HookScene.tsx  # Regenerate by filename
-python -m src.cli scenes llm-inference --timeout 600  # 10 min per scene
-python -m src.cli scenes llm-inference -v        # Verbose output
-```
-
-Output: `projects/<project>/scenes/*.tsx`, `styles.ts`, `index.ts`
-
-This uses Claude Code to generate animated React components with:
-- Remotion primitives (useCurrentFrame, interpolate, spring)
-- Consistent styling from shared styles.ts
-- Scene registry for dynamic loading
-- **Automatic validation and self-correction**: The generator validates each scene and automatically retries with error feedback if validation fails
-
-**Syncing Scenes to Updated Voiceover:**
-
-If you re-record or modify the voiceover, use `--sync` to update scene timing without regenerating all visual content:
-
-```bash
-python -m src.cli scenes llm-inference --sync              # Sync all scenes
-python -m src.cli scenes llm-inference --sync --scene HookScene.tsx  # Sync specific scene
-```
-
-This is much faster than full regeneration - it only updates timing values (frame numbers, animation triggers) while preserving all visual structure and animations.
-
-#### Voiceover Generation
-
-Generate audio files from narrations:
-
-```bash
-python -m src.cli voiceover llm-inference        # Use configured TTS
-python -m src.cli voiceover llm-inference --mock # Mock audio for testing
-python -m src.cli voiceover llm-inference --force  # Regenerate all
-python -m src.cli voiceover llm-inference --scene scene1_hook  # Single scene
-```
-
-Output: `projects/<project>/voiceover/*.mp3`, `manifest.json`
-
-#### Storyboard
-
-Generate or view the storyboard that links scenes with audio:
-
-```bash
-python -m src.cli storyboard llm-inference         # Generate from narrations
-python -m src.cli storyboard llm-inference --view  # View existing storyboard
-python -m src.cli storyboard llm-inference --force # Regenerate storyboard
-python -m src.cli storyboard llm-inference -v      # Verbose output
-```
-
-The storyboard combines:
-- Scene metadata from narrations (titles, IDs)
-- Audio durations from voiceover manifest
-- Scene types from generated Remotion components
-
-Output: `projects/<project>/storyboard/storyboard.json`
-
-#### Refinement (4-Phase Process)
-
-The refinement system helps elevate video quality to professional standards (3Blue1Brown / Veritasium level) through a 4-phase process:
-
-1. **Phase 1: Analyze** - Gap analysis that generates patches to fix script issues
-2. **Phase 2: Script** - Loads patches from Phase 1, adds storytelling refinements, applies changes
-3. **Phase 3: Visual-Cue** - Improves visual_cue specifications in script.json
-4. **Phase 4: Visual** - AI-powered visual inspection and fixes
-
-**Key Design: Phases 1 and 2 are connected.** Phase 1 outputs patches that Phase 2 consumes and applies.
-
-**Prerequisites:**
-- For Phase 1: Input source material (`input/*.md` or `input/*.txt`) and narrations
-- For Phase 2: Run Phase 1 first to generate patches
-- For Phase 3: Script with visual_cue fields in `script/script.json`
-- For Phase 4: Scene components generated (`scenes` command) and storyboard created
-
-```bash
-# Phase 1: Gap Analysis (generates patches)
-python -m src.cli refine llm-inference --phase analyze
-
-# Phase 2: Apply patches + storytelling refinement
-python -m src.cli refine llm-inference --phase script              # Interactive approval
-python -m src.cli refine llm-inference --phase script --batch-approve  # Auto-approve all
-
-# Phase 3: Visual-Cue Refinement (improve visual specifications)
-python -m src.cli refine llm-inference --phase visual-cue          # Analyze all scenes
-python -m src.cli refine llm-inference --phase visual-cue --scene 0  # Specific scene
-python -m src.cli refine llm-inference --phase visual-cue --apply  # Apply patches to script.json
-
-# Phase 4: Visual Refinement (inspect and fix scenes)
-python -m src.cli refine llm-inference --phase visual
-python -m src.cli refine llm-inference --phase visual --scene 3  # Specific scene
-
-# Default (no --phase): runs visual refinement
-python -m src.cli refine llm-inference
-```
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--phase` | Phase to run: `analyze`, `script`, `visual-cue`, or `visual` (default: visual) |
-| `--scene N` | Refine only scene N (0-indexed for visual-cue, 1-indexed for visual) |
-| `--apply` | Apply generated patches to script.json (visual-cue phase) |
-| `--batch-approve` | Auto-approve all suggested changes (script phase) |
-| `--live` | Stream Claude Code output in real-time |
-| `-v, --verbose` | Show detailed progress |
-
----
-
-##### Phase 1: Gap Analysis (`--phase analyze`)
-
-Compares source material against the generated script to identify gaps and **generates patches** to fix them:
-- **Missing concepts**: Important topics from source not covered in script
-- **Shallow coverage**: Concepts mentioned but not explained deeply enough
-- **Narrative gaps**: Logical jumps between scenes that confuse viewers
-
-```bash
-python -m src.cli refine llm-inference --phase analyze
-```
-
-**How it works:**
-1. Loads source material from `input/*.md` or `input/*.txt`
-2. Extracts key concepts with importance ratings (critical, high, medium, low)
-3. Analyzes script coverage depth (not_covered, mentioned, explained, deep_dive)
-4. Identifies narrative gaps between scenes
-5. **Generates patches** to fix identified gaps
-
-**Patch Types:**
-
-| Type | Description |
-|------|-------------|
-| `add_scene` | Insert a new scene to cover missing concepts |
-| `modify_scene` | Update existing scene content |
-| `expand_scene` | Add more detail to shallow coverage |
-| `add_bridge` | Add transitional content between scenes |
-
-**Output:** `projects/<project>/refine/gap_analysis.json` (includes `patches` array)
-
-Returns exit code 1 if critical gaps are found (missing critical concepts or high-severity narrative gaps).
-
----
-
-##### Phase 2: Script Refinement (`--phase script`)
-
-Loads patches from Phase 1, generates additional storytelling refinements, and applies approved changes to the script:
-
-```bash
-python -m src.cli refine llm-inference --phase script              # Interactive approval
-python -m src.cli refine llm-inference --phase script --batch-approve  # Auto-approve
-```
-
-**How it works:**
-1. **Loads patches from Phase 1** (`gap_analysis.json`)
-2. Analyzes each scene against 10 narration principles
-3. Generates additional storytelling patches for quality issues
-4. Combines Phase 1 patches + storytelling patches
-5. **Interactive mode**: Presents each patch for approval (y/n/e to edit)
-6. **Batch mode**: Auto-approves all patches
-7. Applies approved patches to update `script.json` and `narrations.json`
-
-**10 Narration Principles:**
-
-1. **Hook in the first sentence** - Grab attention immediately with surprising facts, questions, or stakes
-2. **Build tension before release** - Create anticipation before revealing solutions
-3. **Seamless transitions** - Connect scenes with callback phrases that bridge ideas
-4. **One insight per scene** - Focus each scene on a single memorable takeaway
-5. **Concrete analogies** - Use familiar comparisons to explain abstract concepts
-6. **Emotional beats** - Include moments that create wonder, surprise, or satisfaction
-7. **Match length to complexity** - Simple ideas = short scenes, complex ideas = more time
-8. **Rhetorical questions** - Plant questions in viewers' minds before answering
-9. **Clear stakes** - Explain why the audience should care
-10. **Strong scene endings** - End with memorable phrases or setup for next scene
-
-**Scoring weights:**
-- Hook strength: 15%
-- Flow quality: 15%
-- Tension/buildup: 15%
-- Insight clarity: 20%
-- Emotional engagement: 15%
-- Factual accuracy: 10%
-- Length appropriateness: 10%
-
-**Output:** Updates `script/script.json` and `narration/narrations.json` with approved patches
-
----
-
-##### Phase 3: Visual-Cue Refinement (`--phase visual-cue`)
-
-Analyzes and improves the `visual_cue` specifications in `script.json` to follow established visual patterns.
-
-```bash
-python -m src.cli refine llm-inference --phase visual-cue           # Analyze all scenes
-python -m src.cli refine llm-inference --phase visual-cue --scene 0 # Specific scene
-python -m src.cli refine llm-inference --phase visual-cue --apply   # Apply patches
-```
-
-**How it works:**
-
-1. **Load Script**: Reads `script/script.json` and extracts visual_cue for each scene
-2. **Analyze Visual Cues**: Uses LLM to evaluate each visual_cue against established patterns:
-   - Dark glass panels with multi-layer shadows
-   - 3D depth and layered compositions
-   - Bezel borders and inner shadows
-   - Specific color specifications (e.g., rgba values)
-3. **Generate Patches**: Creates `UpdateVisualCuePatch` for scenes needing improvement
-4. **Apply Patches**: With `--apply` flag, updates `script.json` with improved visual_cues
-
-**Visual Pattern Guidelines:**
-
-The refiner ensures visual_cues specify:
-- **Material style**: Dark glass panels vs light panels
-- **Shadow layers**: Multi-layer shadows with specific opacities
-- **3D depth**: Layered compositions with clear z-ordering
-- **Color values**: Specific rgba ranges for backgrounds
-
-**Output:**
-- Analysis results: `projects/<project>/refine/visual_cue_analysis.json`
-- With `--apply`: Updates `script/script.json` visual_cue fields
-
----
-
-##### Phase 4: Visual Refinement (`--phase visual`)
-
-AI-powered visual inspection using Claude Code with browser access.
-
-```bash
-python -m src.cli refine llm-inference --phase visual
-python -m src.cli refine llm-inference --phase visual --scene 3 --live
-```
-
-**How it works:**
-
-1. **Beat Parsing**: Narration is analyzed to identify key visual moments (beats)
-2. **Visual Inspection**: Claude Code opens the scene in Remotion Studio (SingleScenePlayer)
-3. **Quality Assessment**: Screenshots are analyzed against 13 guiding principles:
-   - Show Don't Tell - Use visuals, not just text
-   - Animation Reveals - Animate elements in sync with narration
-   - Progressive Disclosure - Show info as it's mentioned
-   - Text Complements - Text supports visuals, doesn't replace
-   - Visual Hierarchy - Guide viewer's eye
-   - Breathing Room - Don't clutter
-   - Purposeful Motion - Every animation has meaning
-   - Emotional Resonance - Connect with viewer
-   - Professional Polish - Clean, consistent
-   - Sync with Narration - Timing matches speech
-   - Screen Space Utilization - Use full canvas effectively
-   - Material Depth - Multi-layer shadows and 3D depth
-   - Visual Spec Match - Match visual_cue specification from script.json
-4. **Fix Application**: Claude Code edits the scene component to fix identified issues
-5. **Verification**: New screenshots verify improvements
-
-**Technical Details:**
-
-The refine command uses a `SingleScenePlayer` Remotion composition that loads individual scenes starting at frame 0, eliminating the need to navigate through the entire video.
-
-**Output:** Scene files are modified in place (`projects/<project>/scenes/*.tsx`)
-
-#### Rendering
-
-Render the final video:
-
-```bash
-python -m src.cli render llm-inference            # Default 1080p
-python -m src.cli render llm-inference -r 4k      # 4K for YouTube
-python -m src.cli render llm-inference -r 720p    # Quick preview
-python -m src.cli render llm-inference --preview  # Fast preview
-python -m src.cli render llm-inference --fast     # Faster encoding (lower quality)
-python -m src.cli render llm-inference --concurrency 8  # Custom thread count
-```
-
-**Performance options:**
-- `--fast` - Uses faster x264 preset and lower JPEG quality for quicker renders
-- `--concurrency N` - Override auto-detected thread count (default: 75% of CPU cores)
-
-Output: `projects/<project>/output/video.mp4`
-
-#### Shorts Generation
-
-Generate vertical shorts (1080x1920) optimized for YouTube Shorts, Instagram Reels, and TikTok.
-
-**Prerequisites:** Run `script` and `narration` commands first.
-
-**Full pipeline (recommended):**
-
-```bash
-# Generate everything end-to-end
-python -m src.cli short generate llm-inference
-
-# Then render
-python -m src.cli render llm-inference --short
-```
-
-**Or run individual steps:**
-
-```bash
-# 1. Generate short script (hook analysis + condensed narration)
-python -m src.cli short script llm-inference
-
-# 2. Generate vertical scene components
-python -m src.cli short scenes llm-inference
-
-# 3. Generate voiceover (TTS)
-python -m src.cli short voiceover llm-inference
-
-# 4. Create storyboard with beat timing
-python -m src.cli short storyboard llm-inference
-
-# 5. (Optional) Generate punchy background music
-python -m src.cli music llm-inference short
-
-# 6. Render the short
-python -m src.cli render llm-inference --short
-```
-
-**Manual voiceover workflow:**
-
-```bash
-# Export recording script for voice actor
-python -m src.cli short voiceover llm-inference --export-script
-
-# After recording, process with Whisper for word timestamps
-python -m src.cli short voiceover llm-inference --audio recording.mp3
-
-# Continue with storyboard and render
-python -m src.cli short storyboard llm-inference
-python -m src.cli render llm-inference --short
-```
-
-**Timing sync (when voiceover changes):**
-
-When you re-record or modify the voiceover, scene animations need to sync with the new timing. The timing sync system automates this:
-
-```bash
-# 1. Process new voiceover (generates word timestamps)
-python -m src.cli short voiceover llm-inference --audio new_recording.mp3
-
-# 2. Regenerate storyboard (updates beat timing)
-python -m src.cli short storyboard llm-inference --skip-custom-scenes
-
-# 3. Regenerate timing.ts (syncs scene animations to new word timestamps)
-python -m src.cli short timing llm-inference
-
-# 4. Preview - animations are now synced!
+# 4. Preview in Remotion Studio
 cd remotion && npm run dev
+
+# 5. Render final video
+python -m src.cli render my-video
 ```
 
-**How it works:**
-
-1. **Phase markers** in storyboard link animation phases to spoken words:
-   ```json
-   "phase_markers": [
-     {"id": "gptAppear", "end_word": "GPT,", "description": "GPT logo appears"},
-     {"id": "phase1End", "end_word": "insight.", "description": "End of intro"}
-   ]
-   ```
-
-2. **Timing generator** finds word timestamps and calculates frame numbers:
-   ```bash
-   python -m src.cli short timing llm-inference
-   # Generates: projects/<project>/short/default/scenes/timing.ts
-   ```
-
-3. **Scene components** import timing constants instead of hardcoded values:
-   ```typescript
-   import { TIMING } from "./timing";
-   const gptSpring = spring({ frame: localFrame - TIMING.beat_1.gptAppear, ... });
-   ```
-
-This eliminates the need to manually update scene files when voiceover timing changes.
-
-**Script options:**
-
-| Option | Description |
-|--------|-------------|
-| `--duration` | Target duration in seconds (default: 45, range: 30-60) |
-| `--variant` | Variant name for multiple shorts from same project |
-| `--scenes` | Override scene selection (comma-separated scene IDs) |
-| `--force` | Force regenerate even if files exist |
-| `--mock` | Use mock LLM for testing |
-
-**Voiceover options:**
-
-| Option | Description |
-|--------|-------------|
-| `--provider` | TTS provider: `elevenlabs`, `edge`, `mock` (default: edge) |
-| `--export-script` | Export recording script for manual voiceover |
-| `--audio` | Process manually recorded audio with Whisper |
-| `--whisper-model` | Whisper model size: `tiny`, `base`, `small`, `medium`, `large` |
-
-**Features:**
-- Single-word captions (72px bold, uppercase, glow effect)
-- Dark gradient theme optimized for mobile
-- Phase-based animations synced with voiceover
-- Custom React scene generation for each beat
-- Automatic hook selection from most intriguing scenes
-
-Output: `projects/<project>/short/<variant>/`
-
-**Rendering Shorts:**
+### Step-by-Step Pipeline
 
 ```bash
-python -m src.cli render llm-inference --short              # Render at 1080p (1080x1920)
-python -m src.cli render llm-inference --short -r 4k        # Render at 4K (2160x3840)
-python -m src.cli render llm-inference --short --variant teaser  # Render specific variant
-python -m src.cli render llm-inference --short --fast       # Faster encoding
+python -m src.cli script my-video        # Generate script from input docs
+python -m src.cli narration my-video     # Generate scene narrations
+python -m src.cli scenes my-video        # Generate Remotion components
+python -m src.cli voiceover my-video     # Generate TTS audio
+python -m src.cli storyboard my-video    # Create storyboard
+python -m src.cli render my-video        # Render final video
 ```
 
-#### Sound Design
+## CLI Reference
+
+### Project Management
 
 ```bash
-python -m src.cli sound llm-inference plan        # Plan SFX for all scenes
-python -m src.cli sound llm-inference library --list    # List available sounds
-python -m src.cli sound llm-inference library --download  # Generate library
-python -m src.cli sound llm-inference mix         # Mix voiceover + SFX + music
+python -m src.cli list                    # List all projects
+python -m src.cli info <project>          # Show project details
+python -m src.cli create <project_id>     # Create new project
 ```
 
-#### AI Background Music
-
-Generate ambient background music for full videos using Meta's MusicGen:
+### Generation Pipeline
 
 ```bash
-python -m src.cli music llm-inference generate    # Generate background music
-python -m src.cli music llm-inference generate --duration 120  # 120s target
-python -m src.cli music llm-inference generate --style "ambient electronic"
-python -m src.cli music llm-inference info        # Show device support & presets
+# Full pipeline
+python -m src.cli generate <project>              # Run all steps
+python -m src.cli generate <project> --force      # Regenerate everything
+python -m src.cli generate <project> --mock       # Use mock LLM/TTS
+
+# Partial runs
+python -m src.cli generate <project> --from scenes    # Start from step
+python -m src.cli generate <project> --to voiceover   # Stop at step
 ```
 
-**Shorts Music Generation:**
-
-Generate punchy, energetic background music optimized for YouTube Shorts:
+### Individual Steps
 
 ```bash
-python -m src.cli music llm-inference short       # Generate punchy music for short
-python -m src.cli music llm-inference short --variant teaser  # Specific variant
-python -m src.cli music llm-inference short --style "upbeat electronic, driving bass"
+python -m src.cli script <project>        # Generate script
+python -m src.cli narration <project>     # Generate narrations
+python -m src.cli scenes <project>        # Generate scene components
+python -m src.cli voiceover <project>     # Generate audio
+python -m src.cli storyboard <project>    # Create storyboard
+python -m src.cli render <project>        # Render video
 ```
 
-The shorts music generator:
-- Analyzes beat captions to detect content mood (tech, dramatic, hook, etc.)
-- Detects emotional arc (problem → solution journey, tension, triumphant)
-- Uses punchy, attention-grabbing presets (120 BPM, bold synths, driving rhythm)
-- Applies slightly higher volume (0.35 vs 0.3) for mobile playback
-- Enhances prompt based on detected mood (building energy, tension release, etc.)
-
-**Mood Detection:**
-| Mood | Trigger | Music Enhancement |
-|------|---------|-------------------|
-| Journey | Problem + solution detected | Building energy, tension to release |
-| Tension | Only problems detected | Building tension, suspenseful |
-| Triumphant | Only solutions detected | Uplifting, positive energy |
-| Energetic | Default | Standard punchy preset |
-
-#### Fact Checking
-
-Thoroughly verify the accuracy of scripts and narrations against source material:
+### Sound Design
 
 ```bash
-python -m src.cli factcheck llm-inference        # Run full fact check
-python -m src.cli factcheck llm-inference --mock # Use mock for testing
-python -m src.cli factcheck llm-inference -v     # Verbose output
-python -m src.cli factcheck llm-inference --no-save  # Don't save report
+python -m src.cli sound <project> analyze     # Preview detected moments
+python -m src.cli sound <project> generate    # Generate SFX cues
+python -m src.cli music <project> generate    # Generate background music
 ```
 
-The fact checker:
-- Compares all claims against source documents (Markdown, PDF)
-- Uses web search to verify facts not in source material
-- Identifies factual errors, outdated info, missing context
-- Provides severity ratings (critical/high/medium/low/info)
-- Suggests corrections with source references
-- Generates an accuracy score
+See [docs/SOUND.md](docs/SOUND.md) for detailed sound design documentation.
 
-Output: `projects/<project>/factcheck/report.json`
-
-#### Feedback Processing
-
-Process natural language feedback to automatically update scripts, narrations, and visuals.
+### Refinement
 
 ```bash
-# Add and process new feedback
-python -m src.cli feedback llm-inference add "Make the intro more engaging"
-python -m src.cli feedback llm-inference add "Fix timing in scene 3" --dry-run
-
-# List all feedback for a project
-python -m src.cli feedback llm-inference list
-
-# Show details of a specific feedback item
-python -m src.cli feedback llm-inference show fb_0001_1234567890
-
-# Retry a failed feedback item
-python -m src.cli feedback llm-inference retry fb_0001_1234567890
+python -m src.cli refine <project> --phase analyze     # Gap analysis
+python -m src.cli refine <project> --phase script      # Script refinement
+python -m src.cli refine <project> --phase visual-cue  # Visual spec refinement
+python -m src.cli refine <project> --phase visual      # AI visual inspection
 ```
 
-**How it works:**
+See [docs/REFINEMENT.md](docs/REFINEMENT.md) for the 4-phase refinement process.
 
-The feedback system uses an intent-based pipeline:
-
-1. **Parse** - LLM analyzes feedback to determine intent and affected scenes
-2. **Generate** - Creates patches based on the detected intent type
-3. **Apply** - Applies patches to project files with verification
-
-**Supported Intents:**
-
-| Intent | Description | Files Modified |
-|--------|-------------|----------------|
-| `script_content` | Narration/voiceover text changes | `script.json`, `narrations.json` |
-| `visual_cue` | Visual specification changes | `script.json` (visual_cue field) |
-| `visual_impl` | Code changes to scene components | `scenes/*.tsx` |
-| `script_structure` | Add/remove/reorder scenes | `script.json`, `narrations.json` |
-| `timing` | Duration changes | `script.json` |
-| `style` | Visual styling changes | `script.json`, `scenes/*.tsx` |
-| `mixed` | Multiple intent types | Multiple files |
-
-**Examples:**
+### Shorts Generation
 
 ```bash
-# Script content change
-python -m src.cli feedback llm-inference add "Simplify the explanation in scene 2"
-
-# Visual change
-python -m src.cli feedback llm-inference add "Make the code panel larger in the intro"
-
-# Structure change
-python -m src.cli feedback llm-inference add "Add a new scene explaining transformers after scene 3"
-
-# Timing change
-python -m src.cli feedback llm-inference add "The conclusion feels rushed, give it more time"
-
-# Style change
-python -m src.cli feedback llm-inference add "Use blue instead of orange for the highlights"
+python -m src.cli short generate <project>    # Full shorts pipeline
+python -m src.cli render <project> --short    # Render the short
 ```
 
-**Options:**
+See [docs/SHORTS.md](docs/SHORTS.md) for shorts workflow and timing sync.
 
-| Option | Description |
-|--------|-------------|
-| `--dry-run` | Analyze and generate patches without applying changes |
+### Quality Assurance
 
-Output: Feedback history stored in `projects/<project>/refinement/feedback.json`
+```bash
+python -m src.cli factcheck <project>                          # Verify accuracy
+python -m src.cli feedback <project> add "Make text larger"    # Process feedback
+```
 
-### Resolution Options
+### Rendering Options
 
 | Preset | Resolution | Use Case |
 |--------|------------|----------|
-| 4k     | 3840x2160  | YouTube/Final export |
+| 4k     | 3840x2160  | YouTube/Final |
 | 1440p  | 2560x1440  | High quality |
 | 1080p  | 1920x1080  | Default |
 | 720p   | 1280x720   | Development |
 | 480p   | 854x480    | Quick preview |
 
-## Project Structure
-
-```
-video_explainer/
-├── projects/                    # Self-contained video projects
-│   └── llm-inference/           # Example: LLM Inference video
-│       ├── config.json          # Project configuration
-│       ├── input/               # Source documents (Markdown, PDF)
-│       │   ├── *.md
-│       │   └── *.pdf
-│       ├── script/              # Generated scripts
-│       │   └── script.json
-│       ├── narration/           # Scene narration scripts
-│       │   └── narrations.json
-│       ├── scenes/              # Generated Remotion components
-│       │   ├── index.ts         # Scene registry
-│       │   ├── styles.ts        # Shared styles
-│       │   └── *Scene.tsx       # Scene components
-│       ├── voiceover/           # Generated audio files
-│       │   ├── manifest.json
-│       │   └── *.mp3
-│       ├── storyboard/          # Storyboard definitions
-│       │   └── storyboard.json
-│       ├── music/               # AI-generated background music
-│       │   └── background.mp3
-│       ├── factcheck/           # Fact check reports
-│       │   └── report.json
-│       ├── short/               # Shorts variants
-│       │   └── default/
-│       │       ├── short_script.json
-│       │       ├── scenes/      # Custom React components
-│       │       ├── voiceover/   # Short voiceover audio
-│       │       └── storyboard/  # Shorts storyboard
-│       └── output/              # Generated videos
-│
-├── src/                         # Core pipeline code
-│   ├── cli/                     # CLI commands
-│   ├── project/                 # Project loader module
-│   ├── ingestion/               # Document parsing (MD, PDF, URL)
-│   ├── understanding/           # Content analysis (LLM)
-│   ├── script/                  # Script generation
-│   ├── scenes/                  # Scene component generation
-│   ├── audio/                   # TTS providers + transcription
-│   ├── sound/                   # Sound design (SFX, music, mixing)
-│   ├── music/                   # AI background music generation (MusicGen)
-│   ├── voiceover/               # Voiceover generation
-│   ├── storyboard/              # Storyboard system
-│   ├── factcheck/               # Fact checking with web verification
-│   ├── short/                   # Shorts generation
-│   ├── refine/                  # Refinement system
-│   │   └── feedback/            # Intent-based feedback processing
-│   ├── animation/               # Animation rendering
-│   ├── composition/             # Video assembly
-│   ├── pipeline/                # End-to-end orchestration
-│   ├── config.py                # Configuration management
-│   └── models.py                # Pydantic data models
-│
-├── remotion/                    # Remotion project (React animations)
-│   ├── src/
-│   │   ├── components/          # Reusable animation components
-│   │   ├── scenes/              # Scene compositions
-│   │   ├── shorts/              # Shorts player and components
-│   │   └── types/               # TypeScript types
-│   └── scripts/
-│       └── render.mjs           # Headless rendering script
-│
-├── storyboards/                 # Storyboard schema
-│   └── schema/
-│       └── storyboard.schema.json
-│
-├── tests/                       # Test suite (1192 Python + 203 JS tests)
-├── config.yaml                  # Global configuration
-└── pyproject.toml               # Python package configuration
+```bash
+python -m src.cli render <project> -r 4k          # 4K render
+python -m src.cli render <project> --fast         # Faster encoding
+python -m src.cli render <project> --preview      # Quick preview
+python -m src.cli render <project> --concurrency 8  # Thread count
 ```
 
-## Pipeline Architecture
-
-```
-Document → Parse → Analyze → Script → TTS → Storyboard → Animation → Compose → Video
-                                       │         ↑
-                                       │    (JSON schema)
-                                       └─────────┘
-                                    (word timestamps)
-```
-
-### Key Insight: TTS Before Storyboard
-
-TTS generation happens BEFORE storyboard creation because we need audio timing (word-level timestamps) to sync visuals precisely to narration.
+See [docs/CLI.md](docs/CLI.md) for complete CLI reference with all options.
 
 ## Configuration
 
@@ -846,51 +265,15 @@ video:
   fps: 30
 ```
 
-Note: The default LLM provider is `claude-code`, which uses the Claude Code CLI for generation. Use `--mock` flag for testing without API calls.
-
 ### Environment Variables
 
 - `ANTHROPIC_API_KEY` - For Claude LLM provider
 - `OPENAI_API_KEY` - For OpenAI LLM provider
 - `ELEVENLABS_API_KEY` - For ElevenLabs TTS
 
-## Testing
-
-The project includes 1395 tests (1192 Python + 203 JavaScript).
-
-### Python Tests
-
-```bash
-# Run all Python tests
-pytest tests/ -v
-
-# Run without slow tests (no network required)
-pytest tests/ -v -m "not slow"
-
-# Run specific test file
-pytest tests/test_project.py -v
-
-# Run CLI tests
-pytest tests/test_cli.py -v
-```
-
-### JavaScript Tests (Remotion)
-
-```bash
-cd remotion
-
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-```
-
 ## Development
 
 ### Remotion Studio
-
-Start the Remotion studio for animation development:
 
 ```bash
 cd remotion
@@ -899,29 +282,33 @@ npm run dev
 
 Opens at `http://localhost:3000` for previewing compositions.
 
-### Creating New Animation Components
-
-Add components in `remotion/src/components/`:
+### Creating Animation Components
 
 ```tsx
 import React from "react";
 import { interpolate, useCurrentFrame } from "remotion";
 
-interface MyComponentProps {
-  title: string;
-}
-
-export const MyComponent: React.FC<MyComponentProps> = ({ title }) => {
+export const MyComponent: React.FC<{ title: string }> = ({ title }) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 30], [0, 1], {
     extrapolateRight: "clamp",
   });
-
   return <div style={{ opacity }}>{title}</div>;
 };
 ```
 
-## Visual Style
+### Testing
+
+```bash
+# Python tests (1192 tests)
+pytest tests/ -v
+pytest tests/ -v -m "not slow"  # Skip network tests
+
+# JavaScript tests (203 tests)
+cd remotion && npm test
+```
+
+### Visual Style
 
 Default theme for technical content:
 
@@ -935,29 +322,27 @@ Default theme for technical content:
 
 Typography: Inter/SF Pro for text, JetBrains Mono for code
 
+## Documentation
+
+- [CLI Reference](docs/CLI.md) - Complete command reference with all options
+- [Refinement System](docs/REFINEMENT.md) - 4-phase quality improvement process
+- [Shorts Generation](docs/SHORTS.md) - Vertical video workflow and timing sync
+- [Sound Design](docs/SOUND.md) - SFX system and AI music generation
+
 ## Dependencies
 
-### Python (see pyproject.toml)
-
-- pydantic - Data validation
-- rich - CLI interface
-- pyyaml - Configuration
+### Python
+- pydantic, rich, pyyaml - Core utilities
 - edge-tts - Microsoft Edge TTS
-- httpx - HTTP client
 - pymupdf - PDF parsing
-- beautifulsoup4 - HTML parsing (for URL content)
-- transformers - MusicGen model for AI background music
-- torch - PyTorch backend (MPS/CUDA/CPU)
+- transformers, torch - MusicGen AI music
 
-### Node.js (see remotion/package.json)
-
-- remotion - Video rendering
-- @remotion/renderer - Headless rendering
+### Node.js
+- remotion, @remotion/renderer - Video rendering
 - react - UI components
-- vitest - JavaScript testing framework
+- vitest - Testing
 
 ### System
-
 - FFmpeg - Video processing
 - Node.js 20+ - Remotion runtime
 
@@ -969,5 +354,5 @@ MIT License - see LICENSE file for details.
 
 - [Remotion](https://remotion.dev/) - React-based video generation
 - [ElevenLabs](https://elevenlabs.io/) - Text-to-Speech
-- [MusicGen](https://github.com/facebookresearch/audiocraft) - AI music generation (Meta)
+- [MusicGen](https://github.com/facebookresearch/audiocraft) - AI music generation
 - [FFmpeg](https://ffmpeg.org/) - Video processing
