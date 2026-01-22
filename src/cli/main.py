@@ -1760,6 +1760,9 @@ def cmd_sound(args: argparse.Namespace) -> int:
         print("Usage: python -m src.cli sound <project> <command>")
         print("\nCommands:")
         print("  library    Generate/manage SFX library")
+        print("  analyze    Analyze scenes for sound moments (dry run)")
+        print("  generate   Generate SFX cues and write to storyboard")
+        print("  clear      Remove SFX cues from storyboard")
         print("\nNote: SFX cues are defined in storyboard.json and rendered by Remotion.")
         return 1
 
@@ -1800,9 +1803,169 @@ def cmd_sound(args: argparse.Namespace) -> int:
             print("  --generate   Generate all sound effect files")
             return 1
 
+    elif args.sound_command == "analyze":
+        return _cmd_sound_analyze(project, args)
+
+    elif args.sound_command == "generate":
+        return _cmd_sound_generate(project, args)
+
+    elif args.sound_command == "clear":
+        return _cmd_sound_clear(project, args)
+
     else:
         print(f"Unknown sound command: {args.sound_command}")
         return 1
+
+    return 0
+
+
+def _cmd_sound_analyze(project, args: argparse.Namespace) -> int:
+    """Analyze scenes for sound moments (dry run)."""
+    from ..sound.sfx_orchestrator import SFXOrchestrator
+
+    print(f"Analyzing scenes for {project.id}...")
+    print()
+
+    orchestrator = SFXOrchestrator(project_dir=project.root_dir)
+
+    try:
+        preview = orchestrator.preview_analysis()
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    if not preview:
+        print("No scenes found to analyze.")
+        return 0
+
+    # Filter to specific scene if requested
+    if args.scene:
+        if args.scene not in preview:
+            print(f"Error: Scene '{args.scene}' not found", file=sys.stderr)
+            print(f"Available scenes: {', '.join(preview.keys())}")
+            return 1
+        preview = {args.scene: preview[args.scene]}
+
+    total_moments = 0
+    for scene_id, data in preview.items():
+        print(f"Scene: {scene_id}")
+        print(f"  Type: {data['scene_type']}")
+        print(f"  Duration: {data['duration_frames']} frames ({data['duration_frames']/30:.1f}s)")
+        print(f"  Detected moments: {data['total_moments']}")
+
+        if data['moments_by_type']:
+            print("  By type:")
+            for moment_type, count in sorted(data['moments_by_type'].items()):
+                print(f"    - {moment_type}: {count}")
+
+        if data['notes']:
+            print("  Notes:")
+            for note in data['notes']:
+                print(f"    - {note}")
+
+        if args.verbose:
+            moments = orchestrator.get_scene_moments(scene_id)
+            if moments:
+                print("  Detailed moments:")
+                for m in moments:
+                    print(f"    Frame {m.frame:4d}: {m.type:<18} (conf={m.confidence:.2f}, src={m.source})")
+                    if m.context:
+                        print(f"                    {m.context}")
+
+        total_moments += data['total_moments']
+        print()
+
+    print(f"Total: {len(preview)} scenes, {total_moments} moments detected")
+    print()
+    print("Run 'sound generate' to create SFX cues in storyboard.json")
+
+    return 0
+
+
+def _cmd_sound_generate(project, args: argparse.Namespace) -> int:
+    """Generate SFX cues and write to storyboard."""
+    from ..sound.sfx_orchestrator import SFXOrchestrator
+    from ..sound.generator import SoundTheme
+
+    print(f"Generating SFX cues for {project.id}...")
+
+    # Parse theme
+    try:
+        theme = SoundTheme(args.theme)
+    except ValueError:
+        theme = SoundTheme.TECH_AI
+
+    orchestrator = SFXOrchestrator(
+        project_dir=project.root_dir,
+        theme=theme,
+        use_library=True,  # Use pre-generated library sounds
+    )
+
+    use_llm = not args.no_llm
+
+    if args.dry_run:
+        print("[DRY RUN] Analyzing only, no changes will be written")
+    print(f"Theme: {theme.value}")
+    print(f"Max density: {args.max_density} sounds/second")
+    print(f"Min gap: {args.min_gap} frames")
+    print(f"LLM analysis: {'enabled' if use_llm else 'disabled'}")
+    print()
+
+    result = orchestrator.generate_sfx_cues(
+        use_llm=use_llm,
+        dry_run=args.dry_run,
+        max_per_second=args.max_density,
+        min_gap_frames=args.min_gap,
+    )
+
+    print(f"Scenes analyzed: {result.scenes_analyzed}")
+    print(f"Moments detected: {result.moments_detected}")
+    print(f"Cues generated: {result.cues_generated}")
+
+    if result.errors:
+        print("\nErrors:")
+        for error in result.errors:
+            print(f"  - {error}")
+        return 1
+
+    if not args.dry_run:
+        print("\nScenes updated:")
+        for scene_id, success in result.scenes_updated.items():
+            status = "[ok]" if success else "[failed]"
+            print(f"  {status} {scene_id}")
+        print(f"\nStoryboard updated: {project.root_dir}/storyboard/storyboard.json")
+    else:
+        print("\n[DRY RUN] No changes written. Run without --dry-run to update storyboard.")
+
+    return 0
+
+
+def _cmd_sound_clear(project, args: argparse.Namespace) -> int:
+    """Clear SFX cues from storyboard."""
+    from ..sound.storyboard_updater import load_storyboard
+
+    storyboard_path = project.root_dir / "storyboard" / "storyboard.json"
+
+    if not storyboard_path.exists():
+        print(f"Error: Storyboard not found: {storyboard_path}", file=sys.stderr)
+        return 1
+
+    updater = load_storyboard(storyboard_path)
+
+    if args.scene:
+        # Clear specific scene
+        if updater.clear_scene_cues(args.scene):
+            print(f"Cleared SFX cues from scene: {args.scene}")
+        else:
+            print(f"Error: Scene '{args.scene}' not found", file=sys.stderr)
+            return 1
+    else:
+        # Clear all scenes
+        updater.clear_all_cues()
+        print("Cleared SFX cues from all scenes")
+
+    updater.save(backup=True)
+    print(f"Storyboard updated: {storyboard_path}")
 
     return 0
 
@@ -3372,6 +3535,68 @@ For manual voiceover recording:
         "--download",
         action="store_true",
         help="Alias for --generate (for backwards compatibility)",
+    )
+
+    # sound analyze - analyze scenes for sound moments
+    sound_analyze_parser = sound_subparsers.add_parser(
+        "analyze",
+        help="Analyze scenes and show detected sound moments (dry run)",
+    )
+    sound_analyze_parser.add_argument(
+        "--scene",
+        type=str,
+        help="Analyze only a specific scene ID",
+    )
+    sound_analyze_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed moment information",
+    )
+
+    # sound generate - generate SFX cues
+    sound_generate_parser = sound_subparsers.add_parser(
+        "generate",
+        help="Generate SFX cues and write to storyboard.json",
+    )
+    sound_generate_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be generated without writing to storyboard",
+    )
+    sound_generate_parser.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Skip LLM semantic analysis (faster, pattern-only)",
+    )
+    sound_generate_parser.add_argument(
+        "--theme",
+        type=str,
+        default="tech_ai",
+        choices=["tech_ai", "science", "finance", "space", "nature", "abstract"],
+        help="Sound theme (default: tech_ai)",
+    )
+    sound_generate_parser.add_argument(
+        "--max-density",
+        type=float,
+        default=3.0,
+        help="Maximum sounds per second (default: 3.0)",
+    )
+    sound_generate_parser.add_argument(
+        "--min-gap",
+        type=int,
+        default=10,
+        help="Minimum frames between sounds (default: 10)",
+    )
+
+    # sound clear - remove SFX cues
+    sound_clear_parser = sound_subparsers.add_parser(
+        "clear",
+        help="Remove all SFX cues from storyboard",
+    )
+    sound_clear_parser.add_argument(
+        "--scene",
+        type=str,
+        help="Clear only a specific scene ID",
     )
 
     sound_parser.set_defaults(func=cmd_sound)
