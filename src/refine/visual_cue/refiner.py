@@ -32,7 +32,8 @@ Your task is to improve visual_cue specifications to ensure they:
 
 CRITICAL DISTINCTION - Background vs UI Components:
 - BACKGROUND: The scene canvas/backdrop (can be gradients, colors, patterns)
-  - Example: "Deep space gradient (#0a0f1a to #050508)" or "Dark charcoal with grid pattern"
+  - Example: "Light gradient (#f4f4f5 to #ffffff)" or "Soft gray with subtle grid pattern"
+  - Use LIGHT backgrounds (#f0f0f5, #fafafa, #ffffff range) - NOT dark backgrounds!
   - The background is NOT the same as dark glass panels!
 
 - UI COMPONENTS: The floating panels/cards/windows that sit ON TOP of the background
@@ -80,8 +81,8 @@ Analyze the current visual_cue and generate an improved version that:
    - Subsequent elements describe UI components that float on top
 
 3. **Specifies exact colors/values where possible**:
-   - Background: hex colors like #0a0f1a or rgba values
-   - UI Components: rgba(18,20,25,0.98) for dark glass panels
+   - Background: LIGHT colors like #f4f4f5, #fafafa, #ffffff (soft grays/whites)
+   - UI Components: rgba(18,20,25,0.98) for dark glass panels (contrast against light bg)
 
 4. **Matches the narration**: The visual should support what's being said.
 
@@ -94,11 +95,11 @@ Respond with JSON:
     "needs_update": true,
     "reason": "Why this visual_cue needs improvement",
     "improved_visual_cue": {{
-        "description": "BACKGROUND: [describe scene backdrop - gradient, color, pattern]. UI COMPONENTS: [describe dark glass panels that float on top with their styling].",
+        "description": "BACKGROUND: [describe LIGHT scene backdrop - soft gradients, light colors]. UI COMPONENTS: [describe dark glass panels that float on top with their styling].",
         "visual_type": "animation",
         "elements": [
-            "BACKGROUND: Deep space/charcoal/navy gradient (#hex to #hex) with optional pattern",
-            "Main dark glass panel (rgba(18,20,25,0.98)) with multi-layer shadows",
+            "BACKGROUND: Light gradient (#f4f4f5 to #ffffff) or soft gray (#fafafa) with subtle grid pattern",
+            "Main dark glass panel (rgba(18,20,25,0.98)) with multi-layer shadows - provides contrast against light background",
             "Additional UI component with specific styling",
             "..."
         ],

@@ -507,7 +507,20 @@ class TestSceneIdMatching:
         scenes_dir.mkdir()
         (scenes_dir / "TheIntroductionScene.tsx").write_text("// Scene component")
 
-        generator = PatchGenerator(project, verbose=False)
+        # Mock LLM provider
+        mock_llm = MagicMock()
+        mock_llm.generate_json.return_value = {
+            "needs_update": True,
+            "new_visual_cue": {
+                "description": "BACKGROUND: Light gradient. UI COMPONENTS: Dark glass panel.",
+                "visual_type": "animation",
+                "elements": ["Background", "Main panel"],
+                "duration_seconds": 10,
+            },
+            "reason": "Updated visuals as requested",
+        }
+
+        generator = PatchGenerator(project, llm_provider=mock_llm, verbose=False)
 
         item = FeedbackItem(
             id="fb_0001_test",

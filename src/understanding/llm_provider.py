@@ -310,7 +310,7 @@ class MockLLMProvider(LLMProvider):
                 },
             ],
             "style": {
-                "background_color": "#0f0f1a",
+                "background_color": "#f4f4f5",
                 "primary_color": "#00d9ff",
                 "secondary_color": "#ff6b35",
                 "font_family": "Inter",

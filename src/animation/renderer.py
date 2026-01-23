@@ -123,7 +123,7 @@ class RemotionRenderer(AnimationRenderer):
             "title": script.title,
             "scenes": scenes,
             "style": {
-                "backgroundColor": "#0f0f1a",
+                "backgroundColor": "#f4f4f5",
                 "primaryColor": "#00d9ff",
                 "secondaryColor": "#ff6b35",
                 "accentColor": "#00ff88",

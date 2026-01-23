@@ -37,7 +37,7 @@ class TTSConfig:
 class StyleConfig:
     """Visual style configuration."""
 
-    background_color: str = "#0f0f1a"
+    background_color: str = "#f4f4f5"
     primary_color: str = "#00d9ff"
     secondary_color: str = "#ff6b35"
     font_family: str = "Inter"
@@ -285,7 +285,7 @@ def load_project(project_path: str | Path) -> Project:
     # Parse style config
     style_data = config.get("style", {})
     style_config = StyleConfig(
-        background_color=style_data.get("background_color", "#0f0f1a"),
+        background_color=style_data.get("background_color", "#f4f4f5"),
         primary_color=style_data.get("primary_color", "#00d9ff"),
         secondary_color=style_data.get("secondary_color", "#ff6b35"),
         font_family=style_data.get("font_family", "Inter"),
@@ -368,7 +368,7 @@ def create_project(
         },
         "tts": {"provider": "elevenlabs", "voice_id": ""},
         "style": {
-            "background_color": "#0f0f1a",
+            "background_color": "#f4f4f5",
             "primary_color": "#00d9ff",
             "secondary_color": "#ff6b35",
             "font_family": "Inter",

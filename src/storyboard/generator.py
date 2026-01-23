@@ -188,7 +188,7 @@ class StoryboardGenerator:
             "duration_seconds": total_duration,
             "beats": all_beats,
             "style": {
-                "background_color": "#0f0f1a",
+                "background_color": "#f4f4f5",
                 "primary_color": "#00d9ff",
                 "secondary_color": "#ff6b35",
             },
@@ -356,7 +356,7 @@ class StoryboardGenerator:
             "duration_seconds": duration_seconds,
             "beats": beats,
             "style": {
-                "background_color": "#0f0f1a",
+                "background_color": "#f4f4f5",
                 "primary_color": "#00d9ff",
                 "secondary_color": "#ff6b35",
             },

@@ -201,7 +201,7 @@ class TestRemotionRenderer:
         props = renderer._script_to_props(sample_script)
 
         style = props["style"]
-        assert style["backgroundColor"] == "#0f0f1a"
+        assert style["backgroundColor"] == "#f4f4f5"
         assert style["primaryColor"] == "#00d9ff"
         assert style["secondaryColor"] == "#ff6b35"
         assert style["accentColor"] == "#00ff88"
