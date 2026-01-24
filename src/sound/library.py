@@ -1,14 +1,14 @@
 """Sound library for frame-accurate SFX.
 
-This module generates high-quality sounds designed to sync with specific
-animation events in explainer videos.
+Redesigned for clean, minimal, professional sounds.
 
-Sound Design Principles:
-- Professional synthesis with harmonic layering
-- Exponential envelopes for natural decay
-- Filtered noise for texture (not harsh)
-- Soft saturation for warmth
-- Musical frequency relationships
+Design Philosophy:
+- Subtle and refined, not attention-grabbing
+- Clean sine waves with gentle harmonics
+- Smooth envelopes, no harsh transients
+- Warm low-mids, controlled highs
+- Minimalist - 1-2 layers max
+- Inspired by Apple/iOS UI aesthetics
 """
 
 import wave
@@ -19,209 +19,64 @@ import numpy as np
 
 SAMPLE_RATE = 44100
 
-# Focused sound library for animation events
-SOUND_MANIFEST = {
-    "ui_pop": {
-        "description": "Soft digital pop for elements appearing",
-        "generator": "generate_ui_pop",
-    },
-    "text_tick": {
-        "description": "Light keyboard-like click for text appearing",
-        "generator": "generate_text_tick",
-    },
-    "lock_click": {
-        "description": "Crisp mechanical click for things locking into place",
-        "generator": "generate_lock_click",
-    },
-    "data_flow": {
-        "description": "Subtle digital stream/whoosh for data movement",
-        "generator": "generate_data_flow",
-    },
-    "counter_sweep": {
-        "description": "Rising electronic sweep for fast counters",
-        "generator": "generate_counter_sweep",
-    },
-    "reveal_hit": {
-        "description": "Punchy impact for big reveals (87x faster, etc)",
-        "generator": "generate_reveal_hit",
-    },
-    "warning_tone": {
-        "description": "Low subtle rumble for problem states",
-        "generator": "generate_warning_tone",
-    },
-    "success_tone": {
-        "description": "Positive chime for solutions and success states",
-        "generator": "generate_success_tone",
-    },
-    "transition_whoosh": {
-        "description": "Smooth transition sweep between phases",
-        "generator": "generate_transition_whoosh",
-    },
-    "cache_click": {
-        "description": "Solid digital click for cache/memory operations",
-        "generator": "generate_cache_click",
-    },
-    # New sounds for enhanced semantic mapping
-    "keyboard_type": {
-        "description": "Single keystroke click for typing animations",
-        "generator": "generate_keyboard_type",
-    },
-    "keyboard_rapid": {
-        "description": "Burst of 3-5 keys for fast typing sequences",
-        "generator": "generate_keyboard_rapid",
-    },
-    "bar_grow": {
-        "description": "Rising sweep tone for bar chart growth",
-        "generator": "generate_bar_grow",
-    },
-    "progress_tick": {
-        "description": "Digital increment tick for progress bars",
-        "generator": "generate_progress_tick",
-    },
-    "digital_stream": {
-        "description": "Flowing data sound for token streaming",
-        "generator": "generate_digital_stream",
-    },
-    "impact_soft": {
-        "description": "Soft thump for subtle reveals",
-        "generator": "generate_impact_soft",
-    },
-    "impact_hard": {
-        "description": "Punchy hit for dramatic reveals",
-        "generator": "generate_impact_hard",
-    },
-}
-
 
 # =============================================================================
-# Core Audio Utilities (Professional Quality)
+# Core Audio Utilities
 # =============================================================================
 
 
-def exp_decay(length: int, decay_time: float = 0.5) -> np.ndarray:
-    """Create exponential decay envelope (natural sounding)."""
-    t = np.linspace(0, 1, length)
-    return np.exp(-t * (1 / decay_time) * 5)
+def sine(t: np.ndarray, freq: float) -> np.ndarray:
+    """Pure sine wave."""
+    return np.sin(2 * np.pi * freq * t)
 
 
-def exp_attack_decay(length: int, attack: float = 0.01, decay: float = 0.5) -> np.ndarray:
-    """Attack then exponential decay - sounds more natural than linear ADSR."""
-    t = np.linspace(0, 1, length)
-    attack_samples = int(attack * length)
-    env = np.zeros(length)
+def smooth_envelope(length: int, attack_ms: float = 5, release_ms: float = 50) -> np.ndarray:
+    """Smooth attack and release envelope - no clicks or pops."""
+    attack_samples = int(attack_ms * SAMPLE_RATE / 1000)
+    release_samples = int(release_ms * SAMPLE_RATE / 1000)
 
-    # Sharp attack
-    if attack_samples > 0:
-        env[:attack_samples] = np.linspace(0, 1, attack_samples) ** 0.5  # sqrt for punch
+    env = np.ones(length)
 
-    # Exponential decay
-    decay_samples = length - attack_samples
-    if decay_samples > 0:
-        env[attack_samples:] = np.exp(-np.linspace(0, 5 / decay, decay_samples))
+    # Smooth cosine attack (no click)
+    if attack_samples > 0 and attack_samples < length:
+        env[:attack_samples] = 0.5 * (1 - np.cos(np.pi * np.arange(attack_samples) / attack_samples))
+
+    # Smooth exponential release
+    if release_samples > 0 and release_samples < length:
+        release_start = length - release_samples
+        env[release_start:] *= np.exp(-3 * np.arange(release_samples) / release_samples)
 
     return env
 
 
-def soft_clip(samples: np.ndarray, threshold: float = 0.8) -> np.ndarray:
-    """Soft clipping for warmth (tanh saturation)."""
-    return np.tanh(samples / threshold) * threshold
-
-
-def bandpass_noise(length: int, low_freq: float, high_freq: float) -> np.ndarray:
-    """Generate bandpass filtered noise using FFT."""
-    noise = np.random.randn(length)
-
-    # FFT filtering
-    fft = np.fft.rfft(noise)
-    freqs = np.fft.rfftfreq(length, 1 / SAMPLE_RATE)
-
-    # Create bandpass mask with smooth rolloff
-    mask = np.zeros_like(freqs)
-    in_band = (freqs >= low_freq) & (freqs <= high_freq)
-    mask[in_band] = 1.0
-
-    # Smooth the edges
-    rolloff_width = (high_freq - low_freq) * 0.1
-    for i, f in enumerate(freqs):
-        if low_freq - rolloff_width < f < low_freq:
-            mask[i] = (f - (low_freq - rolloff_width)) / rolloff_width
-        elif high_freq < f < high_freq + rolloff_width:
-            mask[i] = 1 - (f - high_freq) / rolloff_width
-
-    filtered = np.fft.irfft(fft * mask, length)
-    return filtered / (np.max(np.abs(filtered)) + 1e-10)
-
-
-def lowpass_noise(length: int, cutoff: float) -> np.ndarray:
-    """Generate lowpass filtered noise."""
-    return bandpass_noise(length, 20, cutoff)
-
-
-def highpass_noise(length: int, cutoff: float) -> np.ndarray:
-    """Generate highpass filtered noise."""
-    return bandpass_noise(length, cutoff, SAMPLE_RATE // 2 - 100)
-
-
-def harmonic_tone(t: np.ndarray, freq: float, harmonics: list[tuple[int, float]]) -> np.ndarray:
-    """Generate tone with specified harmonics. harmonics = [(multiplier, amplitude), ...]"""
-    tone = np.sin(2 * np.pi * freq * t)
-    for mult, amp in harmonics:
-        tone += amp * np.sin(2 * np.pi * freq * mult * t)
-    return tone / (1 + sum(amp for _, amp in harmonics))
-
-
-def pitch_sweep(t: np.ndarray, start_freq: float, end_freq: float, curve: str = "log") -> np.ndarray:
-    """Generate frequency sweep with log or linear curve."""
-    if curve == "log":
-        freq = start_freq * (end_freq / start_freq) ** (t / t[-1])
-    else:
-        freq = np.linspace(start_freq, end_freq, len(t))
-
+def pitch_envelope(length: int, start_freq: float, end_freq: float) -> np.ndarray:
+    """Smooth pitch sweep using exponential interpolation."""
+    t = np.linspace(0, 1, length)
+    # Exponential interpolation for natural pitch movement
+    freq = start_freq * (end_freq / start_freq) ** t
+    # Convert to phase
     phase = 2 * np.pi * np.cumsum(freq) / SAMPLE_RATE
     return np.sin(phase)
 
 
-def apply_envelope(
-    samples: np.ndarray, attack: float, decay: float, sustain: float, release: float
-) -> np.ndarray:
-    """Apply ADSR envelope to samples (kept for backwards compatibility)."""
-    total = len(samples)
-    attack_samples = int(attack * total)
-    decay_samples = int(decay * total)
-    release_samples = int(release * total)
-    sustain_samples = total - attack_samples - decay_samples - release_samples
+def filtered_noise(length: int, cutoff: float, resonance: float = 0.5) -> np.ndarray:
+    """Gentle filtered noise - not harsh."""
+    noise = np.random.randn(length) * 0.5
 
-    envelope = np.zeros(total)
+    # Simple lowpass via FFT
+    fft = np.fft.rfft(noise)
+    freqs = np.fft.rfftfreq(length, 1 / SAMPLE_RATE)
 
-    # Attack (use sqrt curve for punch)
-    if attack_samples > 0:
-        envelope[:attack_samples] = np.linspace(0, 1, attack_samples) ** 0.5
+    # Gentle rolloff
+    mask = 1 / (1 + (freqs / cutoff) ** 4)
+    # Add subtle resonance bump
+    mask *= 1 + resonance * np.exp(-((freqs - cutoff) ** 2) / (cutoff * 0.1) ** 2)
 
-    # Decay (exponential)
-    decay_start = attack_samples
-    decay_end = decay_start + decay_samples
-    if decay_samples > 0:
-        envelope[decay_start:decay_end] = 1 - (1 - sustain) * (
-            1 - np.exp(-np.linspace(0, 4, decay_samples))
-        ) / (1 - np.exp(-4))
-
-    # Sustain
-    sustain_start = decay_end
-    sustain_end = sustain_start + sustain_samples
-    if sustain_samples > 0:
-        envelope[sustain_start:sustain_end] = sustain
-
-    # Release (exponential)
-    release_start = sustain_end
-    if release_samples > 0:
-        release_len = total - release_start
-        envelope[release_start:] = sustain * np.exp(-np.linspace(0, 5, release_len))
-
-    return samples * envelope
+    return np.fft.irfft(fft * mask, length)
 
 
 def normalize(samples: np.ndarray, target_db: float = -3.0) -> np.ndarray:
-    """Normalize samples to target dB level."""
+    """Normalize to target dB level."""
     max_val = np.max(np.abs(samples))
     if max_val > 0:
         target_amp = 10 ** (target_db / 20)
@@ -229,8 +84,13 @@ def normalize(samples: np.ndarray, target_db: float = -3.0) -> np.ndarray:
     return samples
 
 
+def soft_saturate(samples: np.ndarray, amount: float = 0.3) -> np.ndarray:
+    """Gentle saturation for warmth - not distortion."""
+    return np.tanh(samples * (1 + amount)) / (1 + amount * 0.5)
+
+
 def save_wav(samples: np.ndarray, filename: str, sample_rate: int = SAMPLE_RATE) -> None:
-    """Save samples as 16-bit WAV file."""
+    """Save as 16-bit WAV."""
     samples = normalize(samples, -3.0)
     samples_int = np.int16(samples * 32767)
 
@@ -241,588 +101,519 @@ def save_wav(samples: np.ndarray, filename: str, sample_rate: int = SAMPLE_RATE)
         wav.writeframes(samples_int.tobytes())
 
 
-# =============================================================================
-# Sound Generators (Punchy, High-Impact)
-# =============================================================================
-
-
-def sharp_transient(length: int, intensity: float = 1.0) -> np.ndarray:
-    """Create a sharp attack transient - the 'snap' that makes sounds punchy.
-
-    Uses a burst of full-spectrum noise with instant attack and ultra-fast decay.
-    """
-    # Ultra-short noise burst (1-3ms)
-    burst_samples = min(int(0.002 * SAMPLE_RATE), length)
-
-    transient = np.zeros(length)
-    if burst_samples > 0:
-        # White noise burst
-        burst = np.random.randn(burst_samples)
-        # Instant attack, exponential decay
-        burst_env = np.exp(-np.linspace(0, 8, burst_samples))
-        transient[:burst_samples] = burst * burst_env * intensity
-
-    return transient
-
-
-def hard_clip(samples: np.ndarray, threshold: float = 0.7) -> np.ndarray:
-    """Hard clipping for aggressive transients."""
-    return np.clip(samples, -threshold, threshold)
-
-
-def generate_ui_pop(duration: float = 0.1) -> np.ndarray:
-    """Punchy digital pop - snappy with immediate impact.
-
-    Sharp transient + descending tone + sub thump.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # SHARP TRANSIENT - the snap
-    snap = sharp_transient(n_samples, 1.2)
-    snap = hard_clip(snap, 0.8)
-
-    # Punchy descending tone - fast pitch drop
-    freq = 1200 * np.exp(-t * 25)  # Very fast exponential drop
-    body = np.sin(2 * np.pi * np.cumsum(freq) / SAMPLE_RATE)
-    body += 0.4 * np.sin(4 * np.pi * np.cumsum(freq) / SAMPLE_RATE)
-    body *= np.exp(-t * 30)  # Fast decay
-
-    # Sub thump for weight
-    sub = np.sin(2 * np.pi * 80 * t)
-    sub *= np.exp(-t * 20)
-    sub *= 0.5
-
-    samples = snap * 0.7 + body * 0.8 + sub
-    return hard_clip(samples, 0.85)
-
-
-def generate_text_tick(duration: float = 0.035) -> np.ndarray:
-    """Sharp keyboard click - crisp and immediate.
-
-    Pure transient with minimal tail.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # SHARP CLICK - instant attack
-    click = sharp_transient(n_samples, 1.5)
-
-    # High-frequency ping - very short
-    ping_freq = 4500
-    ping = np.sin(2 * np.pi * ping_freq * t)
-    ping += 0.6 * np.sin(2 * np.pi * ping_freq * 1.4 * t)  # Inharmonic
-    ping *= np.exp(-t * 80)  # Ultra-fast decay
-
-    # Mid body - subtle
-    body = np.sin(2 * np.pi * 1800 * t)
-    body *= np.exp(-t * 50)
-    body *= 0.3
-
-    samples = click + ping * 0.8 + body
-    return hard_clip(samples, 0.9)
-
-
-def generate_lock_click(duration: float = 0.12) -> np.ndarray:
-    """Mechanical snap - satisfying latch with sharp attack.
-
-    Hard transient + metallic ring + low thunk.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # HARD SNAP - the mechanical impact
-    snap = sharp_transient(n_samples, 1.8)
-    snap = hard_clip(snap, 0.7)
-
-    # Metallic ping - detuned for realism
-    freq1, freq2 = 2200, 2250
-    metal = np.sin(2 * np.pi * freq1 * t) + np.sin(2 * np.pi * freq2 * t)
-    metal += 0.4 * np.sin(2 * np.pi * freq1 * 2.7 * t)  # Inharmonic overtone
-    metal *= np.exp(-t * 25)
-    metal *= 0.5
-
-    # Low thunk - the body
-    thunk = np.sin(2 * np.pi * 150 * t)
-    thunk *= np.exp(-t * 30)
-    thunk *= 0.6
-
-    samples = snap + metal + thunk
-    return hard_clip(samples, 0.85)
-
-
-def generate_data_flow(duration: float = 0.4) -> np.ndarray:
-    """Digital data stream - punchy attack, flowing body.
-
-    Sharp start + swept texture + rhythmic pulses.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # PUNCHY START
-    attack = sharp_transient(n_samples, 1.0)
-
-    # Swept filtered noise
-    noise = bandpass_noise(n_samples, 400, 2000)
-
-    # Add rhythmic pulses for "data packet" feel
-    pulse_freq = 15  # 15 Hz pulses
-    pulses = 0.5 + 0.5 * np.sin(2 * np.pi * pulse_freq * t)
-    noise *= pulses
-
-    # Envelope - punchy attack, sustain, fade
-    env = np.ones(n_samples)
-    attack_len = int(0.02 * SAMPLE_RATE)
-    env[:attack_len] = np.linspace(0, 1, attack_len) ** 0.3  # Fast attack
-    fade_start = int(0.7 * n_samples)
-    env[fade_start:] = np.exp(-np.linspace(0, 4, n_samples - fade_start))
-
-    noise *= env * 0.6
-
-    # Digital texture
-    digital = np.sin(2 * np.pi * 800 * t + 2 * np.sin(2 * np.pi * 50 * t))
-    digital *= env * 0.25
-
-    samples = attack * 0.5 + noise + digital
-    return soft_clip(samples, 0.85)
-
-
-def generate_counter_sweep(duration: float = 0.3) -> np.ndarray:
-    """Rising sweep with punch - energetic, driving.
-
-    Sharp attack + accelerating sweep + bright finish.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # PUNCHY START
-    attack = sharp_transient(n_samples, 1.2)
-
-    # Accelerating sweep - exponential feels more energetic
-    start_freq, end_freq = 150, 3000
-    sweep = pitch_sweep(t, start_freq, end_freq, "log")
-    sweep2 = pitch_sweep(t, start_freq * 2, end_freq * 2, "log") * 0.4
-
-    # Envelope with punch
-    env = np.ones(n_samples)
-    env *= np.exp(-t * 2)  # Gradual fade
-    env[:int(0.02 * n_samples)] = np.linspace(0, 1, int(0.02 * n_samples)) ** 0.3
-
-    tone = (sweep + sweep2) * env
-
-    # Bright finish - noise burst at end
-    end_burst = highpass_noise(n_samples, 3000)
-    end_env = np.linspace(0, 1, n_samples) ** 3
-    end_burst *= end_env * np.exp(-np.linspace(0, 2, n_samples)[::-1]) * 0.3
-
-    samples = attack * 0.6 + tone + end_burst
-    return hard_clip(samples, 0.9)
-
-
-def generate_reveal_hit(duration: float = 0.5) -> np.ndarray:
-    """Cinematic impact - hard-hitting reveal moment.
-
-    Massive transient + sub drop + shimmer tail.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # MASSIVE TRANSIENT - the hit
-    hit = sharp_transient(n_samples, 2.5)
-    hit = hard_clip(hit, 0.6)
-
-    # Additional mid-freq punch
-    punch = bandpass_noise(n_samples, 800, 2500)
-    punch *= np.exp(-t * 40)
-    punch *= 0.8
-
-    # Sub drop - pitch falling
-    sub_freq = 80 + 60 * np.exp(-t * 20)
-    sub = np.sin(2 * np.pi * np.cumsum(sub_freq) / SAMPLE_RATE)
-    sub *= np.exp(-t * 8)
-    sub *= 0.9
-
-    # Mid body
-    mid = harmonic_tone(t, 120, [(2, 0.5), (3, 0.25)])
-    mid *= np.exp(-t * 12)
-    mid *= 0.5
-
-    # Shimmer tail
-    shimmer_freq = 1500 * np.exp(-t * 3)
-    shimmer = np.sin(2 * np.pi * np.cumsum(shimmer_freq) / SAMPLE_RATE)
-    shimmer *= np.exp(-t * 5)
-    shimmer *= 0.25
-
-    samples = hit + punch + sub + mid + shimmer
-    return hard_clip(samples, 0.75)
-
-
-def generate_warning_tone(duration: float = 0.4) -> np.ndarray:
-    """Urgent warning - punchy, attention-grabbing.
-
-    Sharp attack + low growl + tremolo.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # PUNCHY START
-    attack = sharp_transient(n_samples, 1.3)
-
-    # Low growl with harmonics
-    freq = 65
-    tone = harmonic_tone(t, freq, [(2, 0.7), (3, 0.4), (4, 0.2), (5, 0.1)])
-
-    # Fast tremolo for urgency
-    tremolo = 0.6 + 0.4 * np.sin(2 * np.pi * 8 * t)
-    tone *= tremolo
-
-    # Sub bass
-    sub = np.sin(2 * np.pi * 32 * t)
-    sub *= 0.5
-
-    # Envelope
-    env = np.exp(-t * 4)
-    env[:int(0.01 * n_samples)] = np.linspace(0, 1, int(0.01 * n_samples)) ** 0.3
-
-    samples = attack * 0.5 + (tone + sub) * env
-    return hard_clip(samples, 0.8)
-
-
-def generate_success_tone(duration: float = 0.35) -> np.ndarray:
-    """Bright success chime - punchy and uplifting.
-
-    Sharp attack + quick arpeggio + sparkle.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # PUNCHY START
-    attack = sharp_transient(n_samples, 1.0)
-
-    # Major chord - quick staggered entry
-    freqs = [523.25, 659.25, 783.99]  # C5, E5, G5
-    delays = [0, 0.015, 0.03]  # Faster arpeggio
-
-    chord = np.zeros(n_samples)
-    for freq, delay in zip(freqs, delays):
-        delay_samples = int(delay * SAMPLE_RATE)
-        note_len = n_samples - delay_samples
-
-        if note_len > 0:
-            note_t = np.linspace(0, note_len / SAMPLE_RATE, note_len)
-            # Bell harmonics
-            note = np.sin(2 * np.pi * freq * note_t)
-            note += 0.35 * np.sin(2 * np.pi * freq * 2.0 * note_t)
-            note += 0.15 * np.sin(2 * np.pi * freq * 3.0 * note_t)
-            note *= np.exp(-note_t * 8)  # Faster decay
-            chord[delay_samples:] += note * 0.45
-
-    # High sparkle
-    sparkle = highpass_noise(n_samples, 4000)
-    sparkle *= np.exp(-t * 15)
-    sparkle *= 0.2
-
-    samples = attack * 0.4 + chord + sparkle
-    return hard_clip(samples, 0.9)
-
-
-def generate_transition_whoosh(duration: float = 0.35) -> np.ndarray:
-    """Punchy whoosh - sharp attack, smooth sweep.
-
-    Hard transient + swept noise + doppler tone.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # PUNCHY START
-    attack = sharp_transient(n_samples, 1.4)
-
-    # Swept noise - fewer bands, more punch
-    whoosh = np.zeros(n_samples)
-    n_bands = 15
-    for i in range(n_bands):
-        band_center = i / n_bands
-        band_env = np.exp(-((t / duration - band_center) ** 2) / 0.02)
-        freq_center = 400 + i * 200
-        band = bandpass_noise(n_samples, freq_center * 0.7, freq_center * 1.3)
-        whoosh += band * band_env
-
-    whoosh *= 0.6
-
-    # Doppler tone
-    doppler_freq = 300 + 1000 * np.sin(np.pi * t / duration)
-    doppler = np.sin(2 * np.pi * np.cumsum(doppler_freq) / SAMPLE_RATE)
-    doppler *= np.sin(np.pi * t / duration)
-    doppler *= 0.3
-
-    # Envelope - punchy start
-    env = np.sin(np.pi * t / duration) ** 0.4
-    env[:int(0.05 * n_samples)] = np.linspace(0, env[int(0.05 * n_samples)], int(0.05 * n_samples)) ** 0.3
-
-    samples = attack * 0.5 + (whoosh + doppler) * env
-    return soft_clip(samples, 0.85)
-
-
-def generate_cache_click(duration: float = 0.1) -> np.ndarray:
-    """Digital cache click - sharp, electronic, precise.
-
-    Hard transient + digital blip + resonant body.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # HARD CLICK
-    click = sharp_transient(n_samples, 1.6)
-    click = hard_clip(click, 0.75)
-
-    # Digital blip - fast pitch drop
-    blip_freq = 2000 * np.exp(-t * 40)
-    blip = np.sin(2 * np.pi * np.cumsum(blip_freq) / SAMPLE_RATE)
-    blip *= np.exp(-t * 35)
-    blip *= 0.7
-
-    # Resonant mid
-    mid = np.sin(2 * np.pi * 900 * t)
-    mid += 0.4 * np.sin(2 * np.pi * 1800 * t)
-    mid *= np.exp(-t * 25)
-    mid *= 0.4
-
-    # Sub click
-    sub = np.sin(2 * np.pi * 120 * t)
-    sub *= np.exp(-t * 30)
-    sub *= 0.35
-
-    samples = click + blip + mid + sub
-    return hard_clip(samples, 0.85)
+# For backwards compatibility with tests
+def apply_envelope(
+    samples: np.ndarray, attack: float, decay: float, sustain: float, release: float
+) -> np.ndarray:
+    """Apply ADSR envelope (kept for compatibility)."""
+    total = len(samples)
+    attack_samples = int(attack * total)
+    decay_samples = int(decay * total)
+    release_samples = int(release * total)
+    sustain_samples = total - attack_samples - decay_samples - release_samples
+
+    envelope = np.zeros(total)
+
+    if attack_samples > 0:
+        envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
+
+    decay_end = attack_samples + decay_samples
+    if decay_samples > 0:
+        envelope[attack_samples:decay_end] = np.linspace(1, sustain, decay_samples)
+
+    sustain_end = decay_end + sustain_samples
+    if sustain_samples > 0:
+        envelope[decay_end:sustain_end] = sustain
+
+    if release_samples > 0:
+        envelope[sustain_end:] = np.linspace(sustain, 0, total - sustain_end)
+
+    return samples * envelope
 
 
 # =============================================================================
-# New Sound Generators (Enhanced Semantic Mapping)
+# Sound Generators - Clean, Minimal, Professional
 # =============================================================================
 
 
-def generate_keyboard_type(duration: float = 0.06) -> np.ndarray:
-    """Single keystroke click - mechanical keyboard sound.
+def generate_ui_pop(duration: float = 0.08) -> np.ndarray:
+    """Soft pop - like a gentle bubble or droplet.
 
-    Crisp, satisfying key press with subtle bottom-out.
+    Clean pitched tone with quick pitch drop. Minimal and pleasant.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Sharp click transient
-    click = sharp_transient(n_samples, 1.3)
+    # Gentle pitch drop: 880 -> 440 Hz (octave down)
+    tone = pitch_envelope(n, 880, 440)
 
-    # High-frequency key sound
-    key_freq = 3800
-    key = np.sin(2 * np.pi * key_freq * t)
-    key += 0.5 * np.sin(2 * np.pi * key_freq * 1.3 * t)  # Inharmonic
-    key *= np.exp(-t * 100)  # Very fast decay
+    # Add subtle second harmonic for warmth
+    tone2 = pitch_envelope(n, 1760, 880) * 0.15
 
-    # Bottom-out thunk
-    thunk = np.sin(2 * np.pi * 400 * t)
-    thunk *= np.exp(-t * 60)
-    thunk *= 0.3
+    # Smooth envelope
+    env = smooth_envelope(n, attack_ms=2, release_ms=60)
 
-    samples = click + key * 0.6 + thunk
-    return hard_clip(samples, 0.85)
+    samples = (tone + tone2) * env
+    return soft_saturate(samples, 0.2)
 
 
-def generate_keyboard_rapid(duration: float = 0.15) -> np.ndarray:
-    """Burst of 3-5 keys - rapid typing sequence.
+def generate_text_tick(duration: float = 0.03) -> np.ndarray:
+    """Subtle tick - barely there, like a soft tap.
 
-    Multiple overlapping key sounds for fast typing effect.
+    Very short, clean, unobtrusive.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    samples = np.zeros(n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Generate 4 key presses with slight timing variation
-    key_times = [0.0, 0.025, 0.055, 0.09]
+    # High but not harsh - 1200 Hz
+    tone = sine(t, 1200)
 
-    for i, key_time in enumerate(key_times):
-        key_start = int(key_time * SAMPLE_RATE)
-        key_duration = 0.04
-        key_samples = int(key_duration * SAMPLE_RATE)
+    # Quick pitch drop for "tick" character
+    tone *= np.exp(-t * 80)
 
-        if key_start + key_samples > n_samples:
-            key_samples = n_samples - key_start
+    # Tiny bit of body
+    body = sine(t, 400) * 0.2
+    body *= np.exp(-t * 60)
 
-        if key_samples > 0:
-            t = np.linspace(0, key_duration, key_samples)
+    samples = tone + body
+    env = smooth_envelope(n, attack_ms=1, release_ms=20)
 
-            # Vary frequency slightly for realism
-            freq = 3500 + i * 200
-            key = sharp_transient(key_samples, 1.0 - i * 0.1)
-            tone = np.sin(2 * np.pi * freq * t)
-            tone *= np.exp(-t * 90)
-            key += tone * 0.5
-
-            samples[key_start:key_start + key_samples] += key * (0.9 - i * 0.15)
-
-    return hard_clip(samples, 0.85)
+    return samples * env
 
 
-def generate_bar_grow(duration: float = 0.35) -> np.ndarray:
-    """Rising sweep tone for bar chart growth.
+def generate_lock_click(duration: float = 0.06) -> np.ndarray:
+    """Clean click - like a camera shutter or gentle latch.
 
-    Smooth ascending tone that feels like growth/progress.
+    Precise, satisfying, not mechanical-sounding.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Initial attack
-    attack = sharp_transient(n_samples, 0.8)
+    # Two detuned tones for subtle beating (more interesting)
+    tone1 = sine(t, 1000)
+    tone2 = sine(t, 1050) * 0.7
 
-    # Rising sweep - smooth ascent
-    start_freq, end_freq = 200, 800
-    sweep = pitch_sweep(t, start_freq, end_freq, "log")
+    # Low thump for body
+    thump = sine(t, 150) * 0.5
+    thump *= np.exp(-t * 40)
 
-    # Add harmonics for richness
-    sweep2 = pitch_sweep(t, start_freq * 2, end_freq * 2, "log") * 0.3
-    sweep3 = pitch_sweep(t, start_freq * 3, end_freq * 3, "log") * 0.15
+    click = (tone1 + tone2) * np.exp(-t * 50)
 
-    tone = sweep + sweep2 + sweep3
+    samples = click + thump
+    env = smooth_envelope(n, attack_ms=1, release_ms=40)
 
-    # Envelope - attack, sustain, gentle fade
-    env = np.ones(n_samples)
-    attack_len = int(0.03 * n_samples)
-    env[:attack_len] = np.linspace(0, 1, attack_len) ** 0.5
-    fade_start = int(0.7 * n_samples)
-    env[fade_start:] = np.exp(-np.linspace(0, 3, n_samples - fade_start))
-
-    tone *= env
-
-    # Subtle noise texture
-    noise = bandpass_noise(n_samples, 400, 1200) * 0.15
-    noise *= env
-
-    samples = attack * 0.4 + tone + noise
-    return soft_clip(samples, 0.85)
+    return samples * env
 
 
-def generate_progress_tick(duration: float = 0.08) -> np.ndarray:
-    """Digital increment tick for progress bars.
+def generate_data_flow(duration: float = 0.25) -> np.ndarray:
+    """Gentle woosh - subtle movement sensation.
 
-    Short, precise tick that suggests incremental progress.
+    Soft filtered noise sweep, not aggressive.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Sharp digital tick
-    tick = sharp_transient(n_samples, 1.2)
+    # Gentle noise, low cutoff
+    noise = filtered_noise(n, 800, resonance=0.3)
 
-    # High pitch blip
-    blip_freq = 2200
-    blip = np.sin(2 * np.pi * blip_freq * t)
-    blip += 0.4 * np.sin(2 * np.pi * blip_freq * 2 * t)
-    blip *= np.exp(-t * 50)
+    # Subtle pitch rise underneath
+    tone = pitch_envelope(n, 200, 400) * 0.3
 
-    # Subtle low end
-    low = np.sin(2 * np.pi * 300 * t)
-    low *= np.exp(-t * 40)
-    low *= 0.25
-
-    samples = tick + blip * 0.7 + low
-    return hard_clip(samples, 0.9)
-
-
-def generate_digital_stream(duration: float = 0.5) -> np.ndarray:
-    """Flowing data sound for token streaming.
-
-    Continuous digital texture with rhythmic pulses.
-    """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
-
-    # Base noise texture
-    noise = bandpass_noise(n_samples, 600, 3000)
-
-    # Rhythmic pulses for "data packet" feel
-    pulse_freq = 20  # 20 Hz pulses
-    pulses = 0.4 + 0.6 * (1 + np.sin(2 * np.pi * pulse_freq * t)) / 2
-
-    noise *= pulses
-
-    # Digital tone underneath
-    tone_freq = 1000
-    tone = np.sin(2 * np.pi * tone_freq * t)
-    tone += 0.3 * np.sin(2 * np.pi * tone_freq * 1.5 * t)
-    tone *= 0.3
-
-    # FM modulation for digital character
-    mod = np.sin(2 * np.pi * 30 * t)
-    tone *= (1 + 0.3 * mod)
-
-    # Envelope
-    env = np.ones(n_samples)
-    attack_len = int(0.05 * n_samples)
-    env[:attack_len] = np.linspace(0, 1, attack_len) ** 0.5
-    fade_start = int(0.75 * n_samples)
-    env[fade_start:] = np.exp(-np.linspace(0, 3, n_samples - fade_start))
+    # Smooth bell curve envelope
+    env = np.exp(-((t - duration/2) ** 2) / (duration/4) ** 2)
+    env = smooth_envelope(n, attack_ms=30, release_ms=80) * env
 
     samples = (noise * 0.6 + tone) * env
-    return soft_clip(samples, 0.8)
+    return soft_saturate(samples, 0.15)
 
 
-def generate_impact_soft(duration: float = 0.15) -> np.ndarray:
-    """Soft thump for subtle reveals.
+def generate_counter_sweep(duration: float = 0.2) -> np.ndarray:
+    """Rising tone - clean pitch sweep upward.
 
-    Gentle impact with warm low end.
+    Musical, not sci-fi. Gentle acceleration feel.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Soft transient
-    transient = sharp_transient(n_samples, 0.8)
-    transient = soft_clip(transient, 0.6)
+    # Clean rising sweep
+    sweep = pitch_envelope(n, 300, 900)
+
+    # Subtle harmonic
+    sweep2 = pitch_envelope(n, 600, 1800) * 0.1
+
+    env = smooth_envelope(n, attack_ms=10, release_ms=60)
+    # Slight volume rise with pitch
+    env *= 0.7 + 0.3 * (t / duration)
+
+    samples = (sweep + sweep2) * env
+    return soft_saturate(samples, 0.2)
+
+
+def generate_reveal_hit(duration: float = 0.3) -> np.ndarray:
+    """Soft impact - emphasis without aggression.
+
+    Warm low tone with gentle attack. Think: "important moment".
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Warm fundamental with harmonics
+    fundamental = 110  # A2 - warm, not boomy
+    tone = sine(t, fundamental)
+    tone += sine(t, fundamental * 2) * 0.4  # Octave
+    tone += sine(t, fundamental * 3) * 0.15  # Fifth above octave
+
+    # Gentle pitch drop for impact feel
+    drop = pitch_envelope(n, 220, 110) * 0.3
+
+    env = smooth_envelope(n, attack_ms=8, release_ms=200)
+    env *= np.exp(-t * 6)  # Natural decay
+
+    samples = (tone + drop) * env
+    return soft_saturate(samples, 0.25)
+
+
+def generate_warning_tone(duration: float = 0.25) -> np.ndarray:
+    """Subtle tension - low tone that suggests caution.
+
+    Not alarming, just a gentle "hmm" feeling.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Low tone with slight dissonance (minor second)
+    tone1 = sine(t, 130)  # C3
+    tone2 = sine(t, 138) * 0.3  # C#3 - creates tension
+
+    # Very subtle vibrato
+    vibrato = 1 + 0.01 * sine(t, 5)
+
+    env = smooth_envelope(n, attack_ms=20, release_ms=100)
+    env *= np.exp(-t * 4)
+
+    samples = (tone1 + tone2) * vibrato * env
+    return soft_saturate(samples, 0.2)
+
+
+def generate_success_tone(duration: float = 0.25) -> np.ndarray:
+    """Pleasant chime - gentle major chord.
+
+    Brief, uplifting, not celebratory or cheesy.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Major third interval - universally pleasant
+    note1 = sine(t, 523)  # C5
+    note2 = sine(t, 659) * 0.7  # E5
+
+    # Stagger slightly for richness
+    delay = int(0.015 * SAMPLE_RATE)
+    note2_delayed = np.zeros(n)
+    note2_delayed[delay:] = note2[:-delay] if delay < n else 0
+
+    env = smooth_envelope(n, attack_ms=5, release_ms=150)
+    env *= np.exp(-t * 5)
+
+    samples = (note1 + note2_delayed) * env
+    return soft_saturate(samples, 0.2)
+
+
+def generate_transition_whoosh(duration: float = 0.2) -> np.ndarray:
+    """Gentle sweep - smooth transition feel.
+
+    Like a soft breath or gentle wind.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Filtered noise with moving cutoff
+    noise = np.random.randn(n) * 0.3
+
+    # Simple moving average filter (smooth)
+    cutoff_env = 400 + 800 * np.sin(np.pi * t / duration)
+
+    # Apply time-varying filter via short segments
+    filtered = np.zeros(n)
+    segment_size = 256
+    for i in range(0, n - segment_size, segment_size // 2):
+        segment = noise[i:i + segment_size]
+        cutoff = cutoff_env[i + segment_size // 2]
+
+        fft = np.fft.rfft(segment)
+        freqs = np.fft.rfftfreq(segment_size, 1 / SAMPLE_RATE)
+        mask = 1 / (1 + (freqs / cutoff) ** 2)
+        segment_filtered = np.fft.irfft(fft * mask, segment_size)
+
+        # Overlap-add
+        filtered[i:i + segment_size] += segment_filtered * np.hanning(segment_size)
+
+    env = np.sin(np.pi * t / duration)  # Bell curve
+    env = smooth_envelope(n, attack_ms=15, release_ms=50) * env
+
+    return filtered * env
+
+
+def generate_cache_click(duration: float = 0.05) -> np.ndarray:
+    """Digital blip - clean, precise, minimal.
+
+    Like a soft notification ping.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Clean tone with quick pitch drop
+    tone = pitch_envelope(n, 1400, 800)
+
+    # Tiny harmonic
+    tone2 = pitch_envelope(n, 2800, 1600) * 0.1
+
+    env = smooth_envelope(n, attack_ms=2, release_ms=35)
+
+    samples = (tone + tone2) * env
+    return soft_saturate(samples, 0.15)
+
+
+# =============================================================================
+# Additional Sounds for Semantic Mapping
+# =============================================================================
+
+
+def generate_keyboard_type(duration: float = 0.04) -> np.ndarray:
+    """Soft key tap - gentle, not mechanical.
+
+    Like typing on a quiet keyboard.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Soft click - mid frequency
+    click = sine(t, 800) + sine(t, 1200) * 0.3
+    click *= np.exp(-t * 100)
+
+    # Tiny thump
+    thump = sine(t, 200) * 0.3
+    thump *= np.exp(-t * 80)
+
+    env = smooth_envelope(n, attack_ms=1, release_ms=25)
+
+    return (click + thump) * env
+
+
+def generate_keyboard_rapid(duration: float = 0.12) -> np.ndarray:
+    """Quick typing burst - several soft taps.
+
+    Gentle rhythm, not aggressive.
+    """
+    n = int(SAMPLE_RATE * duration)
+    samples = np.zeros(n)
+
+    # 3 soft taps
+    tap_times = [0.0, 0.03, 0.065]
+
+    for i, tap_time in enumerate(tap_times):
+        start = int(tap_time * SAMPLE_RATE)
+        tap_len = int(0.035 * SAMPLE_RATE)
+
+        if start + tap_len > n:
+            tap_len = n - start
+
+        if tap_len > 0:
+            t = np.linspace(0, tap_len / SAMPLE_RATE, tap_len)
+
+            # Vary pitch slightly
+            freq = 900 + i * 100
+            tap = sine(t, freq)
+            tap *= np.exp(-t * 90)
+
+            env = smooth_envelope(tap_len, attack_ms=1, release_ms=20)
+
+            # Decrease volume for later taps
+            samples[start:start + tap_len] += tap * env * (0.8 - i * 0.15)
+
+    return samples
+
+
+def generate_bar_grow(duration: float = 0.2) -> np.ndarray:
+    """Gentle rise - smooth ascending tone.
+
+    Suggests growth or progress.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Smooth pitch rise
+    sweep = pitch_envelope(n, 250, 500)
+
+    # Subtle harmonic
+    sweep2 = pitch_envelope(n, 500, 1000) * 0.15
+
+    env = smooth_envelope(n, attack_ms=15, release_ms=60)
+
+    samples = (sweep + sweep2) * env
+    return soft_saturate(samples, 0.15)
+
+
+def generate_progress_tick(duration: float = 0.04) -> np.ndarray:
+    """Tiny tick - very subtle increment sound.
+
+    Almost imperceptible, just enough to register.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # High but soft
+    tick = sine(t, 1500) * 0.7
+    tick += sine(t, 2000) * 0.2
+    tick *= np.exp(-t * 80)
+
+    env = smooth_envelope(n, attack_ms=1, release_ms=25)
+
+    return tick * env
+
+
+def generate_digital_stream(duration: float = 0.3) -> np.ndarray:
+    """Soft data flow - gentle continuous texture.
+
+    Subtle background presence, not distracting.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
+
+    # Very gentle filtered noise
+    noise = filtered_noise(n, 600, resonance=0.2) * 0.4
+
+    # Subtle tone underneath
+    tone = sine(t, 400) * 0.2
+    tone += sine(t, 600) * 0.1
+
+    # Gentle pulsing
+    pulse = 0.7 + 0.3 * sine(t, 8)
+
+    env = smooth_envelope(n, attack_ms=40, release_ms=80)
+
+    samples = (noise + tone) * pulse * env
+    return soft_saturate(samples, 0.1)
+
+
+def generate_impact_soft(duration: float = 0.12) -> np.ndarray:
+    """Gentle thump - soft emphasis.
+
+    Warm, not punchy.
+    """
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
     # Warm low tone
-    low_freq = 100
-    low = np.sin(2 * np.pi * low_freq * t)
-    low += 0.5 * np.sin(2 * np.pi * low_freq * 2 * t)
-    low *= np.exp(-t * 15)
+    tone = sine(t, 150)
+    tone += sine(t, 300) * 0.3
+    tone *= np.exp(-t * 20)
 
-    # Mid body
-    mid = np.sin(2 * np.pi * 400 * t)
-    mid *= np.exp(-t * 20)
-    mid *= 0.4
+    env = smooth_envelope(n, attack_ms=5, release_ms=80)
 
-    samples = transient * 0.5 + low * 0.8 + mid
-    return soft_clip(samples, 0.8)
+    return tone * env
 
 
-def generate_impact_hard(duration: float = 0.25) -> np.ndarray:
-    """Punchy hit for dramatic reveals.
+def generate_impact_hard(duration: float = 0.18) -> np.ndarray:
+    """Firmer impact - still restrained.
 
-    Hard-hitting impact with dramatic low end.
+    More presence than soft, but not aggressive.
     """
-    n_samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, n_samples)
+    n = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, n)
 
-    # Hard transient
-    hit = sharp_transient(n_samples, 2.0)
-    hit = hard_clip(hit, 0.65)
+    # Fuller low end
+    tone = sine(t, 100)
+    tone += sine(t, 200) * 0.5
+    tone += sine(t, 400) * 0.2
 
-    # Mid punch
-    punch = bandpass_noise(n_samples, 600, 2000)
-    punch *= np.exp(-t * 30)
-    punch *= 0.7
+    # Slight pitch drop
+    drop = pitch_envelope(n, 300, 150) * 0.3
 
-    # Deep sub with pitch drop
-    sub_freq = 70 + 40 * np.exp(-t * 15)
-    sub = np.sin(2 * np.pi * np.cumsum(sub_freq) / SAMPLE_RATE)
-    sub *= np.exp(-t * 10)
-    sub *= 0.9
+    env = smooth_envelope(n, attack_ms=5, release_ms=120)
+    env *= np.exp(-t * 8)
 
-    # High shimmer
-    shimmer = highpass_noise(n_samples, 3000)
-    shimmer *= np.exp(-t * 25)
-    shimmer *= 0.2
-
-    samples = hit + punch + sub + shimmer
-    return hard_clip(samples, 0.75)
+    samples = (tone + drop) * env
+    return soft_saturate(samples, 0.25)
 
 
-# Generator function mapping
+# =============================================================================
+# Sound Manifest and Library Class
+# =============================================================================
+
+
+SOUND_MANIFEST = {
+    "ui_pop": {
+        "description": "Soft pop for elements appearing",
+        "generator": "generate_ui_pop",
+    },
+    "text_tick": {
+        "description": "Subtle tick for text appearing",
+        "generator": "generate_text_tick",
+    },
+    "lock_click": {
+        "description": "Clean click for things locking into place",
+        "generator": "generate_lock_click",
+    },
+    "data_flow": {
+        "description": "Gentle woosh for data movement",
+        "generator": "generate_data_flow",
+    },
+    "counter_sweep": {
+        "description": "Rising tone for counters",
+        "generator": "generate_counter_sweep",
+    },
+    "reveal_hit": {
+        "description": "Soft impact for reveals",
+        "generator": "generate_reveal_hit",
+    },
+    "warning_tone": {
+        "description": "Subtle tension tone for problems",
+        "generator": "generate_warning_tone",
+    },
+    "success_tone": {
+        "description": "Pleasant chime for success",
+        "generator": "generate_success_tone",
+    },
+    "transition_whoosh": {
+        "description": "Gentle sweep for transitions",
+        "generator": "generate_transition_whoosh",
+    },
+    "cache_click": {
+        "description": "Clean blip for cache operations",
+        "generator": "generate_cache_click",
+    },
+    "keyboard_type": {
+        "description": "Soft key tap for typing",
+        "generator": "generate_keyboard_type",
+    },
+    "keyboard_rapid": {
+        "description": "Quick typing burst",
+        "generator": "generate_keyboard_rapid",
+    },
+    "bar_grow": {
+        "description": "Gentle rise for chart growth",
+        "generator": "generate_bar_grow",
+    },
+    "progress_tick": {
+        "description": "Tiny tick for progress",
+        "generator": "generate_progress_tick",
+    },
+    "digital_stream": {
+        "description": "Soft texture for streaming",
+        "generator": "generate_digital_stream",
+    },
+    "impact_soft": {
+        "description": "Gentle thump for subtle reveals",
+        "generator": "generate_impact_soft",
+    },
+    "impact_hard": {
+        "description": "Firmer impact for emphasis",
+        "generator": "generate_impact_hard",
+    },
+}
+
+
 GENERATORS = {
     "generate_ui_pop": generate_ui_pop,
     "generate_text_tick": generate_text_tick,
@@ -834,7 +625,6 @@ GENERATORS = {
     "generate_success_tone": generate_success_tone,
     "generate_transition_whoosh": generate_transition_whoosh,
     "generate_cache_click": generate_cache_click,
-    # New generators
     "generate_keyboard_type": generate_keyboard_type,
     "generate_keyboard_rapid": generate_keyboard_rapid,
     "generate_bar_grow": generate_bar_grow,

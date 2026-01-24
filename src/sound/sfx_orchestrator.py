@@ -118,6 +118,7 @@ class SFXOrchestrator:
         """
         # Extract scene name from type
         scene_name = scene_type.split("/")[-1] if "/" in scene_type else scene_type
+        pascal_name = self._to_pascal_case(scene_name)
 
         # Try project's scenes directory first
         project_scenes_dir = self.project_dir / "scenes"
@@ -126,15 +127,19 @@ class SFXOrchestrator:
             candidates = [
                 project_scenes_dir / f"{scene_name}.tsx",
                 project_scenes_dir / f"{scene_name.title()}Scene.tsx",
-                project_scenes_dir / f"{self._to_pascal_case(scene_name)}Scene.tsx",
+                project_scenes_dir / f"{pascal_name}Scene.tsx",
+                # Also try with "The" prefix (common convention)
+                project_scenes_dir / f"The{pascal_name}Scene.tsx",
             ]
             for candidate in candidates:
                 if candidate.exists():
                     return candidate
 
-            # Also try searching by partial match
+            # Also try searching by partial match (remove underscores/hyphens for comparison)
+            scene_name_normalized = scene_name.lower().replace("_", "").replace("-", "")
             for file in project_scenes_dir.glob("*.tsx"):
-                if scene_name.lower() in file.stem.lower():
+                file_stem_normalized = file.stem.lower().replace("_", "").replace("-", "")
+                if scene_name_normalized in file_stem_normalized:
                     return file
 
         # Try remotion directory
