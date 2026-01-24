@@ -1,8 +1,8 @@
 """
-The 13 Guiding Principles for Video Refinement
+The 16 Guiding Principles for Video Refinement
 
 These principles define the quality bar for professional-level
-educational videos. Each scene should be evaluated against all 13 principles.
+educational videos. Each scene should be evaluated against all 16 principles.
 """
 
 from dataclasses import dataclass
@@ -202,6 +202,50 @@ GUIDING_PRINCIPLES: List[Principle] = [
         bad_example="Spec describes rich 3D tree animation but scene shows flat 2D diagram with basic fade effects",
         checklist_question="Does the visual implement EVERY element in the visual_cue? Are ALL described animations present? Does it match the spec EXACTLY, not approximately?",
     ),
+    Principle(
+        id=14,
+        name="Text contrast and readability",
+        issue_type=IssueType.TEXT_CONTRAST,
+        description=(
+            "Text MUST be readable against its background. On dark glass panels (rgba(18,20,25,0.98)), "
+            "text MUST be white (#ffffff) or light gray (rgba(255,255,255,0.85)). NEVER use black or "
+            "dark text on dark backgrounds - it will be invisible. Minimum font sizes: body text 16-18px * scale, "
+            "titles 22-28px * scale, annotations 14-16px * scale. Small text is unreadable on mobile devices."
+        ),
+        good_example="White text (#ffffff) on dark glass panel, title at 24px * scale, body at 18px * scale - clearly readable",
+        bad_example="Black or dark gray text on dark panel (invisible), or 12px text that's too small to read on mobile",
+        checklist_question="Is text WHITE on dark backgrounds? Are font sizes large enough to read on mobile?",
+    ),
+    Principle(
+        id=15,
+        name="Element containment",
+        issue_type=IssueType.ELEMENT_CONTAINMENT,
+        description=(
+            "All visual elements MUST stay within their parent container boundaries. Labels, badges, "
+            "annotations, and floating elements should never overflow or extend outside their panels. "
+            "If a label needs to appear 'above' a bar chart, leave room INSIDE the panel for it. "
+            "Never use negative positioning that causes elements to escape their containers. "
+            "Clipped or cut-off elements look unprofessional and broken."
+        ),
+        good_example="'100×' label positioned inside the graph panel with adequate margin from top edge",
+        bad_example="'100×' label with top: -80px that extends above the panel boundary and gets clipped",
+        checklist_question="Do ALL elements stay within their container bounds? Are there any clipped or overflowing elements?",
+    ),
+    Principle(
+        id=16,
+        name="Header spacing",
+        issue_type=IssueType.HEADER_SPACING,
+        description=(
+            "Content panels must have adequate spacing from the scene title and subtitle. "
+            "Minimum clearance should be 120-160px (scaled) below the title area. Panels that "
+            "overlap or crowd the header look cramped and unprofessional. Use contentTop = "
+            "LAYOUT.title.y + 140 or similar to ensure consistent spacing. Also leave ~100px "
+            "at the bottom for the Reference component."
+        ),
+        good_example="Content panel starts at LAYOUT.title.y + 140, leaving clear space below 'The RLHF Foundation' title",
+        bad_example="Panel starts at LAYOUT.title.y + 80, overlapping with or crowding the subtitle text",
+        checklist_question="Is there adequate spacing between the title/subtitle and the first content panel? No overlap?",
+    ),
 ]
 
 
@@ -223,7 +267,7 @@ def get_principle_by_issue_type(issue_type: IssueType) -> Principle | None:
 
 def format_principles_for_prompt() -> str:
     """Format all principles as a string suitable for LLM prompts."""
-    lines = ["The 13 Guiding Principles for Video Quality:\n"]
+    lines = ["The 16 Guiding Principles for Video Quality:\n"]
 
     for p in GUIDING_PRINCIPLES:
         lines.append(f"{p.id}. **{p.name}**")

@@ -74,6 +74,8 @@ SINGLE_SCENE_ANALYSIS_PROMPT = """Evaluate this scene's narration against storyt
    - engagement: Does it use questions, analogies, surprises?
    - accuracy: Is it technically correct?
    - length: Is the word count appropriate for the duration?
+   - specificity: Does it use SPECIFIC NUMBERS instead of vague qualifiers? (e.g., "17% to 78%" not "improved dramatically")
+   - mechanism: Does it explain HOW things work step-by-step, not just THAT they work? (e.g., "generate candidates, evaluate each, expand best one" not "explores multiple paths")
 
 2. Identify specific issues (if any)
 
@@ -88,11 +90,13 @@ Respond with JSON in this exact format:
         "insight": 9,
         "engagement": 7,
         "accuracy": 10,
-        "length": 8
+        "length": 8,
+        "specificity": 7,
+        "mechanism": 6
     }},
     "issues": [
         {{
-            "issue_type": "weak_hook|poor_transition|missing_tension|no_key_insight|lacks_analogy|no_emotional_beat|wrong_length|technical_inaccuracy|redundant_text|other",
+            "issue_type": "weak_hook|poor_transition|missing_tension|no_key_insight|lacks_analogy|no_emotional_beat|wrong_length|technical_inaccuracy|redundant_text|lacks_specificity|lacks_mechanism|other",
             "description": "Clear description of the issue",
             "current_text": "The specific problematic text",
             "severity": "low|medium|high",
@@ -405,6 +409,8 @@ class ScriptRefiner:
                 engagement=scores_data.get("engagement", 5.0),
                 accuracy=scores_data.get("accuracy", 5.0),
                 length=scores_data.get("length", 5.0),
+                specificity=scores_data.get("specificity", 5.0),
+                mechanism=scores_data.get("mechanism", 5.0),
             )
 
             # Parse issues

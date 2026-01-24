@@ -110,9 +110,11 @@ class TestNarrationScores:
             engagement=10.0,
             accuracy=10.0,
             length=10.0,
+            specificity=10.0,
+            mechanism=10.0,
         )
-        # All 10s should give overall of 10
-        assert scores.overall == 10.0
+        # All 10s should give overall of 10 (use approx for floating point)
+        assert scores.overall == pytest.approx(10.0)
 
     def test_overall_weighted(self):
         """Test that weights affect overall score."""

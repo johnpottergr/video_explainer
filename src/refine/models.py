@@ -24,6 +24,9 @@ class IssueType(str, Enum):
     SCREEN_SPACE_UTILIZATION = "screen_space_utilization"
     MATERIAL_DEPTH = "material_depth"
     VISUAL_SPEC_MATCH = "visual_spec_match"
+    TEXT_CONTRAST = "text_contrast"  # Text readability on dark/light backgrounds
+    ELEMENT_CONTAINMENT = "element_containment"  # Elements staying within bounds
+    HEADER_SPACING = "header_spacing"  # Proper spacing from title/subtitle
     OTHER = "other"
 
 
@@ -215,6 +218,8 @@ class NarrationIssueType(str, Enum):
     WRONG_LENGTH = "wrong_length"
     TECHNICAL_INACCURACY = "technical_inaccuracy"
     REDUNDANT_TEXT = "redundant_text"
+    LACKS_SPECIFICITY = "lacks_specificity"  # Uses vague qualifiers instead of specific numbers
+    LACKS_MECHANISM = "lacks_mechanism"  # Describes outcome but not HOW it works
     OTHER = "other"
 
 
@@ -792,6 +797,8 @@ class NarrationScores:
     engagement: float = 0.0  # 0-10: Does it use analogies, questions, surprises?
     accuracy: float = 0.0  # 0-10: Is it technically correct?
     length: float = 0.0  # 0-10: Is it the right length for the duration?
+    specificity: float = 0.0  # 0-10: Does it use specific numbers instead of vague qualifiers?
+    mechanism: float = 0.0  # 0-10: Does it explain HOW things work, not just THAT they work?
 
     @property
     def overall(self) -> float:
@@ -804,6 +811,8 @@ class NarrationScores:
             "engagement": 1.2,
             "accuracy": 1.5,
             "length": 0.8,
+            "specificity": 1.3,  # Important for technical content
+            "mechanism": 1.4,  # Very important for educational videos
         }
         total = sum(
             getattr(self, attr) * weight for attr, weight in weights.items()
@@ -819,6 +828,8 @@ class NarrationScores:
             "engagement": self.engagement,
             "accuracy": self.accuracy,
             "length": self.length,
+            "specificity": self.specificity,
+            "mechanism": self.mechanism,
             "overall": self.overall,
         }
 
@@ -832,6 +843,8 @@ class NarrationScores:
             engagement=data.get("engagement", 0.0),
             accuracy=data.get("accuracy", 0.0),
             length=data.get("length", 0.0),
+            specificity=data.get("specificity", 0.0),
+            mechanism=data.get("mechanism", 0.0),
         )
 
 

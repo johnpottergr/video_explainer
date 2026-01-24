@@ -61,8 +61,30 @@ Current Narration:
 ## Interpretation:
 {interpretation}
 
+## Narration Quality Guidelines
+When revising narration, follow these principles:
+
+1. USE SPECIFIC NUMBERS instead of vague qualifiers
+   - BAD: "improved dramatically", "much better", "significant improvement"
+   - GOOD: "jumped from 17% to 78%", "one hundred times more often", "500-token chain"
+   - Pull exact figures from the source material whenever possible
+
+2. EXPLAIN MECHANISMS step-by-step (HOW, not just THAT)
+   - BAD: "Tree-of-thought search explores multiple reasoning paths"
+   - GOOD: "Tree-of-thought works like this: generate three candidates, evaluate each, expand the best one. Hit a dead end? Backtrack and try another branch."
+   - Break down processes into sequential steps viewers can follow
+
+3. CREATE INFORMATION GAPS before revealing solutions
+   - Start with "Here's the problem:" or "Here's the challenge:" before giving the answer
+   - Build tension: present the obstacle, THEN reveal the solution
+
+4. CONNECT CAUSALLY with transitions
+   - Use "But there's a problem...", "The breakthrough came when...", "This leads to..."
+   - Each scene should flow naturally into the next
+
 ## Instructions
 Generate specific text changes. Be precise about what to change.
+Apply the narration quality guidelines above to improve the narration.
 
 Respond with JSON:
 {{
@@ -96,13 +118,24 @@ Narration: "{narration}"
 {interpretation}
 
 ## Visual Styling Guidelines
-- BACKGROUND: Scene canvas/backdrop (gradients, colors, patterns)
+- BACKGROUND: Scene canvas/backdrop - use LIGHT colors (#f0f0f5, #fafafa, #ffffff)
 - UI COMPONENTS: Floating dark glass panels with:
   - Dark glass: rgba(18,20,25,0.98) backgrounds
   - Multi-layer shadows (5-7 layers) for depth
   - Bezel borders: light top/left, dark bottom/right
   - Inner shadows for recessed depth
   - Colored accent glows based on content
+
+## Text Styling (CRITICAL)
+- All text on dark panels MUST be white (#ffffff) or light gray
+- NEVER use black/dark text on dark backgrounds - it will be invisible
+- Minimum font sizes: titles 22-28px, body 16-18px, annotations 14-16px
+
+## Layout Constraints
+- Content panels start at LAYOUT.title.y + 140 (not crowding the header)
+- Leave 100px at bottom for Reference component
+- All labels/badges must stay INSIDE their containers (no overflow)
+- Gap between panels: 25-50px
 
 ## Instructions
 Generate an improved visual_cue that addresses the feedback while following styling guidelines.

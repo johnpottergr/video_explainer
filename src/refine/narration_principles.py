@@ -36,7 +36,7 @@ class NarrationPrinciple:
 
 
 # =============================================================================
-# The 10 Universal Narration Principles
+# The 12 Universal Narration Principles
 # =============================================================================
 
 NARRATION_PRINCIPLES: list[NarrationPrinciple] = [
@@ -220,6 +220,45 @@ NARRATION_PRINCIPLES: list[NarrationPrinciple] = [
         ),
         check_question="Will this ending stick with viewers after the video ends?",
     ),
+    NarrationPrinciple(
+        id=11,
+        name="Use specific numbers",
+        description=(
+            "Pull exact figures from the source material. Specific numbers are more "
+            "memorable and credible than vague qualifiers. Say '17% to 78%' not "
+            "'improved dramatically'. Say '500-token chain' not 'long sequence'. "
+            "Numbers create concrete mental anchors for abstract concepts."
+        ),
+        good_example=(
+            "'Accuracy jumped from seventeen percent to seventy-eight percent' - "
+            "Specific numbers that viewers can remember and repeat"
+        ),
+        bad_example=(
+            "'Performance improved significantly' - "
+            "Vague, unmemorable, sounds like marketing speak"
+        ),
+        check_question="Are there specific numbers where vague qualifiers could be replaced?",
+    ),
+    NarrationPrinciple(
+        id=12,
+        name="Explain mechanisms step by step",
+        description=(
+            "Don't just say THAT something works - show HOW it works. Break down "
+            "the mechanism into sequential steps. 'Generate three candidates, evaluate "
+            "each, expand the best one, backtrack if needed' is better than 'it explores "
+            "multiple paths'. Viewers want to understand the process, not just the outcome."
+        ),
+        good_example=(
+            "'Tree-of-thought works like this: generate three candidate next steps. "
+            "Evaluate each—which looks most promising? Expand the best one. Hit a dead "
+            "end? Backtrack and try another branch.' - Step-by-step mechanism"
+        ),
+        bad_example=(
+            "'Tree-of-thought search explores multiple reasoning paths to find the best one.' - "
+            "Describes outcome but not mechanism"
+        ),
+        check_question="Does this explain HOW the concept works, not just THAT it works?",
+    ),
 ]
 
 
@@ -242,7 +281,7 @@ def get_principle_by_name(name: str) -> Optional[NarrationPrinciple]:
 
 def format_principles_for_prompt() -> str:
     """Format all narration principles for inclusion in an LLM prompt."""
-    lines = ["## The 10 Narration Principles for Engaging Educational Videos\n"]
+    lines = ["## The 12 Narration Principles for Engaging Educational Videos\n"]
 
     for p in NARRATION_PRINCIPLES:
         lines.append(f"### {p.id}. {p.name}")

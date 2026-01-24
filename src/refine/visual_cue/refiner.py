@@ -50,6 +50,27 @@ Visual Styling Principles for UI Components:
 - Colored accent glows: Subtle glow underneath based on accent color
 - Top edge highlights: Thin 1px line simulating light catching
 
+TEXT STYLING REQUIREMENTS (CRITICAL):
+- All text on dark glass panels MUST be white (#ffffff) or light gray (rgba(255,255,255,0.85))
+- NEVER use black or dark text on dark panels - it will be INVISIBLE
+- Minimum font sizes for readability:
+  - Body text: 16-18px * scale
+  - Titles: 22-28px * scale
+  - Annotations/labels: 14-16px * scale
+- Always specify text colors explicitly in visual_cue descriptions
+
+ELEMENT CONTAINMENT REQUIREMENTS:
+- All labels, badges, and annotations must stay INSIDE their parent containers
+- If a label needs to appear "above" a bar chart, allocate space WITHIN the panel
+- Never position elements with negative offsets that go outside panels
+- Leave adequate padding (20-30px scaled) inside panels for content
+
+SPACING REQUIREMENTS:
+- Content panels should start at LAYOUT.title.y + 140 minimum (not crowding the title)
+- Leave at least 80-100px between title area and first content panel
+- Bottom of panels should not extend beyond height - 100px (leave room for Reference)
+- Gap between panels: 25-50px scaled
+
 The description MUST start with "BACKGROUND:" specifying the scene backdrop, then "UI COMPONENTS:" describing the floating panels.
 """
 

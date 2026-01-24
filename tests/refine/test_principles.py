@@ -54,9 +54,9 @@ class TestPrinciple:
 class TestGuidingPrinciples:
     """Tests for GUIDING_PRINCIPLES list."""
 
-    def test_has_13_principles(self):
-        """Test that there are exactly 13 guiding principles."""
-        assert len(GUIDING_PRINCIPLES) == 13
+    def test_has_16_principles(self):
+        """Test that there are exactly 16 guiding principles."""
+        assert len(GUIDING_PRINCIPLES) == 16
 
     def test_principles_have_unique_ids(self):
         """Test that all principles have unique IDs."""
@@ -85,6 +85,9 @@ class TestGuidingPrinciples:
             IssueType.SCREEN_SPACE_UTILIZATION,
             IssueType.MATERIAL_DEPTH,
             IssueType.VISUAL_SPEC_MATCH,
+            IssueType.TEXT_CONTRAST,
+            IssueType.ELEMENT_CONTAINMENT,
+            IssueType.HEADER_SPACING,
         }
         assert covered_types == expected_types
 
@@ -100,9 +103,9 @@ class TestGuidingPrinciples:
             assert principle.bad_example, f"Principle {principle.name} has no bad example"
 
     def test_principles_sequential_ids(self):
-        """Test that principle IDs are sequential 1-13."""
+        """Test that principle IDs are sequential 1-16."""
         ids = sorted([p.id for p in GUIDING_PRINCIPLES])
-        assert ids == list(range(1, 14))
+        assert ids == list(range(1, 17))
 
 
 class TestGetPrincipleById:
@@ -122,7 +125,7 @@ class TestGetPrincipleById:
 
     def test_get_all_principles_by_id(self):
         """Test that all principles can be retrieved by their IDs."""
-        for i in range(1, 14):
+        for i in range(1, 17):
             principle = get_principle_by_id(i)
             assert principle is not None
             assert principle.id == i
@@ -209,12 +212,12 @@ class TestFormatChecklistForPrompt:
         # Should include checklist questions
         assert "?" in checklist
 
-    def test_format_checklist_has_13_items(self):
-        """Test checklist has 13 items."""
+    def test_format_checklist_has_16_items(self):
+        """Test checklist has 16 items."""
         checklist = format_checklist_for_prompt()
         # Count checkbox occurrences
         checkbox_count = checklist.count("[ ]")
-        assert checkbox_count == 13
+        assert checkbox_count == 16
 
 
 class TestPrinciplesInInspectorPrompt:

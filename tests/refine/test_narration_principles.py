@@ -52,9 +52,9 @@ class TestNarrationPrinciple:
 class TestNarrationPrinciplesList:
     """Tests for NARRATION_PRINCIPLES list."""
 
-    def test_has_10_principles(self):
-        """Test that there are exactly 10 narration principles."""
-        assert len(NARRATION_PRINCIPLES) == 10
+    def test_has_12_principles(self):
+        """Test that there are exactly 12 narration principles."""
+        assert len(NARRATION_PRINCIPLES) == 12
 
     def test_principles_have_unique_ids(self):
         """Test that all principles have unique IDs."""
@@ -67,9 +67,9 @@ class TestNarrationPrinciplesList:
         assert len(names) == len(set(names))
 
     def test_principles_sequential_ids(self):
-        """Test that principle IDs are sequential 1-10."""
+        """Test that principle IDs are sequential 1-12."""
         ids = sorted([p.id for p in NARRATION_PRINCIPLES])
-        assert ids == list(range(1, 11))
+        assert ids == list(range(1, 13))
 
     def test_each_principle_has_check_question(self):
         """Test that each principle has a check question."""
@@ -122,7 +122,7 @@ class TestGetPrincipleById:
 
     def test_get_all_principles_by_id(self):
         """Test that all principles can be retrieved by their IDs."""
-        for i in range(1, 11):
+        for i in range(1, 13):
             principle = get_principle_by_id(i)
             assert principle is not None
             assert principle.id == i
@@ -187,7 +187,7 @@ class TestFormatPrinciplesForPrompt:
         formatted = format_principles_for_prompt()
         # Should have numbered sections
         assert "1." in formatted or "### 1" in formatted
-        assert "10." in formatted or "### 10" in formatted
+        assert "12." in formatted or "### 12" in formatted
 
 
 class TestFormatChecklistForPrompt:
@@ -206,12 +206,12 @@ class TestFormatChecklistForPrompt:
             # Each principle should have its number
             assert str(principle.id) in checklist
 
-    def test_format_checklist_has_10_items(self):
-        """Test checklist has 10 items."""
+    def test_format_checklist_has_12_items(self):
+        """Test checklist has 12 items."""
         checklist = format_checklist_for_prompt()
         # Count checkbox occurrences
         checkbox_count = checklist.count("[ ]")
-        assert checkbox_count == 10
+        assert checkbox_count == 12
 
 
 class TestPrincipleContent:
