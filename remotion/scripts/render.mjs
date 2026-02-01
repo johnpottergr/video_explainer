@@ -192,6 +192,12 @@ async function main() {
           "@project-short-scenes": projectShortScenesDir,
           "@remotion-components": resolve(__dirname, "../src/components"),
         },
+        // Add remotion node_modules to resolve paths so project scenes can find packages
+        modules: [
+          ...(webpackConfig.resolve?.modules || []),
+          resolve(__dirname, "../node_modules"),
+          "node_modules",
+        ],
       },
     }),
   });
@@ -215,14 +221,20 @@ async function main() {
 
   // Render the video
   // Performance options - can be overridden via CLI flags
-  const concurrency = config.concurrency || Math.max(4, Math.floor(os.cpus().length * 0.75));
+  // For 3D content, use lower concurrency to avoid WebGL context exhaustion
+  const defaultConcurrency = Math.max(4, Math.floor(os.cpus().length * 0.75));
+  const concurrency = config.concurrency || defaultConcurrency;
   const x264Preset = config.fast ? "faster" : "medium"; // "faster" trades some quality for speed
 
   console.log(`\nRendering to ${config.outputPath}...`);
   console.log(`  Concurrency: ${concurrency} threads`);
   console.log(`  Encoding preset: ${x264Preset}`);
+  if (config.gl) {
+    console.log(`  GL renderer: ${config.gl}`);
+  }
 
-  await renderMedia({
+  // Build render options
+  const renderOptions = {
     composition: {
       ...composition,
       width: resolution.width,
@@ -241,7 +253,16 @@ async function main() {
         process.stdout.write(`\r  Render progress: ${percent}%`);
       }
     },
-  });
+  };
+
+  // Add GL option for 3D rendering if specified
+  if (config.gl) {
+    renderOptions.chromiumOptions = {
+      gl: config.gl,
+    };
+  }
+
+  await renderMedia(renderOptions);
 
   console.log(`\n\nVideo rendered successfully: ${config.outputPath}`);
 }

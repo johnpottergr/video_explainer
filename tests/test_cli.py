@@ -1432,6 +1432,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1456,6 +1457,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1475,6 +1477,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1498,6 +1501,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1521,6 +1525,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = FileNotFoundError("node not found")
@@ -1541,6 +1546,7 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=1)

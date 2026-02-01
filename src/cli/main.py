@@ -1332,6 +1332,8 @@ def cmd_render(args: argparse.Namespace) -> int:
         cmd.append("--fast")
     if args.concurrency:
         cmd.extend(["--concurrency", str(args.concurrency)])
+    if hasattr(args, 'gl') and args.gl:
+        cmd.extend(["--gl", args.gl])
 
     print(f"Project: {project.root_dir}")
     print(f"Composition: {composition_id}")
@@ -3157,6 +3159,11 @@ Use --force to regenerate all steps.
         "--variant",
         default="default",
         help="Short variant to render (default: 'default')",
+    )
+    render_parser.add_argument(
+        "--gl",
+        choices=["angle", "egl", "swiftshader", "swangle", "vulkan"],
+        help="OpenGL renderer for 3D content (use 'angle' or 'swangle' if WebGL fails)",
     )
     render_parser.set_defaults(func=cmd_render)
 

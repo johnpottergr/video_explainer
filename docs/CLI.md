@@ -192,6 +192,7 @@ python -m src.cli render <project> -r 4k            # 4K resolution
 python -m src.cli render <project> --preview        # Fast preview
 python -m src.cli render <project> --fast           # Faster encoding
 python -m src.cli render <project> --concurrency 8  # Thread count
+python -m src.cli render <project> --gl angle       # Use ANGLE for WebGL
 python -m src.cli render <project> --short          # Render short
 ```
 
@@ -201,6 +202,7 @@ python -m src.cli render <project> --short          # Render short
 | `--preview` | Fast preview render |
 | `--fast` | Faster encoding (lower quality) |
 | `--concurrency N` | Override thread count |
+| `--gl` | OpenGL renderer: angle, egl, swiftshader, swangle, vulkan |
 | `--short` | Render short instead of full video |
 | `--variant` | Short variant name |
 

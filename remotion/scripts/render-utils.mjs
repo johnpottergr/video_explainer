@@ -21,6 +21,8 @@ export function parseArgs(args) {
     // Performance options
     concurrency: null,
     fast: false,
+    // 3D rendering options
+    gl: null, // "angle", "egl", "swiftshader", "swangle", "vulkan", or null for auto
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -53,6 +55,9 @@ export function parseArgs(args) {
       i++;
     } else if (args[i] === "--fast") {
       config.fast = true;
+    } else if (args[i] === "--gl" && args[i + 1]) {
+      config.gl = args[i + 1];
+      i++;
     }
   }
 
