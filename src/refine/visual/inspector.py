@@ -178,7 +178,7 @@ Resolution status: resolved, partially_resolved, not_resolved
 
 CLAUDE_CODE_VISUAL_INSPECTION_PROMPT = """## FIRST: Load the Remotion skill
 Before doing ANYTHING else, invoke the `/remotion` skill by using the Skill tool with skill="remotion".
-This loads essential Remotion best practices including visual-styling patterns you'll need for fixes.
+This loads essential Remotion best practices you'll need for fixes.
 DO THIS NOW before proceeding.
 
 ---

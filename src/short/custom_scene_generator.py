@@ -101,7 +101,6 @@ Each shorts scene MUST have 2-3 phases synced with the voiceover:
 DEFAULT_REMOTION_RULES = [
     "animations.md",
     "timing.md",
-    "visual-styling.md",
     "text-animations.md",
 ]
 
@@ -489,7 +488,14 @@ Create visually stunning scenes that:
         # Build system prompt dynamically from Remotion skill + shorts constraints
         system_prompt = self._build_system_prompt()
 
-        full_prompt = f"""{system_prompt}
+        full_prompt = f"""## FIRST: Load the Remotion skill
+Before doing ANYTHING else, invoke the `/remotion` skill by using the Skill tool with skill="remotion".
+This loads essential Remotion best practices for animations, timing, and visual patterns.
+DO THIS NOW before proceeding.
+
+---
+
+{system_prompt}
 
 {prompt}
 

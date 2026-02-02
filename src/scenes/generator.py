@@ -2051,7 +2051,14 @@ Please fix this issue and try again.
             timeout=self.timeout,
         )
 
-        full_prompt = f"""{SCENE_SYSTEM_PROMPT}
+        full_prompt = f"""## FIRST: Load the Remotion skill
+Before doing ANYTHING else, invoke the `/remotion` skill by using the Skill tool with skill="remotion".
+This loads essential Remotion best practices for animations, timing, and visual patterns.
+DO THIS NOW before proceeding.
+
+---
+
+{SCENE_SYSTEM_PROMPT}
 
 {base_prompt}
 {validation_feedback}
