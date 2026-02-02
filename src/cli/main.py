@@ -1379,6 +1379,17 @@ def cmd_render(args: argparse.Namespace) -> int:
             else:
                 output_path = project.get_path("final_video")
 
+    # Modify output filename if --frames is specified for chunked rendering
+    if hasattr(args, 'frames') and args.frames:
+        # Parse frame range to create descriptive filename
+        # e.g., "0-2500" -> "final-4k-frames-0-2500.mp4"
+        # e.g., "7501-" -> "final-4k-frames-7501-end.mp4"
+        frame_suffix = args.frames
+        if frame_suffix.endswith("-"):
+            frame_suffix = f"{frame_suffix}end"
+        stem = output_path.stem  # e.g., "final-4k"
+        output_path = output_path.parent / f"{stem}-frames-{frame_suffix}.mp4"
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Build render command using new data-driven architecture
@@ -1405,6 +1416,8 @@ def cmd_render(args: argparse.Namespace) -> int:
         cmd.extend(["--concurrency", str(args.concurrency)])
     if hasattr(args, 'gl') and args.gl:
         cmd.extend(["--gl", args.gl])
+    if hasattr(args, 'frames') and args.frames:
+        cmd.extend(["--frames", args.frames])
 
     print(f"Project: {project.root_dir}")
     print(f"Composition: {composition_id}")
@@ -3546,6 +3559,10 @@ Commands:
         "--gl",
         choices=["angle", "egl", "swiftshader", "swangle", "vulkan"],
         help="OpenGL renderer for 3D content (use 'angle' or 'swangle' if WebGL fails)",
+    )
+    render_parser.add_argument(
+        "--frames",
+        help="Frame range to render (e.g., '0-3500', '3501-7000', '7001-' for chunked rendering)",
     )
     render_parser.set_defaults(func=cmd_render)
 

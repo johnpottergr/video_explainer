@@ -6,8 +6,12 @@
  * When this happens, EffectComposer.addPass() fails with:
  * "Cannot read properties of null (reading 'alpha')"
  *
- * This wrapper checks if the WebGL context (gl) is available before rendering
- * the EffectComposer and its children.
+ * This wrapper performs multiple checks:
+ * 1. Verifies the WebGL renderer (gl) exists
+ * 2. Verifies the underlying WebGL context is accessible via gl.getContext()
+ * 3. Verifies context attributes are readable (the actual source of the 'alpha' error)
+ *
+ * If any check fails, it returns null to skip post-processing for that frame.
  */
 
 import React from "react";
@@ -40,6 +44,23 @@ export const SafeEffectComposer: React.FC<SafeEffectComposerProps> = ({ children
   // If the WebGL renderer is not available, don't render EffectComposer
   // This prevents "Cannot read properties of null (reading 'alpha')" errors
   if (!gl) {
+    return null;
+  }
+
+  // Check if the WebGL context is still valid
+  // The renderer exists but the underlying context may be lost or null
+  try {
+    const context = gl.getContext();
+    if (!context) {
+      return null;
+    }
+    // Check if context attributes are accessible (this is what fails in the error)
+    const attributes = context.getContextAttributes();
+    if (!attributes) {
+      return null;
+    }
+  } catch {
+    // If any error occurs during context check, skip rendering post-processing
     return null;
   }
 

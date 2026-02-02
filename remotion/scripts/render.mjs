@@ -232,6 +232,11 @@ async function main() {
   if (config.gl) {
     console.log(`  GL renderer: ${config.gl}`);
   }
+  if (config.frameRange) {
+    const [start, end] = config.frameRange;
+    const endStr = end === null ? composition.durationInFrames - 1 : end;
+    console.log(`  Frame range: ${start}-${endStr}`);
+  }
 
   // Build render options
   const renderOptions = {
@@ -260,6 +265,14 @@ async function main() {
     renderOptions.chromiumOptions = {
       gl: config.gl,
     };
+  }
+
+  // Add frame range for chunked rendering
+  if (config.frameRange) {
+    const [start, end] = config.frameRange;
+    // If end is null, render to the last frame
+    const endFrame = end === null ? composition.durationInFrames - 1 : end;
+    renderOptions.frameRange = [start, endFrame];
   }
 
   await renderMedia(renderOptions);

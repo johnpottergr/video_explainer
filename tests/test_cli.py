@@ -1433,6 +1433,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1458,6 +1459,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1478,6 +1480,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1502,6 +1505,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1526,6 +1530,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = FileNotFoundError("node not found")
@@ -1547,6 +1552,7 @@ class TestCmdRender:
         args.short = False
         args.variant = "default"
         args.gl = None
+        args.frames = None
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=1)
@@ -1555,6 +1561,81 @@ class TestCmdRender:
             assert result == 1
             captured = capsys.readouterr()
             assert "failed" in captured.err.lower()
+
+    def test_render_frames_option_modifies_filename(self, render_project, tmp_path, capsys):
+        """Test --frames option modifies output filename."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "4k"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = "0-2500"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = cmd_render(args)
+
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+            output_idx = cmd.index("--output") + 1
+            output_path = cmd[output_idx]
+            # Should have frames in filename
+            assert "frames-0-2500" in output_path
+            assert "final-4k-frames-0-2500.mp4" in output_path
+
+    def test_render_frames_open_ended_modifies_filename(self, render_project, tmp_path, capsys):
+        """Test --frames with open-ended range (e.g., 7501-) adds 'end' suffix."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "4k"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = "7501-"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = cmd_render(args)
+
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+            output_idx = cmd.index("--output") + 1
+            output_path = cmd[output_idx]
+            # Should have frames with 'end' suffix
+            assert "frames-7501-end" in output_path
+
+    def test_render_frames_passed_to_subprocess(self, render_project, tmp_path, capsys):
+        """Test --frames option is passed to the render subprocess."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "1080p"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = "2501-5000"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = cmd_render(args)
+
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+            assert "--frames" in cmd
+            frames_idx = cmd.index("--frames") + 1
+            assert cmd[frames_idx] == "2501-5000"
 
 
 class TestMainEntrypoint:

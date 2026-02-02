@@ -23,6 +23,8 @@ export function parseArgs(args) {
     fast: false,
     // 3D rendering options
     gl: null, // "angle", "egl", "swiftshader", "swangle", "vulkan", or null for auto
+    // Frame range for chunked rendering
+    frameRange: null, // [startFrame, endFrame] or null for full video
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -57,6 +59,16 @@ export function parseArgs(args) {
       config.fast = true;
     } else if (args[i] === "--gl" && args[i + 1]) {
       config.gl = args[i + 1];
+      i++;
+    } else if (args[i] === "--frames" && args[i + 1]) {
+      // Parse frame range: "0-3500" or "3501-7000" or "7001-" (to end)
+      const frameArg = args[i + 1];
+      const parts = frameArg.split("-");
+      if (parts.length === 2) {
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] === "" ? null : parseInt(parts[1], 10);
+        config.frameRange = [start, end];
+      }
       i++;
     }
   }
@@ -202,6 +214,21 @@ export function getFinalResolution(customWidth, customHeight, composition) {
   const height = customHeight || composition.height;
   const isCustom = customWidth !== null || customHeight !== null;
   return { width, height, isCustom };
+}
+
+/**
+ * Generate a filename suffix for frame range.
+ * Used for chunked rendering to create unique output filenames.
+ * @param {string} frameArg - Frame range string (e.g., "0-2500", "7501-")
+ * @returns {string} Filename suffix (e.g., "frames-0-2500", "frames-7501-end")
+ */
+export function getFrameRangeSuffix(frameArg) {
+  if (!frameArg) return "";
+  let suffix = frameArg;
+  if (suffix.endsWith("-")) {
+    suffix = `${suffix}end`;
+  }
+  return `frames-${suffix}`;
 }
 
 /**

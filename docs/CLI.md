@@ -269,6 +269,7 @@ python -m src.cli render <project> --fast           # Faster encoding
 python -m src.cli render <project> --concurrency 8  # Thread count
 python -m src.cli render <project> --gl angle       # Use ANGLE for WebGL
 python -m src.cli render <project> --short          # Render short
+python -m src.cli render <project> --frames 0-3500  # Render frame range (chunked)
 ```
 
 | Option | Description |
@@ -280,8 +281,40 @@ python -m src.cli render <project> --short          # Render short
 | `--gl` | OpenGL renderer: angle, egl, swiftshader, swangle, vulkan |
 | `--short` | Render short instead of full video |
 | `--variant` | Short variant name |
+| `--frames` | Frame range for chunked rendering (e.g., `0-3500`, `3501-7000`, `7001-`) |
 
 **Output:** `projects/<project>/output/video.mp4`
+
+### Chunked Rendering (Memory Issues)
+
+For long 4K videos that run out of memory, render in chunks and concatenate.
+
+**Output files are automatically named based on frame range:**
+- `--frames 0-2500` → `final-4k-frames-0-2500.mp4`
+- `--frames 7501-` → `final-4k-frames-7501-end.mp4`
+
+```bash
+# Calculate total frames: duration_seconds × 30 fps
+# Example: 343s video = ~10,290 frames
+
+# Render in chunks (files are auto-named)
+python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 0-2500
+python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 2501-5000
+python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 5001-7500
+python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 7501-
+
+# Concatenate with ffmpeg (lossless)
+cd projects/<project>/output
+cat > concat.txt << EOF
+file 'final-4k-frames-0-2500.mp4'
+file 'final-4k-frames-2501-5000.mp4'
+file 'final-4k-frames-5001-7500.mp4'
+file 'final-4k-frames-7501-end.mp4'
+EOF
+ffmpeg -f concat -safe 0 -i concat.txt -c copy final-4k.mp4
+```
+
+**Note:** Chunked rendering produces identical quality to single-pass rendering. The `ffmpeg -c copy` concatenation is lossless.
 
 ### Resolution Presets
 

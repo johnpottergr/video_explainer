@@ -14,6 +14,7 @@ import {
   deriveShortsSceneDir,
   getFinalResolution,
   shouldSkipSceneValidation,
+  getFrameRangeSuffix,
   RESOLUTION_PRESETS,
   SHORTS_RESOLUTION_PRESETS,
 } from "./render-utils.mjs";
@@ -31,6 +32,7 @@ describe("parseArgs", () => {
     expect(config.height).toBeNull();
     expect(config.concurrency).toBeNull();
     expect(config.fast).toBe(false);
+    expect(config.frameRange).toBeNull();
   });
 
   it("should parse --project flag", () => {
@@ -139,6 +141,49 @@ describe("parseArgs", () => {
   it("should ignore --concurrency without value", () => {
     const config = parseArgs(["--concurrency"]);
     expect(config.concurrency).toBeNull();
+  });
+
+  it("should parse --frames with start-end range", () => {
+    const config = parseArgs(["--frames", "0-3500"]);
+    expect(config.frameRange).toEqual([0, 3500]);
+  });
+
+  it("should parse --frames with open-ended range (to end)", () => {
+    const config = parseArgs(["--frames", "7001-"]);
+    expect(config.frameRange).toEqual([7001, null]);
+  });
+
+  it("should parse --frames with middle range", () => {
+    const config = parseArgs(["--frames", "3501-7000"]);
+    expect(config.frameRange).toEqual([3501, 7000]);
+  });
+
+  it("should ignore --frames without value", () => {
+    const config = parseArgs(["--frames"]);
+    expect(config.frameRange).toBeNull();
+  });
+
+  it("should handle --frames with other flags", () => {
+    const config = parseArgs([
+      "--project", "/projects/test",
+      "--frames", "0-2500",
+      "--concurrency", "1",
+      "--gl", "angle",
+    ]);
+    expect(config.projectDir).toBe("/projects/test");
+    expect(config.frameRange).toEqual([0, 2500]);
+    expect(config.concurrency).toBe(1);
+    expect(config.gl).toBe("angle");
+  });
+
+  it("should parse --gl flag", () => {
+    const config = parseArgs(["--gl", "angle"]);
+    expect(config.gl).toBe("angle");
+  });
+
+  it("should parse --gl with swiftshader", () => {
+    const config = parseArgs(["--gl", "swiftshader"]);
+    expect(config.gl).toBe("swiftshader");
   });
 });
 
@@ -475,6 +520,34 @@ describe("SHORTS_RESOLUTION_PRESETS", () => {
   });
 });
 
+describe("getFrameRangeSuffix", () => {
+  it("should return empty string for null/undefined input", () => {
+    expect(getFrameRangeSuffix(null)).toBe("");
+    expect(getFrameRangeSuffix(undefined)).toBe("");
+    expect(getFrameRangeSuffix("")).toBe("");
+  });
+
+  it("should generate suffix for start-end range", () => {
+    expect(getFrameRangeSuffix("0-2500")).toBe("frames-0-2500");
+  });
+
+  it("should generate suffix for middle range", () => {
+    expect(getFrameRangeSuffix("2501-5000")).toBe("frames-2501-5000");
+  });
+
+  it("should generate suffix for open-ended range with 'end'", () => {
+    expect(getFrameRangeSuffix("7501-")).toBe("frames-7501-end");
+  });
+
+  it("should handle single frame", () => {
+    expect(getFrameRangeSuffix("100-100")).toBe("frames-100-100");
+  });
+
+  it("should handle large frame numbers", () => {
+    expect(getFrameRangeSuffix("10000-20000")).toBe("frames-10000-20000");
+  });
+});
+
 describe("shouldSkipSceneValidation", () => {
   it("should return true for ShortsPlayer", () => {
     expect(shouldSkipSceneValidation("ShortsPlayer")).toBe(true);
@@ -591,5 +664,41 @@ describe("Integration: Full argument parsing scenarios", () => {
 
     expect(config.compositionId).toBe("ShortsPlayer");
     expect(config.voiceoverBasePath).toBe("short/default/voiceover");
+  });
+
+  it("should handle chunked 4K render - chunk 1", () => {
+    const config = parseArgs([
+      "--project", "../projects/continual-learning",
+      "--output", "./part1.mp4",
+      "--width", "3840",
+      "--height", "2160",
+      "--frames", "0-2500",
+      "--concurrency", "1",
+      "--gl", "angle",
+    ]);
+
+    expect(config.projectDir).toBe("../projects/continual-learning");
+    expect(config.outputPath).toBe("./part1.mp4");
+    expect(config.width).toBe(3840);
+    expect(config.height).toBe(2160);
+    expect(config.frameRange).toEqual([0, 2500]);
+    expect(config.concurrency).toBe(1);
+    expect(config.gl).toBe("angle");
+  });
+
+  it("should handle chunked 4K render - final chunk (open-ended)", () => {
+    const config = parseArgs([
+      "--project", "../projects/continual-learning",
+      "--output", "./part4.mp4",
+      "--width", "3840",
+      "--height", "2160",
+      "--frames", "7501-",
+      "--concurrency", "1",
+      "--gl", "angle",
+    ]);
+
+    expect(config.projectDir).toBe("../projects/continual-learning");
+    expect(config.outputPath).toBe("./part4.mp4");
+    expect(config.frameRange).toEqual([7501, null]);
   });
 });
