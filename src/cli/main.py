@@ -1292,6 +1292,92 @@ SHORTS_RESOLUTION_PRESETS = {
 }
 
 
+def _merge_render_chunks(project, resolution_name: str, is_short: bool, variant: str) -> int:
+    """Merge chunked render files into a single video.
+
+    Finds all chunk files matching the pattern and concatenates them using ffmpeg.
+    """
+    import subprocess
+    import re
+
+    # Determine output directory and base filename
+    if is_short:
+        output_dir = project.root_dir / "short" / variant / "output"
+        if resolution_name != "1080p":
+            base_name = f"short-{resolution_name}"
+        else:
+            base_name = "short"
+    else:
+        output_dir = project.output_dir
+        if resolution_name != "1080p":
+            base_name = f"final-{resolution_name}"
+        else:
+            base_name = "final"
+
+    # Find all chunk files matching pattern: {base_name}-frames-*.mp4
+    chunk_pattern = f"{base_name}-frames-*.mp4"
+    chunk_files = list(output_dir.glob(chunk_pattern))
+
+    if not chunk_files:
+        print(f"Error: No chunk files found matching '{chunk_pattern}' in {output_dir}", file=sys.stderr)
+        return 1
+
+    # Sort chunks by start frame number
+    def get_start_frame(path: Path) -> int:
+        # Extract start frame from filename like "final-4k-frames-0-2500.mp4" or "final-4k-frames-7501-end.mp4"
+        match = re.search(r'-frames-(\d+)-', path.name)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    chunk_files.sort(key=get_start_frame)
+
+    print(f"Found {len(chunk_files)} chunk files to merge:")
+    for f in chunk_files:
+        print(f"  - {f.name}")
+
+    # Create concat file
+    concat_file = output_dir / "concat.txt"
+    with open(concat_file, "w") as f:
+        for chunk in chunk_files:
+            f.write(f"file '{chunk.name}'\n")
+
+    # Determine output filename
+    output_path = output_dir / f"{base_name}.mp4"
+
+    # Check if output already exists
+    if output_path.exists():
+        print(f"Warning: {output_path} already exists, will be overwritten")
+
+    # Run ffmpeg to concatenate
+    print(f"\nMerging chunks into {output_path}...")
+    cmd = [
+        "ffmpeg",
+        "-y",  # Overwrite output
+        "-f", "concat",
+        "-safe", "0",
+        "-i", str(concat_file),
+        "-c", "copy",
+        str(output_path),
+    ]
+
+    try:
+        result = subprocess.run(cmd, cwd=str(output_dir), capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Error: ffmpeg failed with exit code {result.returncode}", file=sys.stderr)
+            print(result.stderr, file=sys.stderr)
+            return result.returncode
+    except FileNotFoundError:
+        print("Error: ffmpeg not found. Please install ffmpeg.", file=sys.stderr)
+        return 1
+
+    # Clean up concat file
+    concat_file.unlink()
+
+    print(f"\nSuccessfully merged {len(chunk_files)} chunks into: {output_path}")
+    return 0
+
+
 def cmd_render(args: argparse.Namespace) -> int:
     """Render video for a project."""
     import subprocess
@@ -1306,6 +1392,11 @@ def cmd_render(args: argparse.Namespace) -> int:
 
     is_short = getattr(args, "short", False)
     variant = getattr(args, "variant", "default")
+
+    # Handle --merge-chunks option
+    if hasattr(args, 'merge_chunks') and args.merge_chunks:
+        resolution_name = args.resolution or "1080p"
+        return _merge_render_chunks(project, resolution_name, is_short, variant)
 
     if is_short:
         print(f"Rendering short for {project.id} (variant: {variant})")
@@ -3563,6 +3654,11 @@ Commands:
     render_parser.add_argument(
         "--frames",
         help="Frame range to render (e.g., '0-3500', '3501-7000', '7001-' for chunked rendering)",
+    )
+    render_parser.add_argument(
+        "--merge-chunks",
+        action="store_true",
+        help="Merge previously rendered chunks into final video (uses ffmpeg)",
     )
     render_parser.set_defaults(func=cmd_render)
 

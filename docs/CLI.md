@@ -270,6 +270,7 @@ python -m src.cli render <project> --concurrency 8  # Thread count
 python -m src.cli render <project> --gl angle       # Use ANGLE for WebGL
 python -m src.cli render <project> --short          # Render short
 python -m src.cli render <project> --frames 0-3500  # Render frame range (chunked)
+python -m src.cli render <project> -r 4k --merge-chunks  # Merge chunks into final video
 ```
 
 | Option | Description |
@@ -282,6 +283,7 @@ python -m src.cli render <project> --frames 0-3500  # Render frame range (chunke
 | `--short` | Render short instead of full video |
 | `--variant` | Short variant name |
 | `--frames` | Frame range for chunked rendering (e.g., `0-3500`, `3501-7000`, `7001-`) |
+| `--merge-chunks` | Merge previously rendered chunks into final video (uses ffmpeg) |
 
 **Output:** `projects/<project>/output/video.mp4`
 
@@ -303,18 +305,11 @@ python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 250
 python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 5001-7500
 python -m src.cli render <project> -r 4k --concurrency 1 --gl angle --frames 7501-
 
-# Concatenate with ffmpeg (lossless)
-cd projects/<project>/output
-cat > concat.txt << EOF
-file 'final-4k-frames-0-2500.mp4'
-file 'final-4k-frames-2501-5000.mp4'
-file 'final-4k-frames-5001-7500.mp4'
-file 'final-4k-frames-7501-end.mp4'
-EOF
-ffmpeg -f concat -safe 0 -i concat.txt -c copy final-4k.mp4
+# Merge chunks into final video (auto-finds and sorts chunk files)
+python -m src.cli render <project> -r 4k --merge-chunks
 ```
 
-**Note:** Chunked rendering produces identical quality to single-pass rendering. The `ffmpeg -c copy` concatenation is lossless.
+**Note:** Chunked rendering produces identical quality to single-pass rendering. The merge operation uses `ffmpeg -c copy` for lossless concatenation.
 
 ### Resolution Presets
 

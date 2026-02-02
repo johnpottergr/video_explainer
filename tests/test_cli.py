@@ -1415,6 +1415,9 @@ class TestCmdRender:
         args.concurrency = None
         args.short = False
         args.variant = "default"
+        args.gl = None
+        args.frames = None
+        args.merge_chunks = False
 
         result = cmd_render(args)
         assert result == 1
@@ -1434,6 +1437,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1460,6 +1464,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1481,6 +1486,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1506,6 +1512,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1531,6 +1538,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = FileNotFoundError("node not found")
@@ -1553,6 +1561,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = None
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=1)
@@ -1575,6 +1584,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = "0-2500"
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1601,6 +1611,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = "7501-"
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1626,6 +1637,7 @@ class TestCmdRender:
         args.variant = "default"
         args.gl = None
         args.frames = "2501-5000"
+        args.merge_chunks = False
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
@@ -1636,6 +1648,91 @@ class TestCmdRender:
             assert "--frames" in cmd
             frames_idx = cmd.index("--frames") + 1
             assert cmd[frames_idx] == "2501-5000"
+
+    def test_merge_chunks_finds_and_sorts_files(self, render_project, tmp_path, capsys):
+        """Test --merge-chunks finds chunk files and sorts them correctly."""
+        # Create fake chunk files
+        output_dir = render_project / "output"
+        (output_dir / "final-4k-frames-2501-5000.mp4").touch()
+        (output_dir / "final-4k-frames-0-2500.mp4").touch()
+        (output_dir / "final-4k-frames-5001-7500.mp4").touch()
+        (output_dir / "final-4k-frames-7501-end.mp4").touch()
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "4k"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = None
+        args.merge_chunks = True
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = cmd_render(args)
+
+            # Verify ffmpeg was called
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+            assert "ffmpeg" in cmd
+            assert "-c" in cmd
+            assert "copy" in cmd
+
+            # Check output mentions all 4 chunks
+            captured = capsys.readouterr()
+            assert "4 chunk files" in captured.out
+
+    def test_merge_chunks_no_files_found(self, render_project, tmp_path, capsys):
+        """Test --merge-chunks with no chunk files returns error."""
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "4k"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = None
+        args.merge_chunks = True
+
+        result = cmd_render(args)
+
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "No chunk files found" in captured.err
+
+    def test_merge_chunks_ffmpeg_not_found(self, render_project, tmp_path, capsys):
+        """Test --merge-chunks handles missing ffmpeg."""
+        # Create fake chunk files
+        output_dir = render_project / "output"
+        (output_dir / "final-4k-frames-0-2500.mp4").touch()
+
+        args = MagicMock()
+        args.projects_dir = str(tmp_path)
+        args.project = "render-project"
+        args.preview = False
+        args.resolution = "4k"
+        args.fast = False
+        args.concurrency = None
+        args.short = False
+        args.variant = "default"
+        args.gl = None
+        args.frames = None
+        args.merge_chunks = True
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = FileNotFoundError("ffmpeg not found")
+            result = cmd_render(args)
+
+            assert result == 1
+            captured = capsys.readouterr()
+            assert "ffmpeg not found" in captured.err
 
 
 class TestMainEntrypoint:
