@@ -1,6 +1,8 @@
 import { Composition } from "remotion";
 import { loadFont as loadOutfit } from "@remotion/google-fonts/Outfit";
 import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { loadFont as loadSpaceGrotesk } from "@remotion/google-fonts/SpaceGrotesk";
+import { loadFont as loadJetBrainsMono } from "@remotion/google-fonts/JetBrainsMono";
 import { ExplainerVideo } from "./scenes/ExplainerVideo";
 import { StoryboardPlayer } from "./scenes/StoryboardPlayer";
 import { ThreeDemo } from "./ThreeDemo";
@@ -10,6 +12,8 @@ import type { ShortsStoryboard } from "./shorts/ShortsPlayer";
 // Load fonts globally
 loadOutfit(); // Modern geometric sans-serif for tech content
 loadInter();  // Clean sans-serif for shorts captions
+loadSpaceGrotesk(); // Hero numbers and headlines for shorts
+loadJetBrainsMono(); // Technical/code elements for shorts
 import {
   SceneStoryboardPlayer,
   DynamicStoryboardPlayer,
