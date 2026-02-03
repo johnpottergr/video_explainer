@@ -1,11 +1,11 @@
 /**
- * AnimatedCaptions - Single word captions for shorts
+ * AnimatedCaptions - Karaoke-style captions for shorts
  *
  * Features:
- * - Shows ONE word at a time, big and bold (viral TikTok/Reels style)
- * - Word-by-word sync to voiceover
+ * - Shows THREE words at a time
+ * - Currently spoken word is highlighted
+ * - Advances to next 3 words once current chunk is complete
  * - Large, eye-catching text optimized for mobile
- * - Dark background for readability
  */
 
 import React from "react";
@@ -35,11 +35,10 @@ export const AnimatedCaptions: React.FC<AnimatedCaptionsProps> = ({
 }) => {
   const { fps } = useVideoConfig();
 
-  // Show only ONE word at a time for maximum impact
-  const MAX_VISIBLE_WORDS = 1;
+  // Show THREE words at a time
+  const WORDS_PER_CHUNK = 3;
 
   // If we have word timestamps, use them for highlighting
-  // Otherwise, fall back to showing the full text
   const hasTimestamps = wordTimestamps.length > 0;
 
   // Split text into words for rendering
@@ -72,25 +71,15 @@ export const AnimatedCaptions: React.FC<AnimatedCaptionsProps> = ({
 
   const currentWordIndex = getCurrentWordIndex();
 
-  // Calculate visible word window (current word is always at the end/rightmost)
-  // This creates a teleprompter effect: words flow in and the highlight follows
-  const getVisibleWordRange = (): { start: number; end: number } => {
-    const totalWords = words.length;
+  // Determine which chunk of 3 words we're in
+  const currentChunkIndex = Math.floor(currentWordIndex / WORDS_PER_CHUNK);
 
-    if (totalWords <= MAX_VISIBLE_WORDS) {
-      return { start: 0, end: totalWords };
-    }
+  // Get the start and end indices for the current chunk
+  const chunkStart = currentChunkIndex * WORDS_PER_CHUNK;
+  const chunkEnd = Math.min(chunkStart + WORDS_PER_CHUNK, words.length);
 
-    // Current word is always at the end (rightmost position)
-    // Show up to MAX_VISIBLE_WORDS-1 previous words for context
-    const end = currentWordIndex + 1;  // Include current word
-    const start = Math.max(0, end - MAX_VISIBLE_WORDS);
-
-    return { start, end };
-  };
-
-  const { start: visibleStart, end: visibleEnd } = getVisibleWordRange();
-  const currentWord = words[currentWordIndex] || "";
+  // Get the words in the current chunk
+  const chunkWords = words.slice(chunkStart, chunkEnd);
 
   const fadeIn = interpolate(beatLocalTime, [0, 0.2], [0, 1], {
     extrapolateRight: "clamp",
@@ -105,36 +94,50 @@ export const AnimatedCaptions: React.FC<AnimatedCaptionsProps> = ({
         alignItems: "center",
         justifyContent: "center",
         opacity: fadeIn,
-        padding: `${20 * scale}px`,
+        padding: `${8 * scale}px`,
       }}
     >
-      {/* Single word - big and bold */}
+      {/* Three words in a row */}
       <div
         style={{
-          background: "rgba(0, 0, 0, 0.7)",
-          backdropFilter: "blur(12px)",
-          borderRadius: 20 * scale,
-          padding: `${32 * scale}px ${48 * scale}px`,
-          minWidth: 200 * scale,
-          minHeight: 100 * scale,
           display: "flex",
+          flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
+          gap: `${32 * scale}px`,
+          flexWrap: "wrap",
         }}
       >
-        <span
-          style={{
-            fontSize: 72 * scale,
-            fontFamily: SHORTS_FONTS.primary,
-            fontWeight: 800,
-            color: SHORTS_COLORS.primary,
-            textShadow: `0 0 30px ${SHORTS_COLORS.primaryGlow}, 0 0 60px ${SHORTS_COLORS.primaryGlow}40`,
-            textTransform: "uppercase",
-            letterSpacing: "0.02em",
-          }}
-        >
-          {currentWord}
-        </span>
+        {chunkWords.map((word, indexInChunk) => {
+          const globalIndex = chunkStart + indexInChunk;
+          const isActive = globalIndex === currentWordIndex;
+          const isPast = globalIndex < currentWordIndex;
+
+          return (
+            <span
+              key={`${currentChunkIndex}-${indexInChunk}`}
+              style={{
+                fontSize: 36 * scale,
+                fontFamily: SHORTS_FONTS.primary,
+                fontWeight: isActive ? 700 : 500,
+                color: isActive
+                  ? SHORTS_COLORS.primary
+                  : isPast
+                    ? SHORTS_COLORS.text
+                    : SHORTS_COLORS.textMuted,
+                textShadow: isActive
+                  ? `0 0 20px ${SHORTS_COLORS.primaryGlow}, 0 0 40px ${SHORTS_COLORS.primaryGlow}30`
+                  : "none",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                transform: isActive ? "scale(1.1)" : "scale(1)",
+                transition: "all 0.15s ease-out",
+              }}
+            >
+              {word}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 /**
  * Tests for AnimatedCaptions component.
  *
- * Tests the single-word caption display for YouTube Shorts.
+ * Tests the three-word karaoke-style caption display for YouTube Shorts.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -69,54 +69,82 @@ const createWordTimestamps = (words: string[], startTime = 0): WordTimestamp[] =
   }));
 };
 
+// Helper to get chunk words from the result
+const getChunkWords = (result: React.ReactElement): React.ReactElement[] => {
+  const wordContainer = result.props.children; // inner div with word spans
+  return React.Children.toArray(wordContainer.props.children) as React.ReactElement[];
+};
+
 // ============================================================================
 // AnimatedCaptions Tests
 // ============================================================================
 
 describe("AnimatedCaptions", () => {
   const defaultProps = {
-    text: "This is a test caption",
-    wordTimestamps: createWordTimestamps(["This", "is", "a", "test", "caption"]),
+    text: "This is a test caption with more words",
+    wordTimestamps: createWordTimestamps([
+      "This", "is", "a", "test", "caption", "with", "more", "words"
+    ]),
     currentTime: 0,
     beatStartTime: 0,
     scale: 1,
   };
 
-  describe("Single Word Display", () => {
-    it("should show only one word at a time", () => {
+  describe("Three Word Chunk Display", () => {
+    it("should show three words at a time", () => {
       const result = AnimatedCaptions({
+        ...defaultProps,
+        currentTime: 0.2, // During "This" (first word of first chunk)
+      });
+
+      const chunkWords = getChunkWords(result);
+
+      // Should show exactly 3 words in the first chunk
+      expect(chunkWords.length).toBe(3);
+      expect(chunkWords[0].props.children).toBe("This");
+      expect(chunkWords[1].props.children).toBe("is");
+      expect(chunkWords[2].props.children).toBe("a");
+    });
+
+    it("should highlight the currently spoken word", () => {
+      const result = AnimatedCaptions({
+        ...defaultProps,
+        currentTime: 0.7, // During "is" (second word)
+      });
+
+      const chunkWords = getChunkWords(result);
+
+      // "is" should be highlighted (active)
+      expect(chunkWords[1].props.style.fontWeight).toBe(700);
+      expect(chunkWords[1].props.style.color).toBe("#00d4ff");
+
+      // "This" should be past (white)
+      expect(chunkWords[0].props.style.fontWeight).toBe(500);
+      expect(chunkWords[0].props.style.color).toBe("#ffffff");
+
+      // "a" should be future (muted)
+      expect(chunkWords[2].props.style.fontWeight).toBe(500);
+      expect(chunkWords[2].props.style.color).toBe("#666666");
+    });
+
+    it("should advance to next chunk when current chunk is complete", () => {
+      // First chunk: "This is a" (words 0-2)
+      const resultChunk1 = AnimatedCaptions({
         ...defaultProps,
         currentTime: 0.2, // During "This"
       });
 
-      // The component returns a div structure
-      // We verify the structure is correct for single-word display
-      expect(result).toBeDefined();
-      expect(result.props.children).toBeDefined();
-    });
-
-    it("should show the correct word based on currentTime", () => {
-      // Test word at different times
-      const times = [
-        { time: 0.2, expectedWord: "This" },
-        { time: 0.7, expectedWord: "is" },
-        { time: 1.2, expectedWord: "a" },
-        { time: 1.7, expectedWord: "test" },
-        { time: 2.2, expectedWord: "caption" },
-      ];
-
-      times.forEach(({ time, expectedWord }) => {
-        const result = AnimatedCaptions({
-          ...defaultProps,
-          currentTime: time,
-        });
-
-        // Traverse to find the word text
-        const captionBox = result.props.children;
-        const wordSpan = captionBox.props.children;
-
-        expect(wordSpan.props.children).toBe(expectedWord);
+      // Second chunk: "test caption with" (words 3-5)
+      const resultChunk2 = AnimatedCaptions({
+        ...defaultProps,
+        currentTime: 1.7, // During "test" (word index 3)
       });
+
+      const chunk1Words = getChunkWords(resultChunk1);
+      const chunk2Words = getChunkWords(resultChunk2);
+
+      expect(chunk1Words[0].props.children).toBe("This");
+      expect(chunk2Words[0].props.children).toBe("test");
     });
 
     it("should handle beat-local time correctly", () => {
@@ -126,34 +154,38 @@ describe("AnimatedCaptions", () => {
         beatStartTime: 5.0,
       });
 
-      // Should show "is" (second word, at 0.5-0.9s beat-local)
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
-      expect(wordSpan.props.children).toBe("is");
+      const chunkWords = getChunkWords(result);
+
+      // Should show first chunk, with "is" highlighted
+      expect(chunkWords[0].props.children).toBe("This");
+      expect(chunkWords[1].props.children).toBe("is");
+      expect(chunkWords[1].props.style.fontWeight).toBe(700); // "is" is active
     });
   });
 
-  describe("Word Index Calculation", () => {
-    it("should return first word before any timestamp", () => {
+  describe("Chunk Index Calculation", () => {
+    it("should show first chunk before any timestamp", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
         currentTime: -0.1,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
-      expect(wordSpan.props.children).toBe("This");
+      const chunkWords = getChunkWords(result);
+      expect(chunkWords[0].props.children).toBe("This");
     });
 
-    it("should return last word after all timestamps", () => {
+    it("should show last chunk after all timestamps", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
         currentTime: 10.0, // Well past all timestamps
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
-      expect(wordSpan.props.children).toBe("caption");
+      const chunkWords = getChunkWords(result);
+
+      // Last chunk should contain "more" and "words" (partial chunk)
+      expect(chunkWords.length).toBe(2); // Only 2 words in last chunk
+      expect(chunkWords[0].props.children).toBe("more");
+      expect(chunkWords[1].props.children).toBe("words");
     });
 
     it("should handle empty word timestamps gracefully", () => {
@@ -163,24 +195,23 @@ describe("AnimatedCaptions", () => {
         currentTime: 1.0,
       });
 
-      // Should not crash and should show first word from text
+      // Should not crash and should show some words
       expect(result).toBeDefined();
     });
   });
 
   describe("Styling", () => {
-    it("should apply large font size for mobile readability", () => {
+    it("should apply correct font size for readability", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
         scale: 1,
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      // Font size should be 72 * scale
-      expect(wordSpan.props.style.fontSize).toBe(72);
+      // Font size should be 36 * scale
+      expect(chunkWords[0].props.style.fontSize).toBe(36);
     });
 
     it("should scale font size with scale prop", () => {
@@ -190,10 +221,9 @@ describe("AnimatedCaptions", () => {
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.style.fontSize).toBe(36); // 72 * 0.5
+      expect(chunkWords[0].props.style.fontSize).toBe(18); // 36 * 0.5
     });
 
     it("should apply uppercase text transform", () => {
@@ -202,73 +232,70 @@ describe("AnimatedCaptions", () => {
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.style.textTransform).toBe("uppercase");
+      expect(chunkWords[0].props.style.textTransform).toBe("uppercase");
     });
 
-    it("should apply bold font weight", () => {
+    it("should apply bold font weight to active word", () => {
+      const result = AnimatedCaptions({
+        ...defaultProps,
+        currentTime: 0.2, // "This" is active
+      });
+
+      const chunkWords = getChunkWords(result);
+
+      expect(chunkWords[0].props.style.fontWeight).toBe(700);
+    });
+
+    it("should have glow text shadow on active word", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.style.fontWeight).toBe(800);
+      expect(chunkWords[0].props.style.textShadow).toContain("0 0 20px");
     });
 
-    it("should have glow text shadow", () => {
+    it("should not have text shadow on inactive words", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
-        currentTime: 0.2,
+        currentTime: 0.2, // "This" is active
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.style.textShadow).toContain("0 0 30px");
+      // "is" and "a" should have no text shadow
+      expect(chunkWords[1].props.style.textShadow).toBe("none");
+      expect(chunkWords[2].props.style.textShadow).toBe("none");
     });
   });
 
   describe("Container Styling", () => {
-    it("should have dark background with blur", () => {
-      const result = AnimatedCaptions({
-        ...defaultProps,
-        currentTime: 0.2,
-      });
-
-      const captionBox = result.props.children;
-
-      expect(captionBox.props.style.background).toContain("rgba(0, 0, 0");
-      expect(captionBox.props.style.backdropFilter).toContain("blur");
-    });
-
-    it("should have rounded corners", () => {
+    it("should have proper gap between words", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
         scale: 1,
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
+      const wordContainer = result.props.children;
 
-      expect(captionBox.props.style.borderRadius).toBe(20);
+      expect(wordContainer.props.style.gap).toBe("32px");
     });
 
-    it("should have minimum dimensions", () => {
+    it("should scale gap with scale prop", () => {
       const result = AnimatedCaptions({
         ...defaultProps,
-        scale: 1,
+        scale: 0.5,
         currentTime: 0.2,
       });
 
-      const captionBox = result.props.children;
+      const wordContainer = result.props.children;
 
-      expect(captionBox.props.style.minWidth).toBe(200);
-      expect(captionBox.props.style.minHeight).toBe(100);
+      expect(wordContainer.props.style.gap).toBe("16px"); // 32 * 0.5
     });
   });
 
@@ -302,10 +329,29 @@ describe("AnimatedCaptions", () => {
         scale: 1,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.children).toBe("Hello");
+      expect(chunkWords.length).toBe(1);
+      expect(chunkWords[0].props.children).toBe("Hello");
+    });
+
+    it("should handle two word text", () => {
+      const result = AnimatedCaptions({
+        text: "Hello world",
+        wordTimestamps: [
+          { word: "Hello", start_seconds: 0, end_seconds: 0.5 },
+          { word: "world", start_seconds: 0.6, end_seconds: 1.0 },
+        ],
+        currentTime: 0.2,
+        beatStartTime: 0,
+        scale: 1,
+      });
+
+      const chunkWords = getChunkWords(result);
+
+      expect(chunkWords.length).toBe(2);
+      expect(chunkWords[0].props.children).toBe("Hello");
+      expect(chunkWords[1].props.children).toBe("world");
     });
 
     it("should handle text with punctuation", () => {
@@ -320,10 +366,9 @@ describe("AnimatedCaptions", () => {
         scale: 1,
       });
 
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
+      const chunkWords = getChunkWords(result);
 
-      expect(wordSpan.props.children).toBe("Hello,");
+      expect(chunkWords[0].props.children).toBe("Hello,");
     });
 
     it("should handle mismatched word count between text and timestamps", () => {
@@ -398,48 +443,81 @@ describe("SimpleAnimatedCaptions", () => {
 });
 
 // ============================================================================
-// Visible Word Range Tests
+// Three Word Chunk Logic Tests
 // ============================================================================
 
-describe("Visible Word Range Logic", () => {
-  it("should always include only the current word", () => {
-    const words = ["one", "two", "three", "four", "five"];
+describe("Three Word Chunk Logic", () => {
+  it("should group words into chunks of 3", () => {
+    const words = ["one", "two", "three", "four", "five", "six"];
     const timestamps = createWordTimestamps(words);
 
-    // Test at each word position
-    words.forEach((expectedWord, index) => {
-      const result = AnimatedCaptions({
-        text: words.join(" "),
-        wordTimestamps: timestamps,
-        currentTime: index * 0.5 + 0.2, // Middle of each word
-        beatStartTime: 0,
-        scale: 1,
-      });
-
-      const captionBox = result.props.children;
-      const wordSpan = captionBox.props.children;
-
-      expect(wordSpan.props.children).toBe(expectedWord);
-    });
-  });
-
-  it("should work with MAX_VISIBLE_WORDS = 1", () => {
-    // This tests the teleprompter behavior where only current word shows
-    const words = ["alpha", "beta", "gamma", "delta", "epsilon"];
-    const timestamps = createWordTimestamps(words);
-
-    const result = AnimatedCaptions({
+    // First chunk (words 0-2)
+    const resultChunk1 = AnimatedCaptions({
       text: words.join(" "),
       wordTimestamps: timestamps,
-      currentTime: 1.2, // Should be on "gamma" (3rd word)
+      currentTime: 0.2, // "one" is active
       beatStartTime: 0,
       scale: 1,
     });
 
-    const captionBox = result.props.children;
-    const wordSpan = captionBox.props.children;
+    // Second chunk (words 3-5)
+    const resultChunk2 = AnimatedCaptions({
+      text: words.join(" "),
+      wordTimestamps: timestamps,
+      currentTime: 1.7, // "four" is active
+      beatStartTime: 0,
+      scale: 1,
+    });
 
-    // Only "gamma" should be visible
-    expect(wordSpan.props.children).toBe("gamma");
+    const chunk1Words = getChunkWords(resultChunk1);
+    const chunk2Words = getChunkWords(resultChunk2);
+
+    expect(chunk1Words.length).toBe(3);
+    expect(chunk1Words.map(w => w.props.children)).toEqual(["one", "two", "three"]);
+
+    expect(chunk2Words.length).toBe(3);
+    expect(chunk2Words.map(w => w.props.children)).toEqual(["four", "five", "six"]);
+  });
+
+  it("should handle partial last chunk", () => {
+    const words = ["one", "two", "three", "four", "five"];
+    const timestamps = createWordTimestamps(words);
+
+    // Last chunk should have only 2 words
+    const result = AnimatedCaptions({
+      text: words.join(" "),
+      wordTimestamps: timestamps,
+      currentTime: 2.2, // "five" is active (word index 4)
+      beatStartTime: 0,
+      scale: 1,
+    });
+
+    const chunkWords = getChunkWords(result);
+
+    expect(chunkWords.length).toBe(2);
+    expect(chunkWords.map(w => w.props.children)).toEqual(["four", "five"]);
+  });
+
+  it("should highlight correct word within chunk", () => {
+    const words = ["alpha", "beta", "gamma", "delta", "epsilon"];
+    const timestamps = createWordTimestamps(words);
+
+    // Test highlighting "beta" (index 1) in first chunk
+    const result = AnimatedCaptions({
+      text: words.join(" "),
+      wordTimestamps: timestamps,
+      currentTime: 0.7, // "beta" is active
+      beatStartTime: 0,
+      scale: 1,
+    });
+
+    const chunkWords = getChunkWords(result);
+
+    // "alpha" is past
+    expect(chunkWords[0].props.style.color).toBe("#ffffff");
+    // "beta" is active
+    expect(chunkWords[1].props.style.color).toBe("#00d4ff");
+    // "gamma" is future
+    expect(chunkWords[2].props.style.color).toBe("#666666");
   });
 });

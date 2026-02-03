@@ -35,14 +35,14 @@ export const SHORTS_LAYOUT = {
   height: 1920,
   visualArea: {
     top: 0,
-    height: 1344, // 70%
+    height: 1920, // Full bleed - 3D extends to bottom
   },
   captionArea: {
-    top: 1344,
-    height: 576, // 30%
+    top: 1920 - 230, // Overlay at bottom ~12% of frame (230px)
+    height: 230,
   },
   progressBar: {
-    height: 8,
+    height: 6,
   },
 };
 
@@ -176,10 +176,33 @@ export const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     );
   }
 
-  // Find current beat based on time
+  // Find current beat based on time (with overlap handling)
+  const TRANSITION_OVERLAP = 0.15; // 4-5 frames at 30fps
+
+  // Find which beats should be visible (current + overlapping transitions)
   const currentBeat = storyboard.beats.find(
     (beat) => currentTime >= beat.start_seconds && currentTime < beat.end_seconds
   );
+
+  // Find previous beat (for fade out during transition)
+  const prevBeatIndex = storyboard.beats.findIndex(
+    (beat) => currentTime >= beat.start_seconds && currentTime < beat.end_seconds
+  ) - 1;
+  const prevBeat = prevBeatIndex >= 0 ? storyboard.beats[prevBeatIndex] : null;
+
+  // Find next beat (for fade in during transition)
+  const nextBeatIndex = storyboard.beats.findIndex(
+    (beat) => currentTime >= beat.start_seconds && currentTime < beat.end_seconds
+  ) + 1;
+  const nextBeat = nextBeatIndex < storyboard.beats.length ? storyboard.beats[nextBeatIndex] : null;
+
+  // If no current beat found, we might be in a gap - show nearest beat
+  const fallbackBeat = !currentBeat ? storyboard.beats.find(
+    (beat) => currentTime < beat.end_seconds
+  ) || storyboard.beats[storyboard.beats.length - 1] : null;
+
+  // Use current beat or fallback
+  const activeBeat = currentBeat || fallbackBeat;
 
   // Calculate overall progress
   const progress = currentTime / storyboard.total_duration_seconds;
@@ -193,7 +216,7 @@ export const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       {/* Animated background particles/grid */}
       <BackgroundEffect frame={frame} scale={scale} />
 
-      {/* Visual Area (Top 70%) */}
+      {/* Visual Area - Full bleed */}
       <div
         style={{
           position: "absolute",
@@ -208,9 +231,9 @@ export const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         }}
       >
         {/* Main Visual - use custom scene if available, else fallback to ShortsVisualArea */}
-        {currentBeat && (
+        {activeBeat && (
           <VisualRenderer
-            beat={currentBeat}
+            beat={activeBeat}
             frame={frame}
             fps={fps}
             scale={scale}
@@ -218,27 +241,28 @@ export const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         )}
       </div>
 
-      {/* Caption Area (Bottom 30%) */}
+      {/* Caption Area - Gradient overlay at bottom (~12% of frame) */}
       <div
         style={{
           position: "absolute",
-          top: SHORTS_LAYOUT.captionArea.top * scale,
+          bottom: SHORTS_LAYOUT.progressBar.height * scale,
           left: 0,
           width: width,
-          height: (SHORTS_LAYOUT.captionArea.height - SHORTS_LAYOUT.progressBar.height) * scale,
+          height: SHORTS_LAYOUT.captionArea.height * scale,
+          background: `linear-gradient(to bottom, transparent 0%, rgba(10, 10, 15, 0.7) 30%, rgba(10, 10, 15, 0.9) 100%)`,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: `0 ${40 * scale}px`,
+          padding: `0 ${24 * scale}px`,
         }}
       >
-        {currentBeat && (
+        {activeBeat && (
           <AnimatedCaptions
-            text={currentBeat.caption_text}
-            wordTimestamps={currentBeat.word_timestamps || []}
+            text={activeBeat.caption_text}
+            wordTimestamps={activeBeat.word_timestamps || []}
             currentTime={currentTime}
-            beatStartTime={currentBeat.start_seconds}
+            beatStartTime={activeBeat.start_seconds}
             scale={scale}
           />
         )}
